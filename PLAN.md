@@ -304,10 +304,10 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 1.7 — Profile Queries (packages/db)
 
-- [ ] 1.7.1 — Create `packages/db/src/queries/profiles.ts`:
+- [x] 1.7.1 — Create `packages/db/src/queries/profiles.ts`:
   - `getProfile(supabase, userId)` — fetch profile by ID
   - `updateProfile(supabase, userId, data)` — update display_name, photo_url, locale, default_currency
-- [ ] 1.7.2 — Export from `packages/db/src/index.ts`.
+- [x] 1.7.2 — Export from `packages/db/src/index.ts`.
 
 ### 1.8 — Shell Layout & Profile Page (apps/app)
 
