@@ -322,8 +322,8 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 1.9 — Zustand Auth Store (packages/stores)
 
-- [ ] 1.9.1 — Create `packages/stores/src/auth.ts`: `useAuthStore` with `user`, `profile`, `setUser`, `setProfile`, `reset`.
-- [ ] 1.9.2 — In the app's root provider/layout, hydrate the store from the session after mount.
+- [x] 1.9.1 — Create `packages/stores/src/auth.ts`: `useAuthStore` with `user`, `profile`, `setUser`, `setProfile`, `reset`.
+- [x] 1.9.2 — In the app's root provider/layout, hydrate the store from the session after mount.
 
 ### 1.10 — Verify & Test
 
