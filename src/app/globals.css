@@ -12,11 +12,22 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
   }
+} */
+
+@font-face {
+  font-family: "Geist Pixel";
+  src: url("/public/fonts/GeistPixel-Line.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+}
+
+.geist-pixel {
+  font-family: "Geist Pixel", sans-serif;
 }
 
 body {
