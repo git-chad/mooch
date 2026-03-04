@@ -359,13 +359,13 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 **Goal:** Users can create squads, invite friends via invite code or QR, join groups, and switch between groups. The active group context is available throughout the app.
 
-**Status:** ⬜ — _Blocked until Phase 1 is APPROVED_
+**Status:** 🔄
 
 ---
 
 ### 2.1 — Database Migrations: Groups
 
-- [ ] 2.1.1 — Create `supabase/migrations/0002_groups.sql`:
+- [x] 2.1.1 — Create `supabase/migrations/0003_groups.sql`:
 
   ```sql
   create table public.groups (
@@ -422,16 +422,16 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
   $$;
   ```
 
-- [ ] 2.1.2 — Add `Group` and `GroupMember` TypeScript types to `packages/types`.
-- [ ] 2.1.3 — Run migration and verify in Supabase Studio.
+- [x] 2.1.2 — Add `Group` and `GroupMember` TypeScript types to `packages/types`.
+- [x] 2.1.3 — Run migration and verify in Supabase Studio.
 
 ### 2.2 — Group Queries & Server Actions
 
-- [ ] 2.2.1 — `packages/db/src/queries/groups.ts`:
+- [x] 2.2.1 — `packages/db/src/queries/groups.ts`:
   - `getGroupsByUser(supabase, userId)` — groups where user is a member
   - `getGroupById(supabase, groupId)` — single group with members
   - `getGroupMembers(supabase, groupId)` — list of members with profile data
-- [ ] 2.2.2 — `apps/app/src/app/actions/groups.ts` (Server Actions):
+- [x] 2.2.2 — `apps/app/src/app/actions/groups.ts` (Server Actions):
   - `createGroup(data)` — generates 6-char alphanumeric invite code, inserts group + adds creator as admin
   - `joinGroupByCode(inviteCode)` — looks up group, adds current user as member
   - `updateGroup(groupId, data)` — update name, emoji, cover photo, currency, locale (admin only)
@@ -442,7 +442,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 2.3 — Group Zustand Store
 
-- [ ] 2.3.1 — Create `packages/stores/src/groups.ts`: `useGroupStore` with `groups`, `activeGroupId`, `setGroups`, `setActiveGroup`, `addGroup`, `removeGroup`.
+- [x] 2.3.1 — Create `packages/stores/src/groups.ts`: `useGroupStore` with `groups`, `activeGroupId`, `setGroups`, `setActiveGroup`, `addGroup`, `removeGroup`.
 
 ### 2.4 — Groups UI
 

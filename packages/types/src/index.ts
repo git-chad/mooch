@@ -21,7 +21,7 @@ export type Profile = {
 export type Group = {
   id: string;
   name: string;
-  emoji: string | null;
+  emoji: string;
   cover_photo_url: string | null;
   currency: string;
   locale: string;
