@@ -342,12 +342,12 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 **Phase 1 Testing Checklist (must all pass before APPROVED):**
 
-- [ ] Email sign-up + email confirmation works end to end
-- [ ] Google OAuth sign-in works end to end
-- [ ] Auth-guarded routes redirect unauthenticated users
-- [ ] Profile is auto-created on first sign-up
-- [ ] Profile editing (name, locale, currency, avatar) saves correctly
-- [ ] Sign out clears session and redirects
+- [x] Email sign-up + email confirmation works end to end
+- [x] Google OAuth sign-in works end to end
+- [x] Auth-guarded routes redirect unauthenticated users
+- [x] Profile is auto-created on first sign-up
+- [x] Profile editing (name, locale, currency, avatar) saves correctly
+- [x] Sign out clears session and redirects
 
 **Phase 1 Status: 🟢 APPROVED**
 
