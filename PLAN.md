@@ -311,14 +311,14 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 1.8 — Shell Layout & Profile Page (apps/app)
 
-- [ ] 1.8.1 — Create `apps/app/src/app/(shell)/layout.tsx` — server component that fetches the session. If no session, redirect to `/login`. Renders sidebar/navigation shell.
-- [ ] 1.8.2 — Create `apps/app/src/app/(shell)/groups/page.tsx` — placeholder groups list showing "Welcome, {display_name}".
-- [ ] 1.8.3 — Create `apps/app/src/app/(shell)/profile/page.tsx`:
+- [x] 1.8.1 — Create `apps/app/src/app/(shell)/layout.tsx` — server component that fetches the session. If no session, redirect to `/login`. Renders sidebar/navigation shell.
+- [x] 1.8.2 — Create `apps/app/src/app/(shell)/groups/page.tsx` — placeholder groups list showing "Welcome, {display_name}".
+- [x] 1.8.3 — Create `apps/app/src/app/(shell)/profile/page.tsx`:
   - Display current profile (display_name, email read-only, locale, default_currency)
   - Edit form for display_name, locale (EN/ES selector), default_currency
   - Avatar upload (Supabase Storage `avatars` bucket, create bucket in migration)
   - "Sign Out" button — calls `signOut()` + redirect to `/login`
-- [ ] 1.8.4 — Avatar upload: compress client-side (Canvas API) → upload to `avatars/{userId}.{ext}` → save public URL to `profiles.photo_url`.
+- [x] 1.8.4 — Avatar upload: compress client-side (Canvas API) → upload to `avatars/{userId}.{ext}` → save public URL to `profiles.photo_url`.
 
 ### 1.9 — Zustand Auth Store (packages/stores)
 
