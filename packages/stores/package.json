@@ -9,6 +9,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "howler": "^2.2.4",
     "zustand": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/howler": "^2.2.12"
   }
 }
