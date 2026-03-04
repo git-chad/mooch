@@ -266,26 +266,26 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 1.3 — Supabase Client Helpers (packages/db)
 
-- [ ] 1.3.1 — `packages/db/src/client/browser.ts`: `createBrowserClient()` using `@supabase/ssr`.
-- [ ] 1.3.2 — `packages/db/src/client/server.ts`: `createServerClient()` (for Server Components + Server Actions).
-- [ ] 1.3.3 — `packages/db/src/client/middleware.ts`: `createMiddlewareClient()` for Next.js middleware.
-- [ ] 1.3.4 — Export all three from `packages/db/src/index.ts`.
+- [x] 1.3.1 — `packages/db/src/client/browser.ts`: `createBrowserClient()` using `@supabase/ssr`.
+- [x] 1.3.2 — `packages/db/src/client/server.ts`: `createServerClient()` (for Server Components + Server Actions).
+- [x] 1.3.3 — `packages/db/src/client/middleware.ts`: `createMiddlewareClient()` for Next.js middleware.
+- [x] 1.3.4 — Export all three from `packages/db/src/index.ts`.
 
 ### 1.4 — Next.js Auth Middleware (apps/app)
 
-- [ ] 1.4.1 — Create `apps/app/src/middleware.ts`. Use `createMiddlewareClient()` from `@mooch/db` to refresh the session on every request.
-- [ ] 1.4.2 — Protect all routes under `/dashboard/*` — redirect unauthenticated users to `/login`.
-- [ ] 1.4.3 — Redirect authenticated users away from `/login` and `/signup` to `/dashboard`.
+- [x] 1.4.1 — Create `apps/app/src/middleware.ts`. Use `createMiddlewareClient()` from `@mooch/db` to refresh the session on every request.
+- [x] 1.4.2 — Protect all non-auth, non-public routes — redirect unauthenticated users to `/login`.
+- [x] 1.4.3 — Redirect authenticated users away from `/login` and `/signup` to `/groups`.
 
 ### 1.5 — Auth Route Handlers (apps/app)
 
-- [ ] 1.5.1 — Create `apps/app/src/app/auth/callback/route.ts`. Exchange the OAuth code for a session and redirect to `/dashboard`.
-- [ ] 1.5.2 — Create `apps/app/src/app/auth/confirm/route.ts` for email confirmation links.
+- [x] 1.5.1 — Create `apps/app/src/app/auth/callback/route.ts`. Exchange the OAuth code for a session and redirect to `/groups`.
+- [x] 1.5.2 — Create `apps/app/src/app/auth/confirm/route.ts` for email confirmation links.
 
 ### 1.6 — Login & Signup Pages
 
-- [ ] 1.6.1 — Create `apps/app/src/app/(auth)/layout.tsx` — centered, full-height auth layout with mooch logo/wordmark.
-- [ ] 1.6.2 — Create `apps/app/src/app/(auth)/login/page.tsx`:
+- [x] 1.6.1 — Create `apps/app/src/app/(auth)/layout.tsx` — centered, full-height auth layout with mooch logo/wordmark.
+- [x] 1.6.2 — Create `apps/app/src/app/(auth)/login/page.tsx`:
   - Email + password fields
   - "Sign in with Google" button (calls `signInWithOAuth({ provider: 'google' })`)
   - Link to `/signup`
@@ -293,12 +293,12 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
   - Client component — uses `createBrowserClient()`
   - Show error message on failed login
   - Loading state on submit
-- [ ] 1.6.3 — Create `apps/app/src/app/(auth)/signup/page.tsx`:
+- [x] 1.6.3 — Create `apps/app/src/app/(auth)/signup/page.tsx`:
   - Display name, email, password fields
   - Validation: display name ≥ 2 chars, valid email, password ≥ 8 chars
   - On success: show "Check your email" message
   - Link back to `/login`
-- [ ] 1.6.4 — Create `apps/app/src/app/(auth)/forgot-password/page.tsx`:
+- [x] 1.6.4 — Create `apps/app/src/app/(auth)/forgot-password/page.tsx`:
   - Email field → calls `resetPasswordForEmail()`
   - Success/error feedback
 
@@ -309,11 +309,11 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
   - `updateProfile(supabase, userId, data)` — update display_name, photo_url, locale, default_currency
 - [ ] 1.7.2 — Export from `packages/db/src/index.ts`.
 
-### 1.8 — Dashboard Layout & Profile Page (apps/app)
+### 1.8 — Shell Layout & Profile Page (apps/app)
 
-- [ ] 1.8.1 — Create `apps/app/src/app/dashboard/layout.tsx` — server component that fetches the session. If no session, redirect to `/login`. Renders sidebar/navigation shell.
-- [ ] 1.8.2 — Create `apps/app/src/app/dashboard/page.tsx` — placeholder home page showing "Welcome, {display_name}".
-- [ ] 1.8.3 — Create `apps/app/src/app/dashboard/profile/page.tsx`:
+- [ ] 1.8.1 — Create `apps/app/src/app/(shell)/layout.tsx` — server component that fetches the session. If no session, redirect to `/login`. Renders sidebar/navigation shell.
+- [ ] 1.8.2 — Create `apps/app/src/app/(shell)/groups/page.tsx` — placeholder groups list showing "Welcome, {display_name}".
+- [ ] 1.8.3 — Create `apps/app/src/app/(shell)/profile/page.tsx`:
   - Display current profile (display_name, email read-only, locale, default_currency)
   - Edit form for display_name, locale (EN/ES selector), default_currency
   - Avatar upload (Supabase Storage `avatars` bucket, create bucket in migration)
@@ -327,11 +327,11 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 1.10 — Verify & Test
 
-- [ ] 1.10.1 — Sign up with email → receive confirmation email → click link → redirected to `/dashboard`.
-- [ ] 1.10.2 — Sign in with email/password → lands on `/dashboard`.
-- [ ] 1.10.3 — Sign in with Google → redirected through OAuth → lands on `/dashboard`.
-- [ ] 1.10.4 — Visiting `/dashboard` when logged out → redirected to `/login`.
-- [ ] 1.10.5 — Visiting `/login` when logged in → redirected to `/dashboard`.
+- [ ] 1.10.1 — Sign up with email → receive confirmation email → click link → redirected to `/groups`.
+- [ ] 1.10.2 — Sign in with email/password → lands on `/groups`.
+- [ ] 1.10.3 — Sign in with Google → redirected through OAuth → lands on `/groups`.
+- [ ] 1.10.4 — Visiting `/groups` when logged out → redirected to `/login`.
+- [ ] 1.10.5 — Visiting `/login` when logged in → redirected to `/groups`.
 - [ ] 1.10.6 — Profile edit saves to Supabase, changes reflected on reload.
 - [ ] 1.10.7 — Avatar upload works (photo visible after upload).
 - [ ] 1.10.8 — Sign out → redirected to `/login`, session cleared.
@@ -446,7 +446,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 2.4 — Groups UI
 
-- [ ] 2.4.1 — `apps/app/src/app/dashboard/groups/page.tsx`:
+- [ ] 2.4.1 — `apps/app/src/app/(shell)/groups/page.tsx`:
   - List of user's groups (emoji, name, member count, currency badge)
   - "Create a squad" button → opens create group modal
   - "Join a squad" button → opens join group modal
@@ -462,7 +462,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
   - 6-character code input (auto-uppercase, auto-advance per char)
   - QR code scanner (browser `getUserMedia` + `jsqr` lib)
   - On submit: calls `joinGroupByCode`
-- [ ] 2.4.4 — `apps/app/src/app/dashboard/groups/[groupId]/page.tsx`:
+- [ ] 2.4.4 — `apps/app/src/app/(shell)/groups/[groupId]/page.tsx`:
   - Group header (emoji, name, member count)
   - Members list (avatar, name, role badge)
   - Navigation tabs for group sections
@@ -475,7 +475,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 - [ ] 2.4.6 — `apps/app/src/app/join/[code]/page.tsx` (public, no auth required):
   - Shows group name + emoji from invite code lookup
   - "Join this squad" CTA → if not logged in, redirect to `/login?next=/join/{code}`; if logged in, call `joinGroupByCode`
-- [ ] 2.4.7 — `apps/app/src/app/dashboard/groups/[groupId]/settings/page.tsx`:
+- [ ] 2.4.7 — `apps/app/src/app/(shell)/groups/[groupId]/settings/page.tsx`:
   - Edit name, emoji, cover photo, currency, locale
   - Member management (remove member, change role — admin only)
   - "Regenerate invite code" button
@@ -489,9 +489,9 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 2.5 — App Layout with Group Context
 
-- [ ] 2.5.1 — Update `apps/app/src/app/dashboard/layout.tsx` to fetch user's groups server-side.
+- [ ] 2.5.1 — Update `apps/app/src/app/(shell)/layout.tsx` to fetch user's groups server-side.
 - [ ] 2.5.2 — Create client-side `GroupsProvider` that hydrates the Zustand group store.
-- [ ] 2.5.3 — Add `GroupSwitcher` to the dashboard top nav.
+- [ ] 2.5.3 — Add `GroupSwitcher` to the shell top nav.
 
 ### 2.6 — Verify & Test
 
@@ -621,7 +621,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 3.4 — Expenses UI
 
-- [ ] 3.4.1 — `apps/app/src/app/dashboard/[groupId]/expenses/page.tsx`:
+- [ ] 3.4.1 — `apps/app/src/app/(shell)/[groupId]/expenses/page.tsx`:
   - Two tabs: **Activity** and **Balances**
   - "Add Expense" button
 - [ ] 3.4.2 — `apps/app/src/components/expenses/ExpenseList.tsx`:
@@ -641,7 +641,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
     - Percentage: number input per member, must sum to 100%, live validation
     - Exact: number input per member, must sum to total, live validation
   - Submit → optimistic update → `addExpense` action
-- [ ] 3.4.5 — `apps/app/src/app/dashboard/[groupId]/expenses/[expenseId]/page.tsx`:
+- [ ] 3.4.5 — `apps/app/src/app/(shell)/[groupId]/expenses/[expenseId]/page.tsx`:
   - Full breakdown (all participants + shares)
   - Edit button (creator/admin) → pre-filled edit modal
   - Delete with confirm dialog
@@ -769,7 +769,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 4.4 — Polls UI
 
-- [ ] 4.4.1 — `apps/app/src/app/dashboard/[groupId]/polls/page.tsx`:
+- [ ] 4.4.1 — `apps/app/src/app/(shell)/[groupId]/polls/page.tsx`:
   - Active polls at top, closed polls below (grayed)
   - "Create Poll" button
   - Empty state: "No polls yet — start a vote!"
@@ -896,7 +896,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 5.3 — Kanban Board UI
 
-- [ ] 5.3.1 — `apps/app/src/app/dashboard/[groupId]/plans/page.tsx` — full kanban board.
+- [ ] 5.3.1 — `apps/app/src/app/(shell)/[groupId]/plans/page.tsx` — full kanban board.
 - [ ] 5.3.2 — `apps/app/src/components/plans/KanbanBoard.tsx`:
   - Horizontal 4-column layout with horizontal scroll on mobile
   - Columns: "💡 Ideas", "📋 To Plan", "📅 Upcoming", "✅ Done" + count badge
@@ -1031,7 +1031,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 6.4 — Feed UI
 
-- [ ] 6.4.1 — `apps/app/src/app/dashboard/[groupId]/feed/page.tsx`:
+- [ ] 6.4.1 — `apps/app/src/app/(shell)/[groupId]/feed/page.tsx`:
   - Vertical scroll of cards, infinite scroll (intersection observer)
   - Floating post bar: "📷 Photo", "🎙️ Voice", "✍️ Text"
   - Empty state: "Be the first to post something!"
@@ -1184,7 +1184,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 7.3 — Events UI
 
-- [ ] 7.3.1 — `apps/app/src/app/dashboard/[groupId]/events/page.tsx`:
+- [ ] 7.3.1 — `apps/app/src/app/(shell)/[groupId]/events/page.tsx`:
   - Upcoming and Past sections
   - "Create Event" button
   - Empty state: "No events yet — plan something!"
@@ -1199,7 +1199,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
   - "+1 guest" counter appears after "Yes"
   - Optimistic update
   - Mini avatars per RSVP category below buttons
-- [ ] 7.3.4 — `apps/app/src/app/dashboard/[groupId]/events/[eventId]/page.tsx`:
+- [ ] 7.3.4 — `apps/app/src/app/(shell)/[groupId]/events/[eventId]/page.tsx`:
   - Full event details + RSVPButtons
   - RSVP breakdown (expandable Yes / Maybe / No sections with member names + avatars)
   - Past events: "Confirm who came" button (organizer only)
@@ -1322,7 +1322,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 8.4 — Insights UI
 
-- [ ] 8.4.1 — `apps/app/src/app/dashboard/[groupId]/insights/page.tsx`:
+- [ ] 8.4.1 — `apps/app/src/app/(shell)/[groupId]/insights/page.tsx`:
   - Week selector (this week + previous weeks browsable)
   - Loads from `insights` table by `week_id`
   - Empty state: "Digest generates every Sunday — check back soon!"
@@ -1505,7 +1505,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 10.3 — Performance Audit
 
-- [ ] 10.3.1 — Lighthouse: `apps/app` dashboard page → LCP < 2.5s, CLS < 0.1.
+- [ ] 10.3.1 — Lighthouse: `apps/app` groups page → LCP < 2.5s, CLS < 0.1.
 - [ ] 10.3.2 — Lighthouse: `apps/web` home → 90+ score.
 - [ ] 10.3.3 — Add DB indexes on `group_id`, `created_at` for all subcollection tables.
 - [ ] 10.3.4 — Ensure Next.js `<Image>` is used throughout. Verify lazy loading.
@@ -1526,7 +1526,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 - [ ] 10.5.3 — Configure Google OAuth for production callback URL.
 - [ ] 10.5.4 — Deploy Edge Functions: `supabase functions deploy`.
 - [ ] 10.5.5 — Set VAPID keys in production Edge Function secrets.
-- [ ] 10.5.6 — Enable Realtime on required tables in production dashboard.
+- [ ] 10.5.6 — Enable Realtime on required tables in production Supabase project.
 - [ ] 10.5.7 — Set up weekly-digest cron schedule in production.
 
 ### 10.6 — Vercel Deployment
