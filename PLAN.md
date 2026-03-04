@@ -1,9 +1,9 @@
-# SquadSync — Webapp Development Plan
+# mooch — Webapp Development Plan
 
 > **"Track the chaos, keep the vibes: expenses, plans, votes & memories — all in one squad app."**
 >
 > Web app (Next.js 16 + Supabase) · Monorepo · English & Spanish
-> Structure: `squadsync.com` (marketing) + `app.squadsync.com` (app)
+> Structure: `mooch.com` (marketing) + `app.mooch.com` (app)
 
 ---
 
@@ -18,44 +18,44 @@
 
 ## Status Legend
 
-| Symbol | Meaning |
-|--------|---------|
-| ⬜ | Not started |
-| 🔄 | In progress |
-| ✅ | Done |
-| ✋ | Blocked |
-| 🟢 | **APPROVED** — phase complete, next phase can begin |
+| Symbol | Meaning                                             |
+| ------ | --------------------------------------------------- |
+| ⬜     | Not started                                         |
+| 🔄     | In progress                                         |
+| ✅     | Done                                                |
+| ✋     | Blocked                                             |
+| 🟢     | **APPROVED** — phase complete, next phase can begin |
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | Next.js 16 (App Router) + React 19 |
-| Language | TypeScript 5 |
-| Styling | Tailwind CSS 4 |
-| UI Primitives | Base UI Components |
-| Animations | Motion (Framer Motion v12) |
-| Backend | Supabase (Postgres, Auth, Storage, Realtime, Edge Functions) |
-| Auth | Supabase Auth — email/password + Google OAuth |
-| Real-time | Supabase Realtime channels |
-| Push | Web Push API + Supabase Edge Functions |
-| File Storage | Supabase Storage |
-| State (client) | Zustand (stores in `packages/stores`) |
-| Monorepo | Bun workspaces |
-| Linting/Format | Biome |
-| Deployment | Vercel (both apps) |
+| Layer          | Technology                                                   |
+| -------------- | ------------------------------------------------------------ |
+| Framework      | Next.js 16 (App Router) + React 19                           |
+| Language       | TypeScript 5                                                 |
+| Styling        | Tailwind CSS 4                                               |
+| UI Primitives  | Base UI Components                                           |
+| Animations     | Motion (Framer Motion v12)                                   |
+| Backend        | Supabase (Postgres, Auth, Storage, Realtime, Edge Functions) |
+| Auth           | Supabase Auth — email/password + Google OAuth                |
+| Real-time      | Supabase Realtime channels                                   |
+| Push           | Web Push API + Supabase Edge Functions                       |
+| File Storage   | Supabase Storage                                             |
+| State (client) | Zustand (stores in `packages/stores`)                        |
+| Monorepo       | Bun workspaces                                               |
+| Linting/Format | Biome                                                        |
+| Deployment     | Vercel (both apps)                                           |
 
 ---
 
 ## Monorepo Structure
 
 ```
-squad-sync/
+mooch/
 ├── apps/
-│   ├── app/          → Next.js app — app.squadsync.com
-│   └── web/          → Next.js marketing site — squadsync.com
+│   ├── app/          → Next.js app — app.mooch.com
+│   └── web/          → Next.js marketing site — mooch.com
 ├── packages/
 │   ├── db/           → Supabase client, queries, types
 │   ├── types/        → Shared TypeScript types & Zod schemas
@@ -125,18 +125,18 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 - [ ] 0.1.1 — Update root `package.json` to declare bun workspaces:
   ```json
   {
-    "name": "squad-sync",
+    "name": "mooch",
     "private": true,
     "workspaces": ["apps/*", "packages/*"]
   }
   ```
 - [ ] 0.1.2 — Give each app and package a proper `package.json` with a unique name:
-  - `apps/app` → `@squad-sync/app`
-  - `apps/web` → `@squad-sync/web`
-  - `packages/db` → `@squad-sync/db`
-  - `packages/types` → `@squad-sync/types`
-  - `packages/ui` → `@squad-sync/ui`
-  - `packages/stores` → `@squad-sync/stores` (create this package)
+  - `apps/app` → `@mooch/app`
+  - `apps/web` → `@mooch/web`
+  - `packages/db` → `@mooch/db`
+  - `packages/types` → `@mooch/types`
+  - `packages/ui` → `@mooch/ui`
+  - `packages/stores` → `@mooch/stores` (create this package)
 - [ ] 0.1.3 — Run `bun install` from root and verify the lockfile resolves all workspaces.
 
 ### 0.2 — Turborepo
@@ -153,7 +153,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 - [ ] 0.3.1 — Scaffold `apps/app` as a full Next.js 16 App Router project (copy/move relevant config from root `next.config.ts`, `tsconfig.json`, `postcss.config.mjs` into the app folder). App should be self-contained.
 - [ ] 0.3.2 — Scaffold `apps/web` as a second full Next.js 16 App Router project with its own config.
-- [ ] 0.3.3 — Configure each app's `tsconfig.json` to resolve `@squad-sync/*` packages via `paths`.
+- [ ] 0.3.3 — Configure each app's `tsconfig.json` to resolve `@mooch/*` packages via `paths`.
 - [ ] 0.3.4 — Verify both `bun run dev` commands start without errors.
 - [ ] 0.3.5 — Clean up root: remove `src/`, `next.config.ts`, `next-env.d.ts`, `postcss.config.mjs` from root (the root is now the workspace root only, not an app).
 
@@ -191,6 +191,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 ---
 
 **Phase 0 Testing Checklist (must all pass before APPROVED):**
+
 - [ ] Both apps start with `bun run dev`
 - [ ] Both apps build with `bun run build`
 - [ ] Supabase local dev runs (`supabase status` shows all services healthy)
@@ -207,13 +208,14 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 **Goal:** Users can sign up and log in with email/password or Google OAuth. A profile is persisted in Supabase. Auth state is available throughout the app.
 
-**Status:** ⬜ — *Blocked until Phase 0 is APPROVED*
+**Status:** ⬜ — _Blocked until Phase 0 is APPROVED_
 
 ---
 
 ### 1.1 — Database Migration: Profiles
 
 - [ ] 1.1.1 — Create `supabase/migrations/0001_profiles.sql`:
+
   ```sql
   create table public.profiles (
     id uuid references auth.users(id) on delete cascade primary key,
@@ -251,6 +253,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
     after insert on auth.users
     for each row execute function public.handle_new_user();
   ```
+
 - [ ] 1.1.2 — Run `supabase db reset` locally and confirm the `profiles` table exists.
 - [ ] 1.1.3 — Add the `Profile` TypeScript type to `packages/types/src/index.ts`.
 
@@ -270,7 +273,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 1.4 — Next.js Auth Middleware (apps/app)
 
-- [ ] 1.4.1 — Create `apps/app/src/middleware.ts`. Use `createMiddlewareClient()` from `@squad-sync/db` to refresh the session on every request.
+- [ ] 1.4.1 — Create `apps/app/src/middleware.ts`. Use `createMiddlewareClient()` from `@mooch/db` to refresh the session on every request.
 - [ ] 1.4.2 — Protect all routes under `/dashboard/*` — redirect unauthenticated users to `/login`.
 - [ ] 1.4.3 — Redirect authenticated users away from `/login` and `/signup` to `/dashboard`.
 
@@ -281,7 +284,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 1.6 — Login & Signup Pages
 
-- [ ] 1.6.1 — Create `apps/app/src/app/(auth)/layout.tsx` — centered, full-height auth layout with SquadSync logo/wordmark.
+- [ ] 1.6.1 — Create `apps/app/src/app/(auth)/layout.tsx` — centered, full-height auth layout with mooch logo/wordmark.
 - [ ] 1.6.2 — Create `apps/app/src/app/(auth)/login/page.tsx`:
   - Email + password fields
   - "Sign in with Google" button (calls `signInWithOAuth({ provider: 'google' })`)
@@ -338,6 +341,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 ---
 
 **Phase 1 Testing Checklist (must all pass before APPROVED):**
+
 - [ ] Email sign-up + email confirmation works end to end
 - [ ] Google OAuth sign-in works end to end
 - [ ] Auth-guarded routes redirect unauthenticated users
@@ -355,13 +359,14 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 **Goal:** Users can create squads, invite friends via invite code or QR, join groups, and switch between groups. The active group context is available throughout the app.
 
-**Status:** ⬜ — *Blocked until Phase 1 is APPROVED*
+**Status:** ⬜ — _Blocked until Phase 1 is APPROVED_
 
 ---
 
 ### 2.1 — Database Migrations: Groups
 
 - [ ] 2.1.1 — Create `supabase/migrations/0002_groups.sql`:
+
   ```sql
   create table public.groups (
     id uuid primary key default gen_random_uuid(),
@@ -416,6 +421,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
     );
   $$;
   ```
+
 - [ ] 2.1.2 — Add `Group` and `GroupMember` TypeScript types to `packages/types`.
 - [ ] 2.1.3 — Run migration and verify in Supabase Studio.
 
@@ -465,7 +471,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
   - Large monospace invite code display
   - "Copy code" button
   - QR code (generated with `qrcode` npm package)
-  - "Share link" button → `navigator.share()` with `https://app.squadsync.com/join/{code}`
+  - "Share link" button → `navigator.share()` with `https://app.mooch.com/join/{code}`
 - [ ] 2.4.6 — `apps/app/src/app/join/[code]/page.tsx` (public, no auth required):
   - Shows group name + emoji from invite code lookup
   - "Join this squad" CTA → if not logged in, redirect to `/login?next=/join/{code}`; if logged in, call `joinGroupByCode`
@@ -503,6 +509,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 ---
 
 **Phase 2 Testing Checklist (must all pass before APPROVED):**
+
 - [ ] Create group with name, emoji, currency
 - [ ] Join by invite code works
 - [ ] Join by QR code works
@@ -521,13 +528,14 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 **Goal:** Full expense splitting with equal/percentage/exact splits, real-time balance calculation, balance matrix, and settle-up flow. This is the core value loop.
 
-**Status:** ⬜ — *Blocked until Phase 2 is APPROVED*
+**Status:** ⬜ — _Blocked until Phase 2 is APPROVED_
 
 ---
 
 ### 3.1 — Database Migrations: Expenses & Balances
 
 - [ ] 3.1.1 — Create `supabase/migrations/0003_expenses.sql`:
+
   ```sql
   create type expense_category as enum ('bar', 'clubbing', 'bbq', 'groceries', 'transport', 'accommodation', 'other');
   create type split_type as enum ('equal', 'percentage', 'exact');
@@ -583,6 +591,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
   create policy "Group members can view balances"
     on public.balances for select using (public.is_group_member(group_id));
   ```
+
 - [ ] 3.1.2 — Create Postgres function `recalculate_balances(p_group_id uuid)`:
   1. Compute net balance per user (owed minus owing across all unsettled expenses)
   2. Greedy simplification: match largest creditor with largest debtor
@@ -661,6 +670,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 ---
 
 **Phase 3 Testing Checklist (must all pass before APPROVED):**
+
 - [ ] Three split types compute correctly
 - [ ] Balance recalculate trigger works
 - [ ] Balance simplification produces minimal set of transactions
@@ -679,13 +689,14 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 **Goal:** Create polls with single or multi-choice voting, anonymous option, live animated results, and auto-close.
 
-**Status:** ⬜ — *Blocked until Phase 3 is APPROVED*
+**Status:** ⬜ — _Blocked until Phase 3 is APPROVED_
 
 ---
 
 ### 4.1 — Database Migrations: Polls
 
 - [ ] 4.1.1 — Create `supabase/migrations/0004_polls.sql`:
+
   ```sql
   create table public.polls (
     id uuid primary key default gen_random_uuid(),
@@ -736,6 +747,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
       where p.id = poll_id and public.is_group_member(p.group_id)
     ));
   ```
+
 - [ ] 4.1.2 — Add `Poll`, `PollOption`, `PollVote` types to `packages/types`.
 
 ### 4.2 — Poll Queries & Server Actions
@@ -800,6 +812,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 ---
 
 **Phase 4 Testing Checklist (must all pass before APPROVED):**
+
 - [ ] Create polls (template + custom)
 - [ ] Single and multi-choice voting works
 - [ ] Anonymous voting hides voter identities
@@ -817,13 +830,14 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 **Goal:** Drag-and-drop kanban board with 4 columns to move squad ideas into real plans and events.
 
-**Status:** ⬜ — *Blocked until Phase 4 is APPROVED*
+**Status:** ⬜ — _Blocked until Phase 4 is APPROVED_
 
 ---
 
 ### 5.1 — Database Migrations: Plans
 
 - [ ] 5.1.1 — Create `supabase/migrations/0005_plans.sql`:
+
   ```sql
   create type plan_status as enum ('ideas', 'to_plan', 'upcoming', 'done');
 
@@ -863,6 +877,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
       where p.id = plan_id and public.is_group_member(p.group_id)
     ));
   ```
+
 - [ ] 5.1.2 — Add `Plan`, `PlanAttachment`, `PlanStatus` types to `packages/types`.
 
 ### 5.2 — Plan Queries & Server Actions
@@ -928,6 +943,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 ---
 
 **Phase 5 Testing Checklist (must all pass before APPROVED):**
+
 - [ ] Drag-and-drop across all 4 columns works
 - [ ] Reordering within a column persists
 - [ ] Photo and voice attachments upload and display
@@ -945,13 +961,14 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 **Goal:** A chronological feed of photos, voice notes, and text posts with emoji reactions.
 
-**Status:** ⬜ — *Blocked until Phase 5 is APPROVED*
+**Status:** ⬜ — _Blocked until Phase 5 is APPROVED_
 
 ---
 
 ### 6.1 — Database Migrations: Feed
 
 - [ ] 6.1.1 — Create `supabase/migrations/0006_feed.sql`:
+
   ```sql
   create type feed_item_type as enum ('photo', 'voice', 'text');
 
@@ -990,6 +1007,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
       where fi.id = feed_item_id and public.is_group_member(fi.group_id)
     ));
   ```
+
 - [ ] 6.1.2 — Add `FeedItem`, `FeedReaction` types to `packages/types`.
 
 ### 6.2 — Feed Queries & Server Actions
@@ -1065,6 +1083,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 ---
 
 **Phase 6 Testing Checklist (must all pass before APPROVED):**
+
 - [ ] Photo, voice, and text post all work
 - [ ] Voice recording works via MediaRecorder API
 - [ ] Client-side image compression works
@@ -1083,13 +1102,14 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 **Goal:** Create events from polls/plans or manually, RSVP system, post-event attendance confirmation.
 
-**Status:** ⬜ — *Blocked until Phase 6 is APPROVED*
+**Status:** ⬜ — _Blocked until Phase 6 is APPROVED_
 
 ---
 
 ### 7.1 — Database Migrations: Events
 
 - [ ] 7.1.1 — Create `supabase/migrations/0007_events.sql`:
+
   ```sql
   create type rsvp_status as enum ('yes', 'no', 'maybe');
 
@@ -1145,6 +1165,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
       where e.id = event_id and public.is_group_member(e.group_id)
     ));
   ```
+
 - [ ] 7.1.2 — Add `linked_event_id` FK constraint to `feed_items` and `plans` now that `events` table exists.
 - [ ] 7.1.3 — Add `Event`, `EventRSVP`, `RSVPStatus` types to `packages/types`.
 
@@ -1204,6 +1225,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 ---
 
 **Phase 7 Testing Checklist (must all pass before APPROVED):**
+
 - [ ] Create events (manual + from poll + from plan)
 - [ ] RSVP system (yes/no/maybe + plus-ones)
 - [ ] Attendance confirmation (organizer only)
@@ -1220,13 +1242,14 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 **Goal:** Automated weekly stats, leaderboards, fun facts, and a weekly push notification digest.
 
-**Status:** ⬜ — *Blocked until Phase 7 is APPROVED*
+**Status:** ⬜ — _Blocked until Phase 7 is APPROVED_
 
 ---
 
 ### 8.1 — Database Migrations: Insights
 
 - [ ] 8.1.1 — Create `supabase/migrations/0008_insights.sql`:
+
   ```sql
   create table public.insights (
     id uuid primary key default gen_random_uuid(),
@@ -1261,6 +1284,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
   create policy "Users can manage own push subscriptions"
     on public.push_subscriptions for all using (auth.uid() = user_id);
   ```
+
 - [ ] 8.1.2 — Add `Insight` type to `packages/types`.
 
 ### 8.2 — Weekly Digest Edge Function
@@ -1293,7 +1317,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 - [ ] 8.3.4 — Save push subscription JSON to `push_subscriptions` table via Server Action.
 - [ ] 8.3.5 — `supabase/functions/send-push/index.ts`: reusable helper that takes `userId` + message → sends Web Push.
 - [ ] 8.3.6 — In `weekly-digest`: after computing insights, call `send-push` for all group members:
-  - Title: "Your SquadSync Weekly Recap 🎉"
+  - Title: "Your mooch Weekly Recap 🎉"
   - Body: "You spent {amount} · {name} was MVP · {n} events attended"
 
 ### 8.4 — Insights UI
@@ -1329,6 +1353,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 ---
 
 **Phase 8 Testing Checklist (must all pass before APPROVED):**
+
 - [ ] Edge Function produces correct insight data
 - [ ] All 6 stats computed correctly
 - [ ] Fun fact generates from templates
@@ -1346,7 +1371,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 **Goal:** Full UX polish, EN/ES i18n, smooth animations, empty/error states, and the marketing landing site.
 
-**Status:** ⬜ — *Blocked until Phase 8 is APPROVED*
+**Status:** ⬜ — _Blocked until Phase 8 is APPROVED_
 
 ---
 
@@ -1401,11 +1426,11 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 ### 9.6 — Marketing Site (apps/web)
 
 - [ ] 9.6.1 — `apps/web/src/app/page.tsx` home page:
-  - Hero: tagline + CTA → `app.squadsync.com/signup`
+  - Hero: tagline + CTA → `app.mooch.com/signup`
   - Feature sections: Expenses, Polls, Plans, Feed, Events, Insights
   - Footer: Privacy, Terms, support email
 - [ ] 9.6.2 — `/privacy` and `/terms` static pages.
-- [ ] 9.6.3 — `/join/{code}` → redirect to `app.squadsync.com/join/{code}`.
+- [ ] 9.6.3 — `/join/{code}` → redirect to `app.mooch.com/join/{code}`.
 - [ ] 9.6.4 — Open Graph meta tags on all pages.
 - [ ] 9.6.5 — Favicon + apple-touch-icon.
 - [ ] 9.6.6 — `sitemap.xml` and `robots.txt`.
@@ -1425,6 +1450,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 ---
 
 **Phase 9 Testing Checklist (must all pass before APPROVED):**
+
 - [ ] EN/ES switch works across entire app
 - [ ] All 6 empty states present
 - [ ] Skeleton loaders work
@@ -1443,7 +1469,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 **Goal:** Stable, tested, deployed app on production URLs with monitoring.
 
-**Status:** ⬜ — *Blocked until Phase 9 is APPROVED*
+**Status:** ⬜ — _Blocked until Phase 9 is APPROVED_
 
 ---
 
@@ -1508,10 +1534,10 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 - [ ] 10.6.1 — Create Vercel project for `apps/app`:
   - Root: `apps/app`
   - All env vars set
-  - Custom domain: `app.squadsync.com`
+  - Custom domain: `app.mooch.com`
 - [ ] 10.6.2 — Create Vercel project for `apps/web`:
   - Root: `apps/web`
-  - Custom domains: `squadsync.com` + `www.squadsync.com`
+  - Custom domains: `mooch.com` + `www.mooch.com`
 - [ ] 10.6.3 — Configure Turborepo remote cache in Vercel.
 - [ ] 10.6.4 — Set up preview deployments on pull requests.
 
@@ -1535,6 +1561,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 ---
 
 **Phase 10 Testing Checklist (must all pass before APPROVED):**
+
 - [ ] Unit tests pass with 80%+ coverage on packages
 - [ ] E2E Playwright tests all pass
 - [ ] RLS tests: non-members cannot access data
@@ -1554,31 +1581,31 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ## Post-MVP Roadmap
 
-*(Do not start until Phase 10 is APPROVED and shipped)*
+_(Do not start until Phase 10 is APPROVED and shipped)_
 
-| Feature | Notes |
-|---------|-------|
-| Squad Pro subscription | Stripe or LemonSqueezy, feature gates |
-| Receipt OCR | Tesseract.js or cloud vision for expense photo scanning |
-| AI weekly recaps | LLM-generated fun facts (Claude API) |
-| Custom group themes | Color palettes, profile cosmetics |
-| PDF exports | Monthly expense reports, event summaries |
-| PWA offline support | Service Worker caching for offline viewing |
+| Feature                | Notes                                                   |
+| ---------------------- | ------------------------------------------------------- |
+| Squad Pro subscription | Stripe or LemonSqueezy, feature gates                   |
+| Receipt OCR            | Tesseract.js or cloud vision for expense photo scanning |
+| AI weekly recaps       | LLM-generated fun facts (Claude API)                    |
+| Custom group themes    | Color palettes, profile cosmetics                       |
+| PDF exports            | Monthly expense reports, event summaries                |
+| PWA offline support    | Service Worker caching for offline viewing              |
 
 ---
 
 ## Approval Log
 
-| Phase | Status | Approved By | Date | Notes |
-|-------|--------|-------------|------|-------|
-| Phase 0: Monorepo Foundation | ⬜ | — | — | — |
-| Phase 1: Auth & Profiles | ⬜ | — | — | — |
-| Phase 2: Groups System | ⬜ | — | — | — |
-| Phase 3: Expense Tracker | ⬜ | — | — | — |
-| Phase 4: Voting & Polls | ⬜ | — | — | — |
-| Phase 5: Plans Board | ⬜ | — | — | — |
-| Phase 6: Squad Feed | ⬜ | — | — | — |
-| Phase 7: Events | ⬜ | — | — | — |
-| Phase 8: Insights | ⬜ | — | — | — |
-| Phase 9: Polish & Marketing | ⬜ | — | — | — |
-| Phase 10: Testing & Deploy | ⬜ | — | — | — |
+| Phase                        | Status | Approved By | Date | Notes |
+| ---------------------------- | ------ | ----------- | ---- | ----- |
+| Phase 0: Monorepo Foundation | ⬜     | —           | —    | —     |
+| Phase 1: Auth & Profiles     | ⬜     | —           | —    | —     |
+| Phase 2: Groups System       | ⬜     | —           | —    | —     |
+| Phase 3: Expense Tracker     | ⬜     | —           | —    | —     |
+| Phase 4: Voting & Polls      | ⬜     | —           | —    | —     |
+| Phase 5: Plans Board         | ⬜     | —           | —    | —     |
+| Phase 6: Squad Feed          | ⬜     | —           | —    | —     |
+| Phase 7: Events              | ⬜     | —           | —    | —     |
+| Phase 8: Insights            | ⬜     | —           | —    | —     |
+| Phase 9: Polish & Marketing  | ⬜     | —           | —    | —     |
+| Phase 10: Testing & Deploy   | ⬜     | —           | —    | —     |
