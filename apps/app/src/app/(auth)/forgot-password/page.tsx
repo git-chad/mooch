@@ -1,16 +1,20 @@
 "use client";
 
-import { createBrowserClient } from "@mooch/db";
+import { supabase } from "@/lib/supabase";
+
+
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 
 export default function ForgotPasswordPage() {
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(searchParams.get("error"));
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const supabase = createBrowserClient();
+  
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -18,7 +22,7 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/confirm?next=/groups`,
+      redirectTo: `${window.location.origin}/auth/reset-callback`,
     });
 
     if (error) {

@@ -1,6 +1,8 @@
 "use client";
 
-import { createBrowserClient, getProfile } from "@mooch/db";
+import { supabase } from "@/lib/supabase";
+
+import { getProfile } from "@mooch/db";
 import { useAuthStore } from "@mooch/stores";
 import { useEffect } from "react";
 
@@ -10,20 +12,14 @@ export default function AuthProvider({
   children: React.ReactNode;
 }) {
   const { setUser, setProfile, reset } = useAuthStore();
-  const supabase = createBrowserClient();
+  
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session) {
-        setUser(session.user);
-        const profile = await getProfile(supabase, session.user.id);
-        setProfile(profile);
-      }
-    });
-
+    // onAuthStateChange fires INITIAL_SESSION on mount with the current session,
+    // so no separate getSession() call is needed — avoids concurrent lock acquisitions.
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session) {
         setUser(session.user);
         const profile = await getProfile(supabase, session.user.id);

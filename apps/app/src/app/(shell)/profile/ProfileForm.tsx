@@ -1,6 +1,8 @@
 "use client";
 
-import { createBrowserClient, updateProfile } from "@mooch/db";
+import { supabase } from "@/lib/supabase";
+
+import { updateProfile } from "@mooch/db";
 import type { Profile } from "@mooch/types";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -19,7 +21,7 @@ export default function ProfileForm({
   email: string;
 }) {
   const router = useRouter();
-  const supabase = createBrowserClient();
+  
 
   const [displayName, setDisplayName] = useState(profile.display_name);
   const [locale, setLocale] = useState(profile.locale);
@@ -88,6 +90,7 @@ export default function ProfileForm({
   }
 
   async function handleSignOut() {
+    console.log("Signing out");
     await supabase.auth.signOut();
     router.push("/login");
   }

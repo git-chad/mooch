@@ -1,6 +1,8 @@
 "use client";
 
-import { createBrowserClient } from "@mooch/db";
+import { supabase } from "@/lib/supabase";
+
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -12,7 +14,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const supabase = createBrowserClient();
+  
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

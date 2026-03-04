@@ -2,7 +2,7 @@ import { createMiddlewareClient } from "@mooch/db/middleware";
 import { type NextRequest, NextResponse } from "next/server";
 
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
-const PUBLIC_ROUTES = ["/auth/callback", "/auth/confirm"];
+const PUBLIC_ROUTES = ["/auth/callback", "/auth/confirm", "/auth/reset-callback"];
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request });

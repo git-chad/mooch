@@ -1,6 +1,8 @@
 "use client";
 
-import { createBrowserClient } from "@mooch/db";
+import { supabase } from "@/lib/supabase";
+
+
 import Link from "next/link";
 import { useState } from "react";
 
@@ -12,7 +14,7 @@ export default function SignupPage() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const supabase = createBrowserClient();
+  
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
