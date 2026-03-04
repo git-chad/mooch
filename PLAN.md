@@ -208,7 +208,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 **Goal:** Users can sign up and log in with email/password or Google OAuth. A profile is persisted in Supabase. Auth state is available throughout the app.
 
-**Status:** 🔄
+**Status:** 🟢
 
 ---
 
@@ -327,16 +327,16 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 1.10 — Verify & Test
 
-- [ ] 1.10.1 — Sign up with email → receive confirmation email → click link → redirected to `/groups`.
-- [ ] 1.10.2 — Sign in with email/password → lands on `/groups`.
-- [ ] 1.10.3 — Sign in with Google → redirected through OAuth → lands on `/groups`.
-- [ ] 1.10.4 — Visiting `/groups` when logged out → redirected to `/login`.
-- [ ] 1.10.5 — Visiting `/login` when logged in → redirected to `/groups`.
-- [ ] 1.10.6 — Profile edit saves to Supabase, changes reflected on reload.
-- [ ] 1.10.7 — Avatar upload works (photo visible after upload).
-- [ ] 1.10.8 — Sign out → redirected to `/login`, session cleared.
-- [ ] 1.10.9 — Forgot password → email received with reset link.
-- [ ] 1.10.10 — `profiles` row auto-created on signup (verify in Supabase Studio).
+- [x] 1.10.1 — Sign up with email → receive confirmation email → click link → redirected to `/groups`.
+- [x] 1.10.2 — Sign in with email/password → lands on `/groups`.
+- [x] 1.10.3 — Sign in with Google → redirected through OAuth → lands on `/groups`.
+- [x] 1.10.4 — Visiting `/groups` when logged out → redirected to `/login`.
+- [x] 1.10.5 — Visiting `/login` when logged in → redirected to `/groups`.
+- [x] 1.10.6 — Profile edit saves to Supabase, changes reflected on reload.
+- [x] 1.10.7 — Avatar upload works (photo visible after upload).
+- [x] 1.10.8 — Sign out → redirected to `/login`, session cleared.
+- [x] 1.10.9 — Forgot password → email received with reset link.
+- [x] 1.10.10 — `profiles` row auto-created on signup (verify in Supabase Studio).
 
 ---
 
@@ -349,7 +349,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 - [ ] Profile editing (name, locale, currency, avatar) saves correctly
 - [ ] Sign out clears session and redirects
 
-**Phase 1 Status: ⬜ — Awaiting approval**
+**Phase 1 Status: 🟢 APPROVED**
 
 ---
 
