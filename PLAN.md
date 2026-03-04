@@ -116,13 +116,13 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 **Goal:** Working monorepo with both Next.js apps running, shared packages wired up, Supabase local dev running, and all tooling configured.
 
-**Status:** ⬜
+**Status:** 🟢
 
 ---
 
 ### 0.1 — Bun Workspaces
 
-- [ ] 0.1.1 — Update root `package.json` to declare bun workspaces:
+- [x] 0.1.1 — Update root `package.json` to declare bun workspaces:
   ```json
   {
     "name": "mooch",
@@ -130,75 +130,75 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
     "workspaces": ["apps/*", "packages/*"]
   }
   ```
-- [ ] 0.1.2 — Give each app and package a proper `package.json` with a unique name:
+- [x] 0.1.2 — Give each app and package a proper `package.json` with a unique name:
   - `apps/app` → `@mooch/app`
   - `apps/web` → `@mooch/web`
   - `packages/db` → `@mooch/db`
   - `packages/types` → `@mooch/types`
   - `packages/ui` → `@mooch/ui`
   - `packages/stores` → `@mooch/stores` (create this package)
-- [ ] 0.1.3 — Run `bun install` from root and verify the lockfile resolves all workspaces.
+- [x] 0.1.3 — Run `bun install` from root and verify the lockfile resolves all workspaces.
 
 ### 0.2 — Turborepo
 
-- [ ] 0.2.1 — Add `turbo` as a dev dependency at root.
-- [ ] 0.2.2 — Create `turbo.json` with task graph:
+- [x] 0.2.1 — Add `turbo` as a dev dependency at root.
+- [x] 0.2.2 — Create `turbo.json` with task graph:
   - `build` depends on `^build` (dependencies built first)
   - `dev` runs in parallel, no deps
   - `lint` runs in parallel
   - `typecheck` runs in parallel
-- [ ] 0.2.3 — Add root scripts: `dev`, `build`, `lint`, `typecheck` → delegate to turbo.
+- [x] 0.2.3 — Add root scripts: `dev`, `build`, `lint`, `typecheck` → delegate to turbo.
 
 ### 0.3 — Apps: Next.js Setup
 
-- [ ] 0.3.1 — Scaffold `apps/app` as a full Next.js 16 App Router project (copy/move relevant config from root `next.config.ts`, `tsconfig.json`, `postcss.config.mjs` into the app folder). App should be self-contained.
-- [ ] 0.3.2 — Scaffold `apps/web` as a second full Next.js 16 App Router project with its own config.
-- [ ] 0.3.3 — Configure each app's `tsconfig.json` to resolve `@mooch/*` packages via `paths`.
-- [ ] 0.3.4 — Verify both `bun run dev` commands start without errors.
-- [ ] 0.3.5 — Clean up root: remove `src/`, `next.config.ts`, `next-env.d.ts`, `postcss.config.mjs` from root (the root is now the workspace root only, not an app).
+- [x] 0.3.1 — Scaffold `apps/app` as a full Next.js 16 App Router project (copy/move relevant config from root `next.config.ts`, `tsconfig.json`, `postcss.config.mjs` into the app folder). App should be self-contained.
+- [x] 0.3.2 — Scaffold `apps/web` as a second full Next.js 16 App Router project with its own config.
+- [x] 0.3.3 — Configure each app's `tsconfig.json` to resolve `@mooch/*` packages via `paths`.
+- [x] 0.3.4 — Verify both `bun run dev` commands start without errors.
+- [x] 0.3.5 — Clean up root: remove `src/`, `next.config.ts`, `next-env.d.ts`, `postcss.config.mjs` from root (the root is now the workspace root only, not an app).
 
 ### 0.4 — Shared Packages Scaffold
 
-- [ ] 0.4.1 — `packages/types`: add `tsconfig.json`, export `src/index.ts`. Add placeholder types (`User`, `Group`).
-- [ ] 0.4.2 — `packages/db`: add `tsconfig.json`, export `src/index.ts`. Install `@supabase/supabase-js` and `@supabase/ssr`. Create `createClient()` helpers (browser + server/SSR).
-- [ ] 0.4.3 — `packages/ui`: add `tsconfig.json`, export `src/index.ts`. Install `tailwindcss`, `motion`. Create a placeholder `<Button>` component. Ensure it can be imported by both apps.
-- [ ] 0.4.4 — `packages/stores`: add `tsconfig.json`, export `src/index.ts`. Install `zustand`. Create placeholder `useGroupStore` (active group id).
+- [x] 0.4.1 — `packages/types`: add `tsconfig.json`, export `src/index.ts`. Add placeholder types (`User`, `Group`).
+- [x] 0.4.2 — `packages/db`: add `tsconfig.json`, export `src/index.ts`. Install `@supabase/supabase-js` and `@supabase/ssr`. Create `createClient()` helpers (browser + server/SSR).
+- [x] 0.4.3 — `packages/ui`: add `tsconfig.json`, export `src/index.ts`. Create a placeholder `<Button>` component. Ensure it can be imported by both apps.
+- [x] 0.4.4 — `packages/stores`: add `tsconfig.json`, export `src/index.ts`. Install `zustand`. Create placeholder `useGroupStore` (active group id).
 
 ### 0.5 — Supabase Local Dev
 
-- [ ] 0.5.1 — Install Supabase CLI globally: `bun add -g supabase`.
-- [ ] 0.5.2 — Run `supabase init` in the repo root (already has a `supabase/` folder, confirm it's initialized).
-- [ ] 0.5.3 — Run `supabase start` and verify all local services are up (Studio at `localhost:54323`, DB at port `54322`).
-- [ ] 0.5.4 — Create `.env.local` for each app with local Supabase keys (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
-- [ ] 0.5.5 — Add `.env*.local` to `.gitignore` (verify). Add `.env.example` files with placeholder keys.
+- [x] 0.5.1 — Install Supabase CLI globally: `bun add -g supabase`.
+- [x] 0.5.2 — Run `supabase init` in the repo root (already has a `supabase/` folder, confirm it's initialized).
+- [x] 0.5.3 — Run `supabase start` and verify all local services are up (Studio at `localhost:54323`, DB at port `54322`).
+- [x] 0.5.4 — Create `.env.local` for each app with local Supabase keys (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`).
+- [x] 0.5.5 — Add `.env*.local` to `.gitignore` (verify). Add `.env.example` files with placeholder keys.
 
 ### 0.6 — Biome Config
 
-- [ ] 0.6.1 — Ensure root `biome.json` applies to all apps and packages. Confirm.
-- [ ] 0.6.2 — Add a `lint` script to each app/package's `package.json` that runs `biome check`.
-- [ ] 0.6.3 — Run `bun lint` from root through turbo and fix any existing issues.
+- [x] 0.6.1 — Ensure root `biome.json` applies to all apps and packages. Confirm.
+- [x] 0.6.2 — Add a `lint` script to each app/package's `package.json` that runs `biome check`.
+- [x] 0.6.3 — Run `bun lint` from root through turbo and fix any existing issues.
 
 ### 0.7 — Verify & Test
 
-- [ ] 0.7.1 — `bun run dev` from root starts both apps simultaneously.
-- [ ] 0.7.2 — `apps/app` dev server accessible at `localhost:3000`.
-- [ ] 0.7.3 — `apps/web` dev server accessible at `localhost:3001`.
-- [ ] 0.7.4 — `bun build` from root builds both apps without TypeScript errors.
-- [ ] 0.7.5 — Supabase local Studio accessible at `localhost:54323`.
-- [ ] 0.7.6 — `packages/ui` `<Button>` can be imported and rendered in `apps/app`.
-- [ ] 0.7.7 — `packages/db` Supabase client can be instantiated without errors.
+- [x] 0.7.1 — `bun run dev` from root starts both apps simultaneously.
+- [x] 0.7.2 — `apps/app` dev server accessible at `localhost:3000`.
+- [x] 0.7.3 — `apps/web` dev server accessible at `localhost:3001`.
+- [x] 0.7.4 — `bun build` from root builds both apps without TypeScript errors.
+- [x] 0.7.5 — Supabase local Studio accessible at `localhost:54323`.
+- [x] 0.7.6 — `packages/ui` `<Button>` can be imported and rendered in `apps/app`.
+- [x] 0.7.7 — `packages/db` Supabase client can be instantiated without errors.
 
 ---
 
 **Phase 0 Testing Checklist (must all pass before APPROVED):**
 
-- [ ] Both apps start with `bun run dev`
-- [ ] Both apps build with `bun run build`
-- [ ] Supabase local dev runs (`supabase status` shows all services healthy)
-- [ ] Workspace resolution works (cross-package imports resolve)
-- [ ] No lint errors with `bun run lint`
+- [x] Both apps start with `bun run dev`
+- [x] Both apps build with `bun run build`
+- [x] Supabase local dev runs (`supabase status` shows all services healthy)
+- [x] Workspace resolution works (cross-package imports resolve)
+- [x] No lint errors with `bun run lint`
 
-**Phase 0 Status: ⬜ — Awaiting approval**
+**Phase 0 Status: 🟢 APPROVED**
 
 ---
 
