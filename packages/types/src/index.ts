@@ -8,6 +8,16 @@ export type User = {
   updated_at: string;
 };
 
+export type Profile = {
+  id: string;
+  display_name: string;
+  photo_url: string | null;
+  locale: string;
+  default_currency: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type Group = {
   id: string;
   name: string;

@@ -208,13 +208,13 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 **Goal:** Users can sign up and log in with email/password or Google OAuth. A profile is persisted in Supabase. Auth state is available throughout the app.
 
-**Status:** ⬜ — _Blocked until Phase 0 is APPROVED_
+**Status:** 🔄
 
 ---
 
 ### 1.1 — Database Migration: Profiles
 
-- [ ] 1.1.1 — Create `supabase/migrations/0001_profiles.sql`:
+- [x] 1.1.1 — Create `supabase/migrations/0001_profiles.sql`:
 
   ```sql
   create table public.profiles (
@@ -254,15 +254,15 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
     for each row execute function public.handle_new_user();
   ```
 
-- [ ] 1.1.2 — Run `supabase db reset` locally and confirm the `profiles` table exists.
-- [ ] 1.1.3 — Add the `Profile` TypeScript type to `packages/types/src/index.ts`.
+- [x] 1.1.2 — Run `supabase db reset` locally and confirm the `profiles` table exists.
+- [x] 1.1.3 — Add the `Profile` TypeScript type to `packages/types/src/index.ts`.
 
 ### 1.2 — Supabase Auth Configuration
 
-- [ ] 1.2.1 — Enable email/password auth in local Supabase config (`supabase/config.toml`).
-- [ ] 1.2.2 — Enable Google OAuth in Supabase Dashboard (local). Add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` to env.
-- [ ] 1.2.3 — Configure redirect URL for Google OAuth: `http://localhost:3000/auth/callback`.
-- [ ] 1.2.4 — Configure email templates (confirm email, password reset) in Supabase local config.
+- [x] 1.2.1 — Enable email/password auth in local Supabase config (`supabase/config.toml`).
+- [x] 1.2.2 — Enable Google OAuth in Supabase Dashboard (local). Add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` to env.
+- [x] 1.2.3 — Configure redirect URL for Google OAuth: `http://localhost:3000/auth/callback`.
+- [x] 1.2.4 — Configure email templates (confirm email, password reset) in Supabase local config.
 
 ### 1.3 — Supabase Client Helpers (packages/db)
 
