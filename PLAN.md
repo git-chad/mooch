@@ -222,7 +222,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
     display_name text not null,
     photo_url text,
     locale text not null default 'en',
-    default_currency text not null default 'ARS',
+    default_currency text not null default 'USD',
     created_at timestamptz not null default now(),
     updated_at timestamptz not null default now()
   );
