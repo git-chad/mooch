@@ -219,6 +219,27 @@ body {
   transform: translateY(1px);
 }
 
+/* ── IconPicker: popup ────────────────────────────────────────────────────── */
+.icon-picker-popup {
+  transform-origin: var(--transform-origin, top left);
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 130ms ease, transform 130ms ease,
+    display 130ms allow-discrete, overlay 130ms allow-discrete;
+}
+
+.icon-picker-popup[data-ending-style] {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+@starting-style {
+  .icon-picker-popup[data-starting-style] {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
 /* ── Select: popup ───────────────────────────────────────────────────────── */
 .select-popup {
   transform-origin: var(--transform-origin, top);

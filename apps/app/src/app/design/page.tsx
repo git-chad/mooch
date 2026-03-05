@@ -9,6 +9,7 @@ import { SheetDemo } from "./SheetDemo";
 import { BadgeDemo } from "./BadgeDemo";
 import { QRDemo } from "./QRDemo";
 import { SelectDemo } from "./SelectDemo";
+import { IconPickerDemo } from "./IconPickerDemo";
 
 // Design system preview — dev only
 // All components are showcased here as they're built
@@ -255,6 +256,16 @@ export default function DesignPage() {
           </div>
         </div>
 
+      </section>
+
+      {/* ── IconPicker ──────────────────────────────────────────────── */}
+      <Divider label="Primitives · IconPicker" />
+
+      <section className="mb-12 px-8">
+        <SectionLabel name="IconPicker" variant="lucide" note="search · categories · color-tinted trigger · badge + group builder previews" />
+        <div className="mt-5">
+          <IconPickerDemo />
+        </div>
       </section>
 
       {/* ── Select ──────────────────────────────────────────────────── */}
