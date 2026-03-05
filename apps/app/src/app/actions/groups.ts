@@ -1,7 +1,9 @@
 "use server";
 
 import { createClient } from "@mooch/db/server";
+import type { Group } from "@mooch/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase-admin";
 
 const GROUP_COVER_MAX_SIZE_BYTES = 1 * 1024 * 1024;
@@ -120,7 +122,7 @@ export async function createGroup(formData: {
   currency: string;
   locale: string;
   cover_photo_url?: string;
-}): Promise<{ groupId: string } | { error: string }> {
+}): Promise<{ groupId: string; group: Group } | { error: string }> {
   const supabase = await createClient();
   const admin = createAdminClient();
   const {
@@ -131,31 +133,39 @@ export async function createGroup(formData: {
   const invite_code = await getUniqueInviteCode(admin);
   const groupId = crypto.randomUUID();
 
-  const { error: groupError } = await admin.from("groups").insert({
-    id: groupId,
-    name: formData.name,
-    emoji: formData.emoji,
-    currency: formData.currency,
-    locale: formData.locale,
-    cover_photo_url: formData.cover_photo_url ?? null,
-    invite_code,
-    created_by: user.id,
-  });
+  const { data: group, error: groupError } = await admin
+    .from("groups")
+    .insert({
+      id: groupId,
+      name: formData.name,
+      emoji: formData.emoji,
+      currency: formData.currency,
+      locale: formData.locale,
+      cover_photo_url: formData.cover_photo_url ?? null,
+      invite_code,
+      created_by: user.id,
+    })
+    .select("*")
+    .single();
 
-  if (groupError) return { error: groupError.message };
+  if (groupError || !group)
+    return { error: groupError?.message ?? "Failed to create group" };
 
   const { error: memberError } = await admin
     .from("group_members")
-    .insert({ group_id: groupId, user_id: user.id, role: "admin" });
+    .insert({ group_id: group.id, user_id: user.id, role: "admin" });
 
   if (memberError) return { error: memberError.message };
 
-  return { groupId };
+  revalidatePath("/groups");
+  revalidatePath(`/groups/${group.id}`);
+
+  return { groupId: group.id, group: group as Group };
 }
 
 export async function joinGroupByCode(
   inviteCode: string,
-): Promise<{ groupId: string } | { error: string }> {
+): Promise<{ groupId: string; group: Group } | { error: string }> {
   const supabase = await createClient();
   const admin = createAdminClient();
   const {
@@ -165,7 +175,7 @@ export async function joinGroupByCode(
 
   const { data: group, error: lookupError } = await admin
     .from("groups")
-    .select("id")
+    .select("*")
     .eq("invite_code", inviteCode.toUpperCase())
     .maybeSingle();
 
@@ -178,7 +188,11 @@ export async function joinGroupByCode(
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (existing) return { groupId: group.id };
+  if (existing) {
+    revalidatePath("/groups");
+    revalidatePath(`/groups/${group.id}`);
+    return { groupId: group.id, group: group as Group };
+  }
 
   const { error: joinError } = await admin
     .from("group_members")
@@ -186,7 +200,10 @@ export async function joinGroupByCode(
 
   if (joinError) return { error: joinError.message };
 
-  return { groupId: group.id };
+  revalidatePath("/groups");
+  revalidatePath(`/groups/${group.id}`);
+
+  return { groupId: group.id, group: group as Group };
 }
 
 export async function updateGroup(

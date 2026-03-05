@@ -1,5 +1,6 @@
 "use client";
 
+import { useGroupStore } from "@mooch/stores";
 import { Button, InviteCodeInput, Modal } from "@mooch/ui";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -31,6 +32,8 @@ function extractCode(rawValue: string): string {
 
 export function JoinGroupModal({ open, onOpenChange }: JoinGroupModalProps) {
   const router = useRouter();
+  const addGroup = useGroupStore((state) => state.addGroup);
+  const setActiveGroup = useGroupStore((state) => state.setActiveGroup);
 
   const [mode, setMode] = useState<"code" | "qr">("code");
   const [code, setCode] = useState("");
@@ -63,6 +66,8 @@ export function JoinGroupModal({ open, onOpenChange }: JoinGroupModalProps) {
       return;
     }
 
+    addGroup(result.group);
+    setActiveGroup(result.group.id);
     onOpenChange(false);
     resetState();
     router.push(`/groups/${result.groupId}`);

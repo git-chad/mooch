@@ -4,7 +4,6 @@ import { Button } from "@mooch/ui";
 import { useState } from "react";
 import { CreateGroupModal } from "./CreateGroupModal";
 import { GroupCard } from "./GroupCard";
-import { GroupSwitcher } from "./GroupSwitcher";
 import { JoinGroupModal } from "./JoinGroupModal";
 import type { GroupSummary } from "./types";
 
@@ -26,13 +25,6 @@ export function GroupsPageClient({ groups }: GroupsPageClientProps) {
           Create a squad or jump into one with an invite code.
         </p>
       </header>
-
-      {groups.length > 0 && (
-        <GroupSwitcher
-          groups={groups}
-          onCreateClick={() => setCreateOpen(true)}
-        />
-      )}
 
       <div className="flex flex-wrap gap-2">
         <Button

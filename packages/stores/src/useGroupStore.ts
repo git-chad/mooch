@@ -1,6 +1,6 @@
+import type { Group } from "@mooch/types";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { Group } from "@mooch/types";
 
 type GroupStore = {
   groups: Group[];
@@ -18,7 +18,17 @@ export const useGroupStore = create<GroupStore>()(
       activeGroupId: null,
       setGroups: (groups) => set({ groups }),
       setActiveGroup: (id) => set({ activeGroupId: id }),
-      addGroup: (group) => set((s) => ({ groups: [...s.groups, group] })),
+      addGroup: (group) =>
+        set((s) => {
+          const existingIndex = s.groups.findIndex((g) => g.id === group.id);
+          if (existingIndex === -1) {
+            return { groups: [group, ...s.groups] };
+          }
+
+          const nextGroups = [...s.groups];
+          nextGroups[existingIndex] = group;
+          return { groups: nextGroups };
+        }),
       removeGroup: (id) =>
         set((s) => ({
           groups: s.groups.filter((g) => g.id !== id),

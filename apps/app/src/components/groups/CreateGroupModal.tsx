@@ -1,5 +1,6 @@
 "use client";
 
+import { useGroupStore } from "@mooch/stores";
 import {
   AssetUpload,
   Button,
@@ -35,6 +36,8 @@ export function CreateGroupModal({
   onOpenChange,
 }: CreateGroupModalProps) {
   const router = useRouter();
+  const addGroup = useGroupStore((state) => state.addGroup);
+  const setActiveGroup = useGroupStore((state) => state.setActiveGroup);
 
   const [name, setName] = useState("");
   const [emoji, setEmoji] = useState(DEFAULT_ICON);
@@ -122,6 +125,8 @@ export function CreateGroupModal({
         return;
       }
 
+      addGroup(result.group);
+      setActiveGroup(result.group.id);
       onOpenChange(false);
       resetState();
       router.push(`/groups/${result.groupId}`);

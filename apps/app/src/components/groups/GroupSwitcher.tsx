@@ -3,43 +3,22 @@
 import { useGroupStore } from "@mooch/stores";
 import { Button, cn } from "@mooch/ui";
 import Link from "next/link";
-import { useEffect } from "react";
 import { GroupIcon } from "./group-icon";
-import type { GroupSummary } from "./types";
 
 type GroupSwitcherProps = {
-  groups: GroupSummary[];
   onCreateClick?: () => void;
   className?: string;
 };
 
 export function GroupSwitcher({
-  groups,
   onCreateClick,
   className,
 }: GroupSwitcherProps) {
+  const groups = useGroupStore((state) => state.groups);
   const activeGroupId = useGroupStore((state) => state.activeGroupId);
-  const setGroups = useGroupStore((state) => state.setGroups);
   const setActiveGroup = useGroupStore((state) => state.setActiveGroup);
 
-  useEffect(() => {
-    setGroups(groups);
-
-    if (groups.length === 0) {
-      setActiveGroup(null);
-      return;
-    }
-
-    const hasActive = activeGroupId
-      ? groups.some((group) => group.id === activeGroupId)
-      : false;
-
-    if (!hasActive) {
-      setActiveGroup(groups[0]?.id ?? null);
-    }
-  }, [groups, activeGroupId, setGroups, setActiveGroup]);
-
-  if (groups.length === 0) {
+  if (groups.length === 0 && !onCreateClick) {
     return null;
   }
 
@@ -60,9 +39,9 @@ export function GroupSwitcher({
             onClick={() => setActiveGroup(group.id)}
             className={cn(
               "inline-flex max-w-[200px] shrink-0 items-center gap-2 rounded-full px-3 py-2 text-xs font-medium font-sans",
-              "border transition-colors duration-150",
+              "border transition-[background,box-shadow,color,border-color] duration-150",
               isActive
-                ? "border-[#5A9629] text-[#F4FBFF] bg-[var(--action-gradient)]"
+                ? "border-[#5A9629] text-[#F4FBFF] [background:var(--action-gradient)] shadow-[var(--shadow-btn-primary)]"
                 : "border-[#D8C8BC] bg-[#FFFFFF] text-[#4D6480] hover:bg-[#F7F4EF]",
             )}
           >
@@ -74,15 +53,17 @@ export function GroupSwitcher({
         );
       })}
 
-      <Button
-        type="button"
-        variant="secondary"
-        size="sm"
-        className="shrink-0"
-        onClick={onCreateClick}
-      >
-        +
-      </Button>
+      {onCreateClick && (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="shrink-0"
+          onClick={onCreateClick}
+        >
+          +
+        </Button>
+      )}
     </div>
   );
 }

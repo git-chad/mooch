@@ -153,10 +153,10 @@ Zustand stores that need to be built alongside components.
 
 ### Shell / Layout (`app/src/components/shell/`)
 
-- [ ] **`TopNav`** — Houses `GroupSwitcher` and user avatar; glass surface per design system
+- [x] **`TopNav`** — Houses `GroupSwitcher` and user avatar; glass surface per design system
 - [ ] **`SideNav`** — Desktop sidebar; section links with active indicator; collapses to icon-only at narrow widths
 - [ ] **`BottomNav`** — Mobile tab bar; 5 tabs with active lime indicator; 📳 haptic on tab switch
-- [ ] **`GroupsProvider`** — Client component; hydrates Zustand group store from server-fetched data; sets initial `activeGroupId` from localStorage
+- [x] **`GroupsProvider`** — Client component; hydrates Zustand group store from server-fetched data; sets initial `activeGroupId` from localStorage
 
 ---
 

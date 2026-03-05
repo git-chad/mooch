@@ -489,9 +489,9 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 2.5 — App Layout with Group Context
 
-- [ ] 2.5.1 — Update `apps/app/src/app/(shell)/layout.tsx` to fetch user's groups server-side.
-- [ ] 2.5.2 — Create client-side `GroupsProvider` that hydrates the Zustand group store.
-- [ ] 2.5.3 — Add `GroupSwitcher` to the shell top nav.
+- [x] 2.5.1 — Update `apps/app/src/app/(shell)/layout.tsx` to fetch user's groups server-side.
+- [x] 2.5.2 — Create client-side `GroupsProvider` that hydrates the Zustand group store.
+- [x] 2.5.3 — Add `GroupSwitcher` to the shell top nav.
 
 ### 2.6 — Verify & Test
 
