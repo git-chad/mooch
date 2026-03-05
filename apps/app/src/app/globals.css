@@ -53,6 +53,87 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* ── Button: danger ──────────────────────────────────────────────────────── */
+.btn-danger {
+  background: linear-gradient(in oklab 180deg, oklab(56% 0.13 0.06) 0%, oklab(46% 0.16 0.08) 100%);
+  box-shadow: #fca5a530 0px 1px 0px inset, #7f1d1d55 0px 6px 14px, #7f1d1d 0px 3px 0px;
+  transition: box-shadow 80ms ease, transform 80ms ease, filter 80ms ease;
+}
+
+.btn-danger:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.btn-danger:active:not(:disabled) {
+  box-shadow: #fca5a530 0px 1px 0px inset, #7f1d1d 0px 1px 0px;
+  transform: translateY(2px);
+}
+
+/* ── Modal: shake ────────────────────────────────────────────────────────── */
+@keyframes modal-shake {
+  0%, 100% { transform: translateX(0); }
+  18%       { transform: translateX(-7px); }
+  36%       { transform: translateX(7px); }
+  54%       { transform: translateX(-4px); }
+  72%       { transform: translateX(4px); }
+  88%       { transform: translateX(-2px); }
+}
+
+.modal-popup-shake {
+  animation: modal-shake 340ms ease;
+}
+
+/* ── Modal: backdrop ─────────────────────────────────────────────────────── */
+.modal-backdrop {
+  transition: opacity 180ms ease;
+}
+
+.modal-backdrop[data-closed] {
+  opacity: 0;
+}
+
+@starting-style {
+  .modal-backdrop[data-open] {
+    opacity: 0;
+  }
+}
+
+/* ── Modal: popup ────────────────────────────────────────────────────────── */
+.modal-popup {
+  transition: opacity 200ms ease, transform 200ms ease,
+    display 200ms allow-discrete, overlay 200ms allow-discrete;
+}
+
+/* Desktop: fade + scale from center */
+@media (min-width: 640px) {
+  .modal-popup[data-closed] {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  @starting-style {
+    .modal-popup[data-open] {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+  }
+}
+
+/* Mobile: slide up from bottom */
+@media (max-width: 639px) {
+  .modal-popup[data-closed] {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  @starting-style {
+    .modal-popup[data-open] {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+  }
+}
+
 /* ── Button: sizes ───────────────────────────────────────────────────────── */
 .btn-sm { padding: 6px 12px; font-size: 12px; line-height: 16px; }
 .btn-md { padding: 10px 14px; font-size: 13px; line-height: 16px; }

@@ -4,6 +4,7 @@ import {
   StatusTextMorphDemo,
   BalanceTextMorphDemo,
 } from "./TextMorphDemo";
+import { ModalDemo } from "./ModalDemo";
 
 // Design system preview — dev only
 // All components are showcased here as they're built
@@ -138,6 +139,16 @@ export default function DesignPage() {
               <span className="text-xs font-mono text-[#3A536B]">col-span-9 · main</span>
             </div>
           </Container>
+        </div>
+      </section>
+
+      {/* ── Modal ────────────────────────────────────────────────────────── */}
+      <Divider label="Overlay · Modal" />
+
+      <section className="mb-12 px-8">
+        <SectionLabel name="Modal · ConfirmDialog" variant="sizes" note="sm · md · lg · confirm shakes on dismiss attempt" />
+        <div className="mt-5">
+          <ModalDemo />
         </div>
       </section>
 
