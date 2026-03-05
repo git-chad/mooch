@@ -191,7 +191,7 @@ Zustand stores that need to be built alongside components.
 
 ### QR / Invite
 
-- [ ] **`QRCodeDisplay`** — `qrcode` package wrapped in a styled display card with invite code below
+- [x] **`QRCodeDisplay`** — `qrcode` package renders to canvas; dark `#1A1714` / paper `#F8F6F1` colors; invite code + copy link; demo'd in both default and receipt Sheet variants
 - [ ] **`QRScanner`** — `getUserMedia` + `jsqr`; camera view with scan-area overlay and feedback
 - [ ] **`InviteCodeInput`** — 6-cell split input; auto-uppercase; auto-advance on char entry; 📳 haptic on complete
 

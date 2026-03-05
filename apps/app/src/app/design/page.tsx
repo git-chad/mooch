@@ -7,6 +7,7 @@ import {
 import { ModalDemo } from "./ModalDemo";
 import { SheetDemo } from "./SheetDemo";
 import { BadgeDemo } from "./BadgeDemo";
+import { QRDemo } from "./QRDemo";
 
 // Design system preview — dev only
 // All components are showcased here as they're built
@@ -262,6 +263,16 @@ export default function DesignPage() {
         <SectionLabel name="Badge + Input" variant="interactive" note="preset variants · custom color · live customizer · input states" />
         <div className="mt-5">
           <BadgeDemo />
+        </div>
+      </section>
+
+      {/* ── QR Code Display ──────────────────────────────────────────── */}
+      <Divider label="QR / Invite · QRCodeDisplay" />
+
+      <section className="mb-12 px-8">
+        <SectionLabel name="QRCodeDisplay" variant="invite" note="functional QR · default sheet · receipt sheet" />
+        <div className="mt-5">
+          <QRDemo />
         </div>
       </section>
 
