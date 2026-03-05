@@ -66,7 +66,7 @@ export function ConfirmDialog({
             className={cn(
               "modal-popup",
               "relative w-full max-w-sm bg-[#FDFCFB] outline-none",
-              "rounded-2xl",
+              "rounded-[14px]",
               "shadow-[var(--shadow-glass)]",
               "border border-[#EDE3DA]",
             )}

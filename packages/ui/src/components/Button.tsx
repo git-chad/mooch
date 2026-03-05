@@ -25,7 +25,7 @@ const sizeClasses: Record<ButtonSize, string> = {
 const variantClasses: Record<ButtonVariant, string> = {
   primary: cn("btn-primary", "border border-[#5A9629]", "text-[#F4FBFF] font-medium"),
   secondary: cn("btn-secondary", "border border-[#D8C8BC]", "text-[#4D6480]"),
-  ghost: cn("btn-ghost", "bg-[#F1F9E8] border border-[#C7DEB0]", "text-[#4F7330]"),
+  ghost: cn("btn-ghost", "text-[#4F7330]"),
   danger: cn("btn-danger", "border border-[#992B2B]", "text-white font-medium"),
 };
 
@@ -70,7 +70,7 @@ export function Button({
           // layout
           "inline-flex items-center justify-center gap-2 whitespace-nowrap",
           // shape & font — font-sans uses --font-sans → --font-geist-sans
-          "rounded-full font-sans",
+          "rounded-[14px] font-sans",
           // interaction
           "select-none outline-none",
           "focus-visible:ring-2 focus-visible:ring-[#7FBE44] focus-visible:ring-offset-2",

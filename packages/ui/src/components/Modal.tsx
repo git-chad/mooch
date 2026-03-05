@@ -50,7 +50,7 @@ export function Modal({
             className={cn(
               "modal-popup",
               "relative w-full bg-[#FDFCFB] outline-none",
-              "rounded-2xl",
+              "rounded-[14px]",
               // max-width on desktop
               sizeClasses[size],
               // shadow

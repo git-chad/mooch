@@ -13,9 +13,8 @@
   );
 
   /* ── Design system: shadow stacks ────────────────────────────────────── */
-  --shadow-btn-primary: #e2fbc2c7 0px 1px 0px inset, #587b3357 0px 6px 14px,
-    #527f2b 0px 3px 0px;
-  --shadow-btn-primary-pressed: #e2fbc2c7 0px 1px 0px inset, #527f2b 0px 1px 0px;
+  --shadow-btn-primary: rgba(255, 255, 255, 0.45) 0px 1px 0px inset, #3e6e18 0px 2px 0px;
+  --shadow-btn-primary-pressed: rgba(255, 255, 255, 0.3) 0px 1px 0px inset;
   --shadow-glass: #ffffffde 0px 1px 0px inset, #84664f2e 0px 9px 22px,
     #cfaf97a6 0px 2px 0px;
   --shadow-elevated: #ffffffd9 0px 1px 0px inset, #84664f2b 0px 8px 16px;
@@ -104,7 +103,7 @@ body {
 /* ── Button: danger ──────────────────────────────────────────────────────── */
 .btn-danger {
   background: linear-gradient(in oklab 180deg, oklab(56% 0.13 0.06) 0%, oklab(46% 0.16 0.08) 100%);
-  box-shadow: #fca5a530 0px 1px 0px inset, #7f1d1d55 0px 6px 14px, #7f1d1d 0px 3px 0px;
+  box-shadow: rgba(255, 165, 165, 0.3) 0px 1px 0px inset, #7f1d1d 0px 2px 0px;
   transition: box-shadow 80ms ease, transform 80ms ease, filter 80ms ease;
 }
 
@@ -113,7 +112,7 @@ body {
 }
 
 .btn-danger:active:not(:disabled) {
-  box-shadow: #fca5a530 0px 1px 0px inset, #7f1d1d 0px 1px 0px;
+  box-shadow: rgba(255, 165, 165, 0.2) 0px 1px 0px inset;
   transform: translateY(2px);
 }
 
@@ -189,8 +188,8 @@ body {
 /* ── Button: secondary ───────────────────────────────────────────────────── */
 .btn-secondary {
   background: rgba(255, 255, 255, 0.76);
-  box-shadow: #ffffff80 0px 1px 0px inset;
-  transition: background 80ms ease, transform 80ms ease;
+  box-shadow: rgba(255, 255, 255, 0.7) 0px 1px 0px inset, #b8a898 0px 2px 0px;
+  transition: background 80ms ease, box-shadow 80ms ease, transform 80ms ease;
 }
 
 .btn-secondary:hover:not(:disabled) {
@@ -199,7 +198,8 @@ body {
 
 .btn-secondary:active:not(:disabled) {
   background: rgba(240, 236, 232, 0.9);
-  transform: translateY(1px);
+  box-shadow: rgba(255, 255, 255, 0.5) 0px 1px 0px inset;
+  transform: translateY(2px);
 }
 
 /* ── QRScanner: scan line ─────────────────────────────────────────────────── */
@@ -274,14 +274,13 @@ body {
 
 /* ── Button: ghost ───────────────────────────────────────────────────────── */
 .btn-ghost {
-  transition: background 80ms ease, transform 80ms ease;
+  transition: color 80ms ease;
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: #e8f5dd;
+  color: #2D5A10;
 }
 
 .btn-ghost:active:not(:disabled) {
-  background: #d9eeb9;
-  transform: translateY(1px);
+  color: #1F4008;
 }

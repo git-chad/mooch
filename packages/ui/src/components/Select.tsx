@@ -86,13 +86,13 @@ export function Select(props: SelectProps) {
   }
 
   const triggerBase = cn(
-    "w-full flex items-start gap-2 rounded-lg px-3.5 py-2.5 text-sm font-sans text-left",
+    "w-full flex items-start gap-2 rounded-[14px] px-3.5 py-2.5 text-sm font-sans text-left",
     "bg-[#FDFCFB] text-[#1F2A23]",
     "border outline-none",
     hasError
       ? "border-[#C0392B] focus:ring-2 focus:ring-[#C0392B]/15 data-[popup-open]:border-[#C0392B]"
       : "border-[#D8C8BC] focus:ring-2 focus:ring-[#7FBE44]/15 data-[popup-open]:border-[#7FBE44] data-[popup-open]:ring-2 data-[popup-open]:ring-[#7FBE44]/15",
-    "shadow-[0_1px_2px_rgba(132,100,79,0.08)]",
+    "shadow-[rgba(255,255,255,0.6)_0px_1px_0px_inset,#c0b0a0_0px_2px_0px]",
     "transition-[border-color,box-shadow] duration-120",
     "disabled:opacity-50 disabled:cursor-not-allowed",
     className,
