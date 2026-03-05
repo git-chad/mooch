@@ -6,6 +6,7 @@ import {
 } from "./TextMorphDemo";
 import { ModalDemo } from "./ModalDemo";
 import { SheetDemo } from "./SheetDemo";
+import { BadgeDemo } from "./BadgeDemo";
 
 // Design system preview — dev only
 // All components are showcased here as they're built
@@ -254,12 +255,22 @@ export default function DesignPage() {
 
       </section>
 
+      {/* ── Badge + Input ─────────────────────────────────────────────── */}
+      <Divider label="Primitives · Badge + Input" />
+
+      <section className="mb-12 px-8">
+        <SectionLabel name="Badge + Input" variant="interactive" note="preset variants · custom color · live customizer · input states" />
+        <div className="mt-5">
+          <BadgeDemo />
+        </div>
+      </section>
+
       {/* ── Coming soon ─────────────────────────────────────────────────── */}
       <Divider label="Coming soon" />
 
       {[
-        "Modal", "Sheet", "Toast", "Avatar", "Badge",
-        "Chip", "Input", "Toggle", "NavTabs",
+        "Toast",
+        "Chip", "Toggle", "NavTabs",
       ].map((name) => (
         <section key={name} className="mb-2 px-8">
           <div className="rounded-xl border border-dashed border-[#D8C8BC] px-6 py-4 flex items-center gap-3">

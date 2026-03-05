@@ -54,13 +54,13 @@ Zustand stores that need to be built alongside components.
 - [ ] **`Toast`** — Success / error / info; lime aero style; auto-dismiss with progress bar; 🔊 notification sound on show; 📳 light haptic
 - [x] **`Avatar`** — Circular user photo with fallback initials; size variants (`sm`, `md`, `lg`); gradient border + gloss inner shadow; name tooltip
 - [x] **`Tooltip`** — Warm white glass surface; Base UI Tooltip; `TooltipProvider` in root layout; 120ms fade
-- [ ] **`Badge`** — Role (admin/member), status (settled, closed, past), role-color per design system
+- [x] **`Badge`** — Role (admin/member), status (settled, closed, past), role-color per design system; fully custom `color` prop (tinted bg + border derived from hex); `emoji?` prefix; `sm`/`md` sizes
 - [ ] **`Chip`** — Pill label: tags, categories, emoji+name group chips; press state
 - [ ] **`EmptyState`** — SVG illustration + heading + body + CTA button; every section has its own copy/illustration
 - [ ] **`Skeleton`** — Shimmer placeholder; block and list variants; matches exact layout of the content it replaces
 - [ ] **`ErrorBoundary`** — Full-section error with retry button; not a generic crash screen
 - [ ] **`NavTabs`** — Horizontal tab bar; animated lime pill indicator slides between tabs (layout animation, not opacity swap)
-- [ ] **`Input`** — Text input; label, helper text, error state; focus ring per design system; subtle scale-in on focus
+- [x] **`Input`** — Text input; label, helper text, error state; lime focus ring + subtle lift (`-translate-y-px`); `forwardRef` + `useId` for accessible label association; `aria-invalid` + `aria-describedby`
 - [ ] **`Select`** — Dropdown; locale, currency, role; matches Input styling
 - [ ] **`Textarea`** — Multi-line; live char counter; smooth height expansion
 - [ ] **`Toggle`** — Binary switch; spring thumb animation; 📳 light haptic on flip
