@@ -15,11 +15,11 @@ type BadgeProps = {
 };
 
 const PRESETS: Record<BadgeVariant, { bg: string; text: string; border: string }> = {
-  admin:   { bg: "#EBF7D8", text: "#3D6B1A", border: "#C7DEB0" },
-  member:  { bg: "#EDE3D4", text: "#5C3D20", border: "#D8C8BC" },
-  settled: { bg: "#D4EDBC", text: "#2C5A0E", border: "#B4D890" },
-  closed:  { bg: "#E0D8D0", text: "#4A4038", border: "#C8C0B8" },
-  past:    { bg: "#DDD5CC", text: "#5A5048", border: "#C4B8B0" },
+  admin:   { bg: "var(--color-accent-bg)",  text: "var(--color-accent-fg)",  border: "var(--color-accent-edge)" },
+  member:  { bg: "var(--badge-member-bg)",  text: "var(--badge-member-fg)",  border: "var(--color-edge)" },
+  settled: { bg: "var(--badge-settled-bg)", text: "var(--badge-settled-fg)", border: "var(--badge-settled-edge)" },
+  closed:  { bg: "var(--badge-closed-bg)",  text: "var(--badge-closed-fg)",  border: "var(--badge-closed-edge)" },
+  past:    { bg: "var(--badge-past-bg)",    text: "var(--badge-past-fg)",    border: "var(--badge-past-edge)" },
 };
 
 const sizeClasses: Record<BadgeSize, string> = {

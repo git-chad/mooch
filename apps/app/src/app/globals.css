@@ -12,13 +12,38 @@
     oklab(73.4% -0.113 0.123) 100%
   );
 
+  /* ── Raw color tokens (CSS-only, not Tailwind utilities) ─────────────── */
+  --accent-deep: #3e6e18;           /* primary btn bottom shadow */
+  --btn-secondary-shadow: #b8a898;  /* secondary btn bottom shadow */
+  --select-shadow: #c0b0a0;         /* select trigger bottom shadow */
+  --danger-deep: #7f1d1d;           /* danger btn bottom shadow */
+  --ghost-fg-hover: #2d5a10;        /* ghost btn hover text */
+  --ghost-fg-active: #1f4008;       /* ghost btn active text */
+  --receipt-bg: #f8f6f1;            /* receipt sheet background */
+  --receipt-edge: #c8beb4;          /* receipt dividers / drag dots */
+  --avatar-placeholder: #e8ddd6;    /* avatar img fallback bg */
+
+  /* ── Badge variant tokens ─────────────────────────────────────────────── */
+  --badge-member-bg: #ede3d4;
+  --badge-member-fg: #5c3d20;
+  --badge-settled-bg: #d4edbc;
+  --badge-settled-fg: #2c5a0e;
+  --badge-settled-edge: #b4d890;
+  --badge-closed-bg: #e0d8d0;
+  --badge-closed-fg: #4a4038;
+  --badge-closed-edge: #c8c0b8;
+  --badge-past-bg: #ddd5cc;
+  --badge-past-fg: #5a5048;
+  --badge-past-edge: #c4b8b0;
+
   /* ── Design system: shadow stacks ────────────────────────────────────── */
-  --shadow-btn-primary: rgba(255, 255, 255, 0.45) 0px 1px 0px inset, #3e6e18 0px 2px 0px;
+  --shadow-btn-primary: rgba(255, 255, 255, 0.45) 0px 1px 0px inset, var(--accent-deep) 0px 2px 0px;
   --shadow-btn-primary-pressed: rgba(255, 255, 255, 0.3) 0px 1px 0px inset;
   --shadow-glass: #ffffffde 0px 1px 0px inset, #84664f2e 0px 9px 22px,
     #cfaf97a6 0px 2px 0px;
   --shadow-elevated: #ffffffd9 0px 1px 0px inset, #84664f2b 0px 8px 16px;
   --shadow-toast: #ffffffcc 0px 1px 0px inset, #5a8b3633 0px 8px 16px;
+  --shadow-select-trigger: rgba(255, 255, 255, 0.6) 0px 1px 0px inset, var(--select-shadow) 0px 2px 0px;
 
   /* ── Design system: surface glass gradient ───────────────────────────── */
   --surface-glass: linear-gradient(
@@ -33,6 +58,43 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* ── Surfaces ─────────────────────────────────────────────────────────── */
+  --color-surface: #fdfcfb;
+
+  /* ── Text / ink ───────────────────────────────────────────────────────── */
+  --color-ink: #1f2a23;
+  --color-ink-label: #4a3728;
+  --color-ink-sub: #8c7463;
+  --color-ink-dim: #7a6e65;
+  --color-ink-placeholder: #b8a898;
+  --color-ink-info: #556b82;
+  --color-ink-info-2: #6f859b;
+
+  /* ── Edges / borders ──────────────────────────────────────────────────── */
+  --color-edge: #d8c8bc;
+  --color-edge-subtle: #ede3da;
+
+  /* ── Accent (lime) ────────────────────────────────────────────────────── */
+  --color-accent: #7fbe44;
+  --color-accent-strong: #5a9629;
+  --color-accent-bg: #ebf7d8;
+  --color-accent-fg: #3d6b1a;
+  --color-accent-edge: #c7deb0;
+
+  /* ── Button foregrounds ───────────────────────────────────────────────── */
+  --color-btn-primary-fg: #f4fbff;
+  --color-btn-secondary-fg: #4d6480;
+  --color-btn-ghost-fg: #4f7330;
+
+  /* ── Feedback ─────────────────────────────────────────────────────────── */
+  --color-danger: #c0392b;
+
+  /* ── Interactive states ───────────────────────────────────────────────── */
+  --color-hover-bg: #f0e8e0;
+  --color-item-hover: #f5f3f0;
+  --color-item-active: #edf8dc;
+  --color-item-active-hover: #e3f5d0;
 }
 
 @font-face {
@@ -54,15 +116,15 @@ body {
 
 /* ── Avatar: tooltip ─────────────────────────────────────────────────────── */
 .avatar-tooltip {
-  background: #FDFCFB;
-  color: #4A3728;
+  background: var(--color-surface);
+  color: var(--color-ink-label);
   font-size: 11px;
   font-family: var(--font-geist-sans), sans-serif;
   font-weight: 500;
   line-height: 1;
   padding: 4px 9px;
   border-radius: 6px;
-  border: 1px solid #EDE3DA;
+  border: 1px solid var(--color-edge-subtle);
   white-space: nowrap;
   box-shadow: var(--shadow-elevated);
   opacity: 0;
@@ -103,7 +165,7 @@ body {
 /* ── Button: danger ──────────────────────────────────────────────────────── */
 .btn-danger {
   background: linear-gradient(in oklab 180deg, oklab(56% 0.13 0.06) 0%, oklab(46% 0.16 0.08) 100%);
-  box-shadow: rgba(255, 165, 165, 0.3) 0px 1px 0px inset, #7f1d1d 0px 2px 0px;
+  box-shadow: rgba(255, 165, 165, 0.3) 0px 1px 0px inset, var(--danger-deep) 0px 2px 0px;
   transition: box-shadow 80ms ease, transform 80ms ease, filter 80ms ease;
 }
 
@@ -188,7 +250,7 @@ body {
 /* ── Button: secondary ───────────────────────────────────────────────────── */
 .btn-secondary {
   background: rgba(255, 255, 255, 0.76);
-  box-shadow: rgba(255, 255, 255, 0.7) 0px 1px 0px inset, #b8a898 0px 2px 0px;
+  box-shadow: rgba(255, 255, 255, 0.7) 0px 1px 0px inset, var(--btn-secondary-shadow) 0px 2px 0px;
   transition: background 80ms ease, box-shadow 80ms ease, transform 80ms ease;
 }
 
@@ -259,17 +321,17 @@ body {
 
 /* ── Select: item hover + selected ──────────────────────────────────────── */
 .select-item[data-highlighted] {
-  background: #F5F3F0;
-  color: #1F2A23;
+  background: var(--color-item-hover);
+  color: var(--color-ink);
 }
 
 .select-item[data-selected] {
-  background: #EDF8DC;
-  color: #2D5A10;
+  background: var(--color-item-active);
+  color: var(--ghost-fg-hover);
 }
 
 .select-item[data-selected][data-highlighted] {
-  background: #E3F5D0;
+  background: var(--color-item-active-hover);
 }
 
 /* ── Button: ghost ───────────────────────────────────────────────────────── */
@@ -278,9 +340,9 @@ body {
 }
 
 .btn-ghost:hover:not(:disabled) {
-  color: #2D5A10;
+  color: var(--ghost-fg-hover);
 }
 
 .btn-ghost:active:not(:disabled) {
-  color: #1F4008;
+  color: var(--ghost-fg-active);
 }

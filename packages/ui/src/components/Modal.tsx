@@ -49,14 +49,14 @@ export function Modal({
           <Dialog.Popup
             className={cn(
               "modal-popup",
-              "relative w-full bg-[#FDFCFB] outline-none",
+              "relative w-full bg-surface outline-none",
               "rounded-[14px]",
               // max-width on desktop
               sizeClasses[size],
               // shadow
               "shadow-[var(--shadow-glass)]",
               // border
-              "border border-[#EDE3DA]",
+              "border border-edge-subtle",
               className,
             )}
           >
@@ -64,7 +64,7 @@ export function Modal({
             <div className="flex items-center justify-between px-6 pt-5 pb-0">
               <Dialog.Title
                 className={cn(
-                  "text-base font-semibold text-[#1F2A23] font-sans",
+                  "text-base font-semibold text-ink font-sans",
                   hideTitle && "sr-only",
                 )}
               >
@@ -75,9 +75,9 @@ export function Modal({
                 className={cn(
                   "inline-flex items-center justify-center",
                   "w-7 h-7 rounded-full",
-                  "text-[#8C7463] hover:text-[#4A3728] hover:bg-[#F0E8E0]",
+                  "text-ink-sub hover:text-ink-label hover:bg-hover-bg",
                   "transition-colors outline-none",
-                  "focus-visible:ring-2 focus-visible:ring-[#7FBE44] focus-visible:ring-offset-1",
+                  "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1",
                 )}
                 aria-label="Close"
                 onClick={() => haptic.trigger("light")}
@@ -87,7 +87,7 @@ export function Modal({
             </div>
 
             {description && (
-              <Dialog.Description className="px-6 pt-1.5 text-sm text-[#6F859B] font-sans">
+              <Dialog.Description className="px-6 pt-1.5 text-sm text-ink-info-2 font-sans">
                 {description}
               </Dialog.Description>
             )}

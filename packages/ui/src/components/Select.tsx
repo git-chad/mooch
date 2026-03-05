@@ -87,12 +87,12 @@ export function Select(props: SelectProps) {
 
   const triggerBase = cn(
     "w-full flex items-start gap-2 rounded-[14px] px-3.5 py-2.5 text-sm font-sans text-left",
-    "bg-[#FDFCFB] text-[#1F2A23]",
+    "bg-surface text-ink",
     "border outline-none",
     hasError
-      ? "border-[#C0392B] focus:ring-2 focus:ring-[#C0392B]/15 data-[popup-open]:border-[#C0392B]"
-      : "border-[#D8C8BC] focus:ring-2 focus:ring-[#7FBE44]/15 data-[popup-open]:border-[#7FBE44] data-[popup-open]:ring-2 data-[popup-open]:ring-[#7FBE44]/15",
-    "shadow-[rgba(255,255,255,0.6)_0px_1px_0px_inset,#c0b0a0_0px_2px_0px]",
+      ? "border-danger focus:ring-2 focus:ring-danger/15 data-[popup-open]:border-danger"
+      : "border-edge focus:ring-2 focus:ring-accent/15 data-[popup-open]:border-accent data-[popup-open]:ring-2 data-[popup-open]:ring-accent/15",
+    "shadow-[var(--shadow-select-trigger)]",
     "transition-[border-color,box-shadow] duration-120",
     "disabled:opacity-50 disabled:cursor-not-allowed",
     className,
@@ -103,7 +103,7 @@ export function Select(props: SelectProps) {
       {label && (
         <label
           htmlFor={inputId}
-          className="text-xs font-medium text-[#4A3728] font-sans select-none"
+          className="text-xs font-medium text-ink-label font-sans select-none"
         >
           {label}
         </label>
@@ -128,7 +128,7 @@ export function Select(props: SelectProps) {
                 if (multiple) {
                   const vals = (currentValue as string[] | null) ?? [];
                   if (vals.length === 0)
-                    return <span className="text-[#B8A898] leading-[1.4]">{placeholder}</span>;
+                    return <span className="text-ink-placeholder leading-[1.4]">{placeholder}</span>;
                   return (
                     <span className="flex flex-wrap gap-1">
                       {vals.map((v) => {
@@ -136,7 +136,7 @@ export function Select(props: SelectProps) {
                         return (
                           <span
                             key={v}
-                            className="inline-flex items-center gap-1 text-xs bg-[#EBF7D8] text-[#3D6B1A] border border-[#C7DEB0] rounded-full px-2 py-0.5 font-medium leading-none"
+                            className="inline-flex items-center gap-1 text-xs bg-accent-bg text-accent-fg border border-accent-edge rounded-full px-2 py-0.5 font-medium leading-none"
                           >
                             {opt?.icon && <span>{opt.icon}</span>}
                             {opt?.label ?? v}
@@ -148,7 +148,7 @@ export function Select(props: SelectProps) {
                 }
                 // Single: icon + label
                 const v = currentValue as string | null;
-                if (!v) return <span className="text-[#B8A898]">{placeholder}</span>;
+                if (!v) return <span className="text-ink-placeholder">{placeholder}</span>;
                 const opt = findOption(v);
                 return (
                   <span className="flex items-center gap-2">
@@ -161,25 +161,25 @@ export function Select(props: SelectProps) {
           </span>
 
           {/* Chevron */}
-          <BaseSelect.Icon className="flex-shrink-0 mt-[3px] text-[#8C7463] transition-transform duration-150 data-[popup-open]:rotate-180">
+          <BaseSelect.Icon className="flex-shrink-0 mt-[3px] text-ink-sub transition-transform duration-150 data-[popup-open]:rotate-180">
             <ChevronDownIcon />
           </BaseSelect.Icon>
         </BaseSelect.Trigger>
 
         <BaseSelect.Portal>
           <BaseSelect.Positioner sideOffset={6} align="start" className="z-50 min-w-[var(--anchor-width)] max-w-[360px]">
-            <BaseSelect.Popup className="select-popup bg-[#FDFCFB] border border-[#EDE3DA] rounded-xl outline-none overflow-hidden shadow-[var(--shadow-elevated)] py-1.5">
+            <BaseSelect.Popup className="select-popup bg-surface border border-edge-subtle rounded-xl outline-none overflow-hidden shadow-[var(--shadow-elevated)] py-1.5">
               <BaseSelect.List className="max-h-60 overflow-y-auto overflow-x-hidden space-y-1 px-0.5">
                 {groups
                   ? groups.map((group) => (
                       <BaseSelect.Group key={group.label}>
-                        <BaseSelect.GroupLabel className="px-3 pt-2.5 pb-1 text-[10px] font-mono uppercase tracking-widest text-[#8C7463] select-none">
+                        <BaseSelect.GroupLabel className="px-3 pt-2.5 pb-1 text-[10px] font-mono uppercase tracking-widest text-ink-sub select-none">
                           {group.label}
                         </BaseSelect.GroupLabel>
                         {group.options.map((opt) => (
                           <OptionItem key={opt.value} option={opt} />
                         ))}
-                        <BaseSelect.Separator className="my-1.5 h-px bg-[#EDE3DA] mx-2" />
+                        <BaseSelect.Separator className="my-1.5 h-px bg-edge-subtle mx-2" />
                       </BaseSelect.Group>
                     ))
                   : allOptions.map((opt) => (
@@ -195,7 +195,7 @@ export function Select(props: SelectProps) {
         <p
           className={cn(
             "text-xs font-sans leading-snug",
-            hasError ? "text-[#C0392B]" : "text-[#7A6E65]",
+            hasError ? "text-danger" : "text-ink-dim",
           )}
         >
           {error ?? helperText}
@@ -224,7 +224,7 @@ function OptionItem({ option }: { option: SelectOption }) {
       {/* Check indicator — takes up space even when unchecked so labels align */}
       <BaseSelect.ItemIndicator
         keepMounted
-        className="flex-shrink-0 w-4 h-4 flex items-center justify-center text-[#7FBE44] opacity-0 data-[selected]:opacity-100 transition-opacity duration-100"
+        className="flex-shrink-0 w-4 h-4 flex items-center justify-center text-accent opacity-0 data-[selected]:opacity-100 transition-opacity duration-100"
       >
         <CheckIcon />
       </BaseSelect.ItemIndicator>
@@ -236,7 +236,7 @@ function OptionItem({ option }: { option: SelectOption }) {
       <span className="flex-1 min-w-0 py-0.5">
         <BaseSelect.ItemText>{option.label}</BaseSelect.ItemText>
         {option.description && (
-          <span className="block text-[11px] text-[#7A6E65] font-sans mt-0.5 leading-snug">
+          <span className="block text-[11px] text-ink-dim font-sans mt-0.5 leading-snug">
             {option.description}
           </span>
         )}

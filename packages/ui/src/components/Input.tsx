@@ -20,7 +20,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="text-xs font-medium text-[#4A3728] font-sans select-none"
+            className="text-xs font-medium text-ink-label font-sans select-none"
           >
             {label}
           </label>
@@ -31,12 +31,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           id={inputId}
           className={cn(
             "w-full rounded-[14px] px-3.5 py-2.5 text-sm font-sans",
-            "bg-[#FDFCFB] text-[#1F2A23]",
+            "bg-surface text-ink",
             "border",
             hasError
-              ? "border-[#C0392B] focus:border-[#C0392B] focus:ring-[#C0392B]/15"
-              : "border-[#D8C8BC] focus:border-[#7FBE44] focus:ring-[#7FBE44]/15",
-            "placeholder:text-[#B8A898]",
+              ? "border-danger focus:border-danger focus:ring-danger/15"
+              : "border-edge focus:border-accent focus:ring-accent/15",
+            "placeholder:text-ink-placeholder",
             "outline-none",
             // ring + subtle lift on focus
             "focus:ring-2 focus:ring-offset-0",
@@ -57,7 +57,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             id={`${inputId}-hint`}
             className={cn(
               "text-xs font-sans leading-snug",
-              hasError ? "text-[#C0392B]" : "text-[#7A6E65]",
+              hasError ? "text-danger" : "text-ink-dim",
             )}
           >
             {error ?? helperText}

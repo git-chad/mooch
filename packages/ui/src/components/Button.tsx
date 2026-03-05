@@ -23,10 +23,10 @@ const sizeClasses: Record<ButtonSize, string> = {
 };
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: cn("btn-primary", "border border-[#5A9629]", "text-[#F4FBFF] font-medium"),
-  secondary: cn("btn-secondary", "border border-[#D8C8BC]", "text-[#4D6480]"),
-  ghost: cn("btn-ghost", "text-[#4F7330]"),
-  danger: cn("btn-danger", "border border-[#992B2B]", "text-white font-medium"),
+  primary: cn("btn-primary", "border border-accent-strong", "text-btn-primary-fg font-medium"),
+  secondary: cn("btn-secondary", "border border-edge", "text-btn-secondary-fg"),
+  ghost: cn("btn-ghost", "text-btn-ghost-fg"),
+  danger: cn("btn-danger", "border border-danger", "text-white font-medium"),
 };
 
 const hapticMap: Record<ButtonVariant, string> = {
@@ -73,7 +73,7 @@ export function Button({
           "rounded-[14px] font-sans",
           // interaction
           "select-none outline-none",
-          "focus-visible:ring-2 focus-visible:ring-[#7FBE44] focus-visible:ring-offset-2",
+          "focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
           // disabled: no pointer events (prevents hover styles), reduced opacity
           "disabled:opacity-50 disabled:pointer-events-none",
           // loading: block interaction, keep full visual style

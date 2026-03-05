@@ -85,10 +85,10 @@ function DefaultSheet({ open, onOpenChange, title, hideTitle, description, class
             ref={popupRef}
             className={cn(
               "sheet-popup",
-              "relative w-full sm:max-w-lg bg-[#FDFCFB] outline-none",
+              "relative w-full sm:max-w-lg bg-surface outline-none",
               "rounded-t-2xl",
               "shadow-[var(--shadow-glass)]",
-              "border border-b-0 border-[#EDE3DA]",
+              "border border-b-0 border-edge-subtle",
               className,
             )}
           >
@@ -96,15 +96,15 @@ function DefaultSheet({ open, onOpenChange, title, hideTitle, description, class
               className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing touch-none"
               {...drag}
             >
-              <div className="w-8 h-1 rounded-full bg-[#D8C8BC]" />
+              <div className="w-8 h-1 rounded-full bg-edge" />
             </div>
 
             <div className="flex items-center justify-between px-6 pt-3 pb-0">
-              <Dialog.Title className={cn("text-base font-semibold text-[#1F2A23] font-sans", hideTitle && "sr-only")}>
+              <Dialog.Title className={cn("text-base font-semibold text-ink font-sans", hideTitle && "sr-only")}>
                 {title}
               </Dialog.Title>
               <Dialog.Close
-                className="inline-flex items-center justify-center w-7 h-7 rounded-full text-[#8C7463] hover:text-[#4A3728] hover:bg-[#F0E8E0] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#7FBE44] focus-visible:ring-offset-1"
+                className="inline-flex items-center justify-center w-7 h-7 rounded-full text-ink-sub hover:text-ink-label hover:bg-hover-bg transition-colors outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1"
                 aria-label="Close"
                 onClick={() => haptic.trigger("light")}
               >
@@ -113,7 +113,7 @@ function DefaultSheet({ open, onOpenChange, title, hideTitle, description, class
             </div>
 
             {description && (
-              <Dialog.Description className="px-6 pt-1.5 text-sm text-[#6F859B] font-sans">
+              <Dialog.Description className="px-6 pt-1.5 text-sm text-ink-info-2 font-sans">
                 {description}
               </Dialog.Description>
             )}
@@ -132,17 +132,16 @@ function DefaultSheet({ open, onOpenChange, title, hideTitle, description, class
 // showing the dark backdrop through them.
 const SCALLOP_SIZE = 16; // px — diameter of each bite
 const SCALLOP_H = SCALLOP_SIZE / 2;
-const RECEIPT_BG = "#F8F6F1";
 
 const scallopTop = {
   height: SCALLOP_H,
-  background: `radial-gradient(circle at 50% 0%, transparent ${SCALLOP_H - 1}px, ${RECEIPT_BG} ${SCALLOP_H}px)`,
+  background: `radial-gradient(circle at 50% 0%, transparent ${SCALLOP_H - 1}px, var(--receipt-bg) ${SCALLOP_H}px)`,
   backgroundSize: `${SCALLOP_SIZE}px ${SCALLOP_H}px`,
 } as const;
 
 const scallopBottom = {
   height: SCALLOP_H,
-  background: `radial-gradient(circle at 50% 100%, transparent ${SCALLOP_H - 1}px, ${RECEIPT_BG} ${SCALLOP_H}px)`,
+  background: `radial-gradient(circle at 50% 100%, transparent ${SCALLOP_H - 1}px, var(--receipt-bg) ${SCALLOP_H}px)`,
   backgroundSize: `${SCALLOP_SIZE}px ${SCALLOP_H}px`,
   backgroundPosition: "0 100%",
 } as const;
@@ -166,7 +165,7 @@ function ReceiptSheet({ open, onOpenChange, title, description, className, child
           >
             {/* Top scalloped edge — also the drag zone */}
             <div
-              style={{ background: RECEIPT_BG }}
+              style={{ background: "var(--receipt-bg)" }}
               className="cursor-grab active:cursor-grabbing touch-none"
               {...drag}
             >
@@ -175,7 +174,7 @@ function ReceiptSheet({ open, onOpenChange, title, description, className, child
               <div className="flex justify-center gap-1 py-2">
                 {[...Array(5)].map((_, i) => (
                   // biome-ignore lint/suspicious/noArrayIndexKey: decorative
-                  <div key={i} className="w-1 h-1 rounded-full bg-[#C8BEB4]" />
+                  <div key={i} className="w-1 h-1 rounded-full bg-[var(--receipt-edge)]" />
                 ))}
               </div>
             </div>
@@ -183,15 +182,15 @@ function ReceiptSheet({ open, onOpenChange, title, description, className, child
             {/* Receipt body */}
             <div
               className="px-6 pb-5"
-              style={{ background: RECEIPT_BG, fontFamily: "var(--font-geist-mono), monospace" }}
+              style={{ background: "var(--receipt-bg)", fontFamily: "var(--font-geist-mono), monospace" }}
             >
               {/* Store name / title */}
-              <Dialog.Title className="geist-pixel text-[22px] text-center uppercase tracking-wider text-[#1A1714] leading-tight">
+              <Dialog.Title className="geist-pixel text-[22px] text-center uppercase tracking-wider text-ink leading-tight">
                 {title}
               </Dialog.Title>
 
               {description && (
-                <Dialog.Description className="mt-1 text-center text-[11px] text-[#7A6E65] leading-snug" style={{ fontFamily: "inherit" }}>
+                <Dialog.Description className="mt-1 text-center text-[11px] text-ink-dim leading-snug" style={{ fontFamily: "inherit" }}>
                   {description}
                 </Dialog.Description>
               )}
@@ -199,7 +198,7 @@ function ReceiptSheet({ open, onOpenChange, title, description, className, child
               <ReceiptDivider />
 
               {/* Content */}
-              <div className="text-[12px] text-[#2A2520] leading-relaxed">
+              <div className="text-[12px] text-ink leading-relaxed">
                 {children}
               </div>
 
@@ -207,14 +206,14 @@ function ReceiptSheet({ open, onOpenChange, title, description, className, child
 
               {/* Close */}
               <div className="flex justify-center pt-1">
-                <Dialog.Close className="text-[11px] uppercase tracking-widest text-[#8C7463] hover:text-[#4A3728] transition-colors outline-none focus-visible:underline" style={{ fontFamily: "inherit" }} onClick={() => haptic.trigger("light")}>
+                <Dialog.Close className="text-[11px] uppercase tracking-widest text-ink-sub hover:text-ink-label transition-colors outline-none focus-visible:underline" style={{ fontFamily: "inherit" }} onClick={() => haptic.trigger("light")}>
                   × Close
                 </Dialog.Close>
               </div>
             </div>
 
             {/* Bottom scalloped edge */}
-            <div style={{ ...scallopBottom, background: `radial-gradient(circle at 50% 100%, transparent ${SCALLOP_H - 1}px, ${RECEIPT_BG} ${SCALLOP_H}px)`, backgroundSize: `${SCALLOP_SIZE}px ${SCALLOP_H}px`, backgroundPosition: "0 100%" }} />
+            <div style={{ ...scallopBottom, background: `radial-gradient(circle at 50% 100%, transparent ${SCALLOP_H - 1}px, var(--receipt-bg) ${SCALLOP_H}px)`, backgroundSize: `${SCALLOP_SIZE}px ${SCALLOP_H}px`, backgroundPosition: "0 100%" }} />
           </Dialog.Popup>
         </Dialog.Viewport>
       </Dialog.Portal>
@@ -227,7 +226,7 @@ function ReceiptDivider() {
     <div className="my-4 flex items-center gap-0.5">
       {[...Array(32)].map((_, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: decorative
-        <div key={i} className="flex-1 h-px bg-[#C8BEB4]" style={{ opacity: i % 2 === 0 ? 1 : 0 }} />
+        <div key={i} className="flex-1 h-px bg-[var(--receipt-edge)]" style={{ opacity: i % 2 === 0 ? 1 : 0 }} />
       ))}
     </div>
   );

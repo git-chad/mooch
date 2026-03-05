@@ -79,7 +79,7 @@ const AvatarBubble = forwardRef<
         <span
           className="w-full h-full rounded-full overflow-hidden inline-flex items-center justify-center"
           style={{
-            background: showImage ? "#e8ddd6" : p.bg,
+            background: showImage ? "var(--avatar-placeholder)" : p.bg,
             boxShadow: GLOSS_SHADOW,
           }}
         >
