@@ -73,8 +73,8 @@ export function GroupDetailClient({
               className={[
                 "shrink-0 rounded-full border px-3 py-2 text-xs font-medium font-sans",
                 tab.label === "Overview"
-                  ? "border-[#5A9629] bg-[var(--action-gradient)] text-[#F4FBFF]"
-                  : "border-[#D8C8BC] bg-[#FFFFFF] text-[#4D6480]",
+                  ? "border-accent-strong bg-accent-strong text-btn-primary-fg"
+                  : "border-edge bg-surface text-ink-label",
               ].join(" ")}
             >
               {tab.label}

@@ -129,7 +129,7 @@ export function CreateGroupModal({
       setActiveGroup(result.group.id);
       onOpenChange(false);
       resetState();
-      router.push(`/groups/${result.groupId}`);
+      router.push(`/${result.groupId}`);
       router.refresh();
     } catch (caughtError) {
       const message =
