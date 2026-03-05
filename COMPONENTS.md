@@ -52,7 +52,7 @@ Zustand stores that need to be built alongside components.
 - [ ] **`Sheet`** — Bottom-sheet; swipe-to-dismiss with velocity detection; 📳 haptic on open and on dismiss snap
 - [x] **`ConfirmDialog`** — Destructive-action modal; shakes on dismiss attempt; 📳 heavy haptic on destructive confirm
 - [ ] **`Toast`** — Success / error / info; lime aero style; auto-dismiss with progress bar; 🔊 notification sound on show; 📳 light haptic
-- [ ] **`Avatar`** — Circular user photo with fallback initials; size variants (`sm`, `md`, `lg`); subtle border per design system
+- [x] **`Avatar`** — Circular user photo with fallback initials; size variants (`sm`, `md`, `lg`); subtle border per design system
 - [ ] **`Badge`** — Role (admin/member), status (settled, closed, past), role-color per design system
 - [ ] **`Chip`** — Pill label: tags, categories, emoji+name group chips; press state
 - [ ] **`EmptyState`** — SVG illustration + heading + body + CTA button; every section has its own copy/illustration

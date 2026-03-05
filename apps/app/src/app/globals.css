@@ -53,6 +53,33 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* ── Avatar: tooltip ─────────────────────────────────────────────────────── */
+.avatar-tooltip {
+  background: #FDFCFB;
+  color: #4A3728;
+  font-size: 11px;
+  font-family: var(--font-geist-sans), sans-serif;
+  font-weight: 500;
+  line-height: 1;
+  padding: 4px 9px;
+  border-radius: 6px;
+  border: 1px solid #EDE3DA;
+  white-space: nowrap;
+  box-shadow: var(--shadow-elevated);
+  opacity: 0;
+  transition: opacity 120ms ease, display 120ms allow-discrete, overlay 120ms allow-discrete;
+}
+
+.avatar-tooltip[data-open] {
+  opacity: 1;
+}
+
+@starting-style {
+  .avatar-tooltip[data-open] {
+    opacity: 0;
+  }
+}
+
 /* ── Button: danger ──────────────────────────────────────────────────────── */
 .btn-danger {
   background: linear-gradient(in oklab 180deg, oklab(56% 0.13 0.06) 0%, oklab(46% 0.16 0.08) 100%);

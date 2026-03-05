@@ -1,4 +1,4 @@
-import { Button, Container } from "@mooch/ui";
+import { Button, Container, Avatar } from "@mooch/ui";
 import {
   ButtonTextMorphDemo,
   StatusTextMorphDemo,
@@ -140,6 +140,66 @@ export default function DesignPage() {
             </div>
           </Container>
         </div>
+      </section>
+
+      {/* ── Avatar ───────────────────────────────────────────────────────── */}
+      <Divider label="Primitives · Avatar" />
+
+      <section className="mb-12 px-8 space-y-8">
+
+        {/* Sizes */}
+        <div>
+          <SectionLabel name="Avatar" variant="sizes" note="sm · md · lg" />
+          <div className="mt-5 flex flex-wrap items-end gap-4">
+            <Avatar name="Tobias Moccagatta" size="sm" />
+            <Avatar name="Tobias Moccagatta" size="md" />
+            <Avatar name="Tobias Moccagatta" size="lg" />
+          </div>
+        </div>
+
+        {/* Initials palette */}
+        <div>
+          <SectionLabel name="Avatar" variant="initials" note="deterministic color per name" />
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            {[
+              "Tobias Moccagatta",
+              "Ana García",
+              "Marcus Webb",
+              "Priya Sharma",
+              "Leo Nakamura",
+              "Sofia Rossi",
+              "Carlos Mendez",
+              "Nina Johansson",
+            ].map((name) => (
+              <Avatar key={name} name={name} size="md" />
+            ))}
+          </div>
+        </div>
+
+        {/* Photo */}
+        <div>
+          <SectionLabel name="Avatar" variant="photo" note="with src · broken src falls back to initials" />
+          <div className="mt-5 flex flex-wrap items-end gap-4">
+            <Avatar
+              name="Tobias Moccagatta"
+              src="https://avatars.githubusercontent.com/u/9919"
+              size="sm"
+            />
+            <Avatar
+              name="Tobias Moccagatta"
+              src="https://avatars.githubusercontent.com/u/9919"
+              size="md"
+            />
+            <Avatar
+              name="Tobias Moccagatta"
+              src="https://avatars.githubusercontent.com/u/9919"
+              size="lg"
+            />
+            {/* Broken src → initials fallback (404 fires onError immediately) */}
+            <Avatar name="Tobias Moccagatta" src="/nonexistent-avatar.jpg" size="md" />
+          </div>
+        </div>
+
       </section>
 
       {/* ── Modal ────────────────────────────────────────────────────────── */}
