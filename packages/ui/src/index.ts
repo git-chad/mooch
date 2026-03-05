@@ -9,6 +9,8 @@ export type { AvatarSize } from "./components/Avatar";
 export { Badge } from "./components/Badge";
 export type { BadgeVariant, BadgeSize } from "./components/Badge";
 export { Input } from "./components/Input";
+export { Select } from "./components/Select";
+export type { SelectOption, SelectGroup, SelectProps, SelectSingleProps, SelectMultiProps } from "./components/Select";
 export { cn } from "./lib/cn";
 export type { ButtonVariant, ButtonSize } from "./components/Button";
 export type { ModalSize } from "./components/Modal";

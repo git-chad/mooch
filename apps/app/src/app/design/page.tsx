@@ -8,6 +8,7 @@ import { ModalDemo } from "./ModalDemo";
 import { SheetDemo } from "./SheetDemo";
 import { BadgeDemo } from "./BadgeDemo";
 import { QRDemo } from "./QRDemo";
+import { SelectDemo } from "./SelectDemo";
 
 // Design system preview — dev only
 // All components are showcased here as they're built
@@ -254,6 +255,16 @@ export default function DesignPage() {
           </div>
         </div>
 
+      </section>
+
+      {/* ── Select ──────────────────────────────────────────────────── */}
+      <Divider label="Primitives · Select" />
+
+      <section className="mb-12 px-8">
+        <SectionLabel name="Select" variant="all modes" note="single · grouped · multi · icons · descriptions · disabled" />
+        <div className="mt-5">
+          <SelectDemo />
+        </div>
       </section>
 
       {/* ── Badge + Input ─────────────────────────────────────────────── */}

@@ -219,6 +219,42 @@ body {
   transform: translateY(1px);
 }
 
+/* ── Select: popup ───────────────────────────────────────────────────────── */
+.select-popup {
+  transform-origin: var(--transform-origin, top);
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 130ms ease, transform 130ms ease,
+    display 130ms allow-discrete, overlay 130ms allow-discrete;
+}
+
+.select-popup[data-ending-style] {
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+@starting-style {
+  .select-popup[data-starting-style] {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+/* ── Select: item hover + selected ──────────────────────────────────────── */
+.select-item[data-highlighted] {
+  background: #F5F3F0;
+  color: #1F2A23;
+}
+
+.select-item[data-selected] {
+  background: #EDF8DC;
+  color: #2D5A10;
+}
+
+.select-item[data-selected][data-highlighted] {
+  background: #E3F5D0;
+}
+
 /* ── Button: ghost ───────────────────────────────────────────────────────── */
 .btn-ghost {
   transition: background 80ms ease, transform 80ms ease;

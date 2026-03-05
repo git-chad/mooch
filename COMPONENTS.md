@@ -61,7 +61,7 @@ Zustand stores that need to be built alongside components.
 - [ ] **`ErrorBoundary`** — Full-section error with retry button; not a generic crash screen
 - [ ] **`NavTabs`** — Horizontal tab bar; animated lime pill indicator slides between tabs (layout animation, not opacity swap)
 - [x] **`Input`** — Text input; label, helper text, error state; lime focus ring + subtle lift (`-translate-y-px`); `forwardRef` + `useId` for accessible label association; `aria-invalid` + `aria-describedby`
-- [ ] **`Select`** — Dropdown; locale, currency, role; matches Input styling
+- [x] **`Select`** — Base UI Select; `single` + `multi` mode; flat options or grouped; options support `icon` (emoji) + `description`; multi shows chips in trigger; error/disabled states; matches Input styling exactly
 - [ ] **`Textarea`** — Multi-line; live char counter; smooth height expansion
 - [ ] **`Toggle`** — Binary switch; spring thumb animation; 📳 light haptic on flip
 - [ ] **`ProgressBar`** — Track + lime gradient fill; pill-shaped; animated fill width
