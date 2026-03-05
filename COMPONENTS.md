@@ -78,13 +78,13 @@ Zustand stores that need to be built alongside components.
 
 ### Groups (`app/src/components/groups/`)
 
-- [ ] **`CreateGroupModal`** — Name input, emoji picker grid, currency selector, locale selector, optional cover photo upload; submit: 🔊 `group-joined` sound + 📳 haptic
-- [ ] **`JoinGroupModal`** — `InviteCodeInput` + QR scanner (`jsqr`); on join success: 🔊 `group-joined` + 📳 haptic
-- [ ] **`InviteSheet`** — Monospace invite code, copy button (📳 haptic on copy), `QRCodeDisplay`, share via `navigator.share()`
-- [ ] **`GroupSwitcher`** — Horizontal scrollable chip row in top nav; active chip uses lime gradient; switching: 📳 light haptic; "+" chip opens CreateGroupModal
-- [ ] **`GroupCard`** — Emoji, name, member count, currency badge; press scale
-- [ ] **`MemberList`** — Scrollable member list; staggered fade-up entrance
-- [ ] **`MemberRow`** — Avatar, display name, role badge; admin actions (remove, promote) behind long-press or swipe
+- [x] **`CreateGroupModal`** — Name input, emoji picker grid, currency selector, locale selector, optional cover photo upload; submit: 🔊 `group-joined` sound + 📳 haptic
+- [x] **`JoinGroupModal`** — `InviteCodeInput` + QR scanner (`jsqr`); on join success: 🔊 `group-joined` + 📳 haptic
+- [x] **`InviteSheet`** — Monospace invite code, copy button (📳 haptic on copy), `QRCodeDisplay`, share via `navigator.share()`
+- [x] **`GroupSwitcher`** — Horizontal scrollable chip row in top nav; active chip uses lime gradient; switching: 📳 light haptic; "+" chip opens CreateGroupModal
+- [x] **`GroupCard`** — Emoji, name, member count, currency badge; press scale
+- [x] **`MemberList`** — Scrollable member list; staggered fade-up entrance
+- [x] **`MemberRow`** — Avatar, display name, role badge; admin actions (remove, promote) behind long-press or swipe
 
 ---
 

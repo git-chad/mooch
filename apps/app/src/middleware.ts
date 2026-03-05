@@ -2,7 +2,13 @@ import { createMiddlewareClient } from "@mooch/db/middleware";
 import { type NextRequest, NextResponse } from "next/server";
 
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
-const PUBLIC_ROUTES = ["/auth/callback", "/auth/confirm", "/auth/reset-callback", "/design"];
+const PUBLIC_ROUTES = [
+  "/auth/callback",
+  "/auth/confirm",
+  "/auth/reset-callback",
+  "/design",
+  "/join",
+];
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request });
@@ -37,7 +43,9 @@ export async function middleware(request: NextRequest) {
 
   // Authenticated + auth route → /groups
   if (session && isAuthRoute) {
-    return NextResponse.redirect(new URL("/groups", request.url));
+    const nextPath = request.nextUrl.searchParams.get("next");
+    const safeNextPath = nextPath?.startsWith("/") ? nextPath : "/groups";
+    return NextResponse.redirect(new URL(safeNextPath, request.url));
   }
 
   return response;

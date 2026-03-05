@@ -44,6 +44,48 @@ When a problem is encountered and fixed, log it here immediately:
 
 ---
 
+### Group modal layout only side-by-side on `sm+`
+- **Problem:** Implemented icon/name side-by-side with `sm:grid-cols...`, so on mobile it still stacked even after explicit request for side-by-side.
+- **Fix:** Changed to always-on two-column grid (`grid-cols-[auto,minmax(0,1fr)]`) for icon + name and `grid-cols-2` for currency/language.
+- **Avoid:** When user asks for fixed layout behavior, avoid responsive qualifiers unless explicitly requested.
+
+---
+
+### Cover upload path relied on brittle client-side storage flow
+- **Problem:** Initial create/settings cover uploads were done from browser client directly, exposing "bucket not found" and inconsistent behavior across environments.
+- **Fix:** Added server action `uploadGroupCover`, bucket ensure/create guard, and server-side upload with admin client. Both create and settings now use this shared server upload path.
+- **Avoid:** For critical writes (storage/object creation), prefer server-side actions with explicit validation and setup checks, not ad-hoc client uploads.
+
+---
+
+### Upload UX duplicated controls after file selection
+- **Problem:** `AssetUpload` kept the dropzone visible even after a file was already selected, creating redundant UI and clutter.
+- **Fix:** Hide dropzone once a file is selected; show preview + compact row with `Change` and `Remove`.
+- **Avoid:** Don’t show mutually redundant controls in the same state. Design component states explicitly (`empty`, `selected`, `error`).
+
+---
+
+### Group banner file-size policy started too high
+- **Problem:** Set limit to 5 MB, which is too permissive for this use case and against product preference.
+- **Fix:** Enforced 1 MB across UI, server validation, storage bucket creation limit, and user-facing error copy. Reduced server action body limit to 2 MB headroom.
+- **Avoid:** Confirm product constraints first, then enforce them consistently at every layer (client hints, server checks, storage policy).
+
+---
+
+### Groups list read path hid failures and appeared stale
+- **Problem:** Groups page depended on RLS-sensitive reads and DB helpers that return `[]` on error, so failures looked like "no groups" even when rows existed in DB.
+- **Fix:** Switched groups page to forced-dynamic render and server-side admin-scoped queries by authenticated user membership, then computed counts from the same source.
+- **Avoid:** Never swallow data-read errors as empty state in critical screens; surface/handle explicitly, and avoid fragile read paths when consistency is required.
+
+---
+
+### Wrong lint path when running from app subdirectory
+- **Problem:** Ran Biome with repo-relative path while already in `apps/app`, causing a false "no files processed" failure.
+- **Fix:** Re-ran with subdir-relative path and completed lint/typecheck successfully.
+- **Avoid:** Match lint/typecheck target paths to current working directory.
+
+---
+
 ## Sessions
 
 | Date | Summary | Problems |
@@ -51,3 +93,4 @@ When a problem is encountered and fixed, log it here immediately:
 | 2026-03-04 | Phase 0 complete — bun workspaces, turbo, both Next.js apps, shared packages (db/types/ui/stores), Supabase local dev, Biome lint clean. Renamed project from squad-sync → mooch throughout. | Docker not running initially (started mid-session). Turbo missing `packageManager` field. Lockfile stale after rename — deleted and regenerated. |
 | 2026-03-04 | Phase 1 (1.4–1.9) complete — middleware, auth route handlers, login/signup/forgot-password/update-password pages, profile queries, shell layout, profile page with avatar upload, Zustand auth store. | @mooch/db barrel export pulled next/headers into client bundle (fixed with subpath exports). Password reset flow broken by middleware missing /auth/reset-callback in PUBLIC_ROUTES + /update-password in AUTH_ROUTES blocking authenticated users. Web Lock AbortError on updateUser fixed by moving to a Server Action. |
 | 2026-03-05 | UI component library sprint — built design system primitives in `packages/ui`: Button (primary/secondary/ghost/danger, loading state, TextMorph preview), Container (site/app variants), Modal (Base UI Dialog, slide-up mobile / fade-scale desktop, no backdrop blur), ConfirmDialog (shakes on dismiss attempt via pointer/escape interception), Sheet (swipe-to-dismiss with velocity detection + receipt variant with CSS scalloped edges), Avatar (gradient border, gloss inner shadow, deterministic color palette, Base UI tooltip), Tooltip (warm glass surface). Added `TooltipProvider` to root layout. `/design` route previews all components. | Tailwind v4 silently drops classes from packages/ui without `@source` directive — fixed by adding `@source` to globals.css and moving size classes to plain CSS. `onPointerMove` fires on hover (not just drag) — fixed with `dragging` ref guard. `Tooltip.Trigger` render prop swallows Base UI event handlers unless component uses `forwardRef` and spreads `...htmlProps`. Broken image DNS timeout shows browser broken-image placeholder before `onError` fires — fixed by using a local 404 path. |
+| 2026-03-05 | Phase 2.4 groups implementation/cleanup — create/join modals, group pages/settings, lucide icon support, invite/deeplink paths, upload primitive, and server-side group actions hardening. | Multiple regressions fixed during iteration: side-by-side layout initially only on `sm+`; group cover upload started client-side and was brittle (`bucket not found`); upload UX duplicated controls after selection; banner size policy initially too high (5MB) and was tightened to 1MB; groups list rendered empty despite DB rows due to fragile read path and silent empty-on-error behavior, fixed with dynamic + admin-scoped membership queries. |

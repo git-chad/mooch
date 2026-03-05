@@ -446,42 +446,42 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 2.4 — Groups UI
 
-- [ ] 2.4.1 — `apps/app/src/app/(shell)/groups/page.tsx`:
+- [x] 2.4.1 — `apps/app/src/app/(shell)/groups/page.tsx`:
   - List of user's groups (emoji, name, member count, currency badge)
   - "Create a squad" button → opens create group modal
   - "Join a squad" button → opens join group modal
   - Empty state: "You're not in any squads yet"
-- [ ] 2.4.2 — `apps/app/src/components/groups/CreateGroupModal.tsx`:
+- [x] 2.4.2 — `apps/app/src/components/groups/CreateGroupModal.tsx`:
   - Group name input
   - Emoji picker (inline grid of preset emojis)
   - Currency selector (ARS, USD, EUR, BRL)
   - Locale selector (EN, ES)
   - Optional: cover photo upload
   - On submit: calls `createGroup` → navigates to group page
-- [ ] 2.4.3 — `apps/app/src/components/groups/JoinGroupModal.tsx`:
+- [x] 2.4.3 — `apps/app/src/components/groups/JoinGroupModal.tsx`:
   - 6-character code input (auto-uppercase, auto-advance per char)
   - QR code scanner (browser `getUserMedia` + `jsqr` lib)
   - On submit: calls `joinGroupByCode`
-- [ ] 2.4.4 — `apps/app/src/app/(shell)/groups/[groupId]/page.tsx`:
+- [x] 2.4.4 — `apps/app/src/app/(shell)/groups/[groupId]/page.tsx`:
   - Group header (emoji, name, member count)
   - Members list (avatar, name, role badge)
   - Navigation tabs for group sections
   - "Invite" button → opens invite sheet
-- [ ] 2.4.5 — `apps/app/src/components/groups/InviteSheet.tsx`:
+- [x] 2.4.5 — `apps/app/src/components/groups/InviteSheet.tsx`:
   - Large monospace invite code display
   - "Copy code" button
   - QR code (generated with `qrcode` npm package)
   - "Share link" button → `navigator.share()` with `https://app.mooch.com/join/{code}`
-- [ ] 2.4.6 — `apps/app/src/app/join/[code]/page.tsx` (public, no auth required):
+- [x] 2.4.6 — `apps/app/src/app/join/[code]/page.tsx` (public, no auth required):
   - Shows group name + emoji from invite code lookup
   - "Join this squad" CTA → if not logged in, redirect to `/login?next=/join/{code}`; if logged in, call `joinGroupByCode`
-- [ ] 2.4.7 — `apps/app/src/app/(shell)/groups/[groupId]/settings/page.tsx`:
+- [x] 2.4.7 — `apps/app/src/app/(shell)/groups/[groupId]/settings/page.tsx`:
   - Edit name, emoji, cover photo, currency, locale
   - Member management (remove member, change role — admin only)
   - "Regenerate invite code" button
   - "Leave group" with confirm dialog
   - "Delete group" (admin only, confirm by typing group name)
-- [ ] 2.4.8 — `apps/app/src/components/groups/GroupSwitcher.tsx`:
+- [x] 2.4.8 — `apps/app/src/components/groups/GroupSwitcher.tsx`:
   - Horizontal scrollable row of group chips (emoji + name) in top nav
   - Active chip highlighted
   - Clicking sets `activeGroupId` in Zustand + persists to `localStorage`
