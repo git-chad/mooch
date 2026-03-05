@@ -11,6 +11,8 @@ export type { BadgeVariant, BadgeSize } from "./components/Badge";
 export { Input } from "./components/Input";
 export { Select } from "./components/Select";
 export { IconPicker, LucideIconByName } from "./components/IconPicker";
+export { InviteCodeInput } from "./components/InviteCodeInput";
+export type { InviteCodeInputProps } from "./components/InviteCodeInput";
 export type { IconPickerProps } from "./components/IconPicker";
 export type { SelectOption, SelectGroup, SelectProps, SelectSingleProps, SelectMultiProps } from "./components/Select";
 export { cn } from "./lib/cn";

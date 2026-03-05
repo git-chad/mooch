@@ -10,6 +10,7 @@ import { BadgeDemo } from "./BadgeDemo";
 import { QRDemo } from "./QRDemo";
 import { SelectDemo } from "./SelectDemo";
 import { IconPickerDemo } from "./IconPickerDemo";
+import { InviteCodeDemo } from "./InviteCodeDemo";
 
 // Design system preview — dev only
 // All components are showcased here as they're built
@@ -285,6 +286,16 @@ export default function DesignPage() {
         <SectionLabel name="Badge + Input" variant="interactive" note="preset variants · custom color · live customizer · input states" />
         <div className="mt-5">
           <BadgeDemo />
+        </div>
+      </section>
+
+      {/* ── InviteCodeInput ──────────────────────────────────────────── */}
+      <Divider label="QR / Invite · InviteCodeInput" />
+
+      <section className="mb-12 px-8">
+        <SectionLabel name="InviteCodeInput" variant="6-cell" note="auto-advance · paste · backspace · haptic on complete" />
+        <div className="mt-5">
+          <InviteCodeDemo />
         </div>
       </section>
 
