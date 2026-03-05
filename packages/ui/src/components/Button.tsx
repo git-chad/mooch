@@ -1,6 +1,7 @@
 "use client";
 
 import type { ButtonHTMLAttributes } from "react";
+import { useWebHaptics } from "web-haptics/react";
 import { cn } from "../lib/cn";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
@@ -28,6 +29,13 @@ const variantClasses: Record<ButtonVariant, string> = {
   danger: cn("btn-danger", "border border-[#992B2B]", "text-white font-medium"),
 };
 
+const hapticMap: Record<ButtonVariant, string> = {
+  primary: "medium",
+  secondary: "light",
+  ghost: "light",
+  danger: "warning",
+};
+
 export function Button({
   variant = "primary",
   size = "md",
@@ -35,8 +43,16 @@ export function Button({
   disabled,
   loading,
   children,
+  onClick,
   ...props
 }: ButtonProps) {
+  const haptic = useWebHaptics();
+
+  function handleClick(e: React.MouseEvent<HTMLButtonElement>) {
+    haptic.trigger(hapticMap[variant]);
+    onClick?.(e);
+  }
+
   return (
     // Wrapper carries cursor so it's visible even when the
     // button itself has pointer-events:none (which suppresses :hover styles)
@@ -67,6 +83,7 @@ export function Button({
           variantClasses[variant],
           className,
         )}
+        onClick={handleClick}
         {...props}
       >
         {children}

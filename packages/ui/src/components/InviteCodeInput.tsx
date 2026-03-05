@@ -1,20 +1,12 @@
 "use client";
 
 import { useRef, useState, useId, useCallback } from "react";
-import { WebHaptics } from "web-haptics";
+import { useWebHaptics } from "web-haptics/react";
 import { cn } from "../lib/cn";
 
 const LENGTH = 6;
 // Only alphanumeric — matches the invite code format
 const ALLOWED = /^[A-Za-z0-9]$/;
-
-// Singleton haptics instance — created once on first use
-let haptics: WebHaptics | null = null;
-function getHaptics() {
-  if (typeof window === "undefined") return null;
-  if (!haptics) haptics = new WebHaptics();
-  return haptics;
-}
 
 export type InviteCodeInputProps = {
   value?: string;
@@ -39,6 +31,7 @@ export function InviteCodeInput({
   className,
 }: InviteCodeInputProps) {
   const id = useId();
+  const haptic = useWebHaptics();
   const hasError = !!error;
 
   // Internal chars array — source of truth when uncontrolled
@@ -57,7 +50,7 @@ export function InviteCodeInput({
     const code = next.join("");
     onChange?.(code);
     if (next.every((c) => c !== "")) {
-      getHaptics()?.trigger([80, 40, 120], { intensity: 0.8 });
+      haptic.trigger("success");
       onComplete?.(code);
     }
   }
@@ -122,8 +115,8 @@ export function InviteCodeInput({
 
     const next = [...chars];
     next[i] = ch;
+    haptic.trigger("selection");
     updateChars(next);
-    getHaptics()?.trigger(12, { intensity: 0.4 });
 
     if (i < LENGTH - 1) focusCell(i + 1);
   }, [chars]);

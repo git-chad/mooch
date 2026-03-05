@@ -43,6 +43,7 @@ import {
   ZodiacScorpio, ZodiacTaurus, ZodiacVirgo,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useWebHaptics } from "web-haptics/react";
 import { cn } from "../lib/cn";
 
 // ── Icon registry ──────────────────────────────────────────────────────────────
@@ -327,6 +328,7 @@ export function IconPicker({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("All");
+  const haptic = useWebHaptics();
 
   const SelectedIcon = value ? ALL_ICONS.find((e) => e.name === value)?.Icon : null;
 
@@ -341,6 +343,7 @@ export function IconPicker({
   }, [activeCategory, query]);
 
   function handleSelect(name: string) {
+    haptic.trigger("selection");
     onValueChange(name);
     setOpen(false);
     setQuery("");
@@ -364,6 +367,7 @@ export function IconPicker({
         <Popover.Trigger
           id={id}
           disabled={disabled}
+          onClick={() => !open && haptic.trigger("light")}
           className={cn(
             "relative inline-flex items-center justify-center rounded-lg border",
             "bg-[#FDFCFB] text-[#4A3728]",
@@ -462,7 +466,7 @@ export function IconPicker({
                   <span className="text-[11px] font-mono text-[#8C7463]">{value}</span>
                   <button
                     type="button"
-                    onClick={() => { onValueChange(""); setOpen(false); }}
+                    onClick={() => { haptic.trigger("light"); onValueChange(""); setOpen(false); }}
                     className="text-[11px] font-sans text-[#8C7463] hover:text-[#C0392B] transition-colors outline-none"
                   >
                     Clear

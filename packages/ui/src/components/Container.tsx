@@ -22,7 +22,7 @@ export function Container({
   return (
     <Tag
       className={cn(
-        "w-full grid grid-cols-12 gap-2 px-8",
+        "w-full grid grid-cols-6 sm:grid-cols-12 gap-2 px-4 sm:px-8",
         variant === "site" && "max-w-[1280px] mx-auto",
         className,
       )}

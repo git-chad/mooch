@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { Dialog } from "@base-ui-components/react";
+import { useWebHaptics } from "web-haptics/react";
 import { cn } from "../lib/cn";
 
 export type SheetVariant = "default" | "receipt";
@@ -72,7 +73,8 @@ function useSwipeToDismiss(onDismiss: () => void) {
 // ── Default sheet ─────────────────────────────────────────────────────────────
 
 function DefaultSheet({ open, onOpenChange, title, hideTitle, description, className, children }: SheetProps) {
-  const { popupRef, ...drag } = useSwipeToDismiss(() => onOpenChange(false));
+  const haptic = useWebHaptics();
+  const { popupRef, ...drag } = useSwipeToDismiss(() => { haptic.trigger("light"); onOpenChange(false); });
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -104,6 +106,7 @@ function DefaultSheet({ open, onOpenChange, title, hideTitle, description, class
               <Dialog.Close
                 className="inline-flex items-center justify-center w-7 h-7 rounded-full text-[#8C7463] hover:text-[#4A3728] hover:bg-[#F0E8E0] transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#7FBE44] focus-visible:ring-offset-1"
                 aria-label="Close"
+                onClick={() => haptic.trigger("light")}
               >
                 <CloseIcon />
               </Dialog.Close>
@@ -145,7 +148,8 @@ const scallopBottom = {
 } as const;
 
 function ReceiptSheet({ open, onOpenChange, title, description, className, children }: SheetProps) {
-  const { popupRef, ...drag } = useSwipeToDismiss(() => onOpenChange(false));
+  const haptic = useWebHaptics();
+  const { popupRef, ...drag } = useSwipeToDismiss(() => { haptic.trigger("light"); onOpenChange(false); });
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -203,7 +207,7 @@ function ReceiptSheet({ open, onOpenChange, title, description, className, child
 
               {/* Close */}
               <div className="flex justify-center pt-1">
-                <Dialog.Close className="text-[11px] uppercase tracking-widest text-[#8C7463] hover:text-[#4A3728] transition-colors outline-none focus-visible:underline" style={{ fontFamily: "inherit" }}>
+                <Dialog.Close className="text-[11px] uppercase tracking-widest text-[#8C7463] hover:text-[#4A3728] transition-colors outline-none focus-visible:underline" style={{ fontFamily: "inherit" }} onClick={() => haptic.trigger("light")}>
                   × Close
                 </Dialog.Close>
               </div>

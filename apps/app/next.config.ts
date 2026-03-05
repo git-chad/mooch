@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
     "@mooch/types",
     "@mooch/stores",
   ],
+  // Allow ngrok tunnels for mobile testing
+  allowedDevOrigins: ["*.ngrok-free.app", "*.ngrok.io"],
 };
 
 export default nextConfig;

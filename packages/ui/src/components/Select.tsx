@@ -2,6 +2,7 @@
 
 import { useId } from "react";
 import { Select as BaseSelect } from "@base-ui-components/react";
+import { useWebHaptics } from "web-haptics/react";
 import { cn } from "../lib/cn";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
@@ -207,10 +208,12 @@ export function Select(props: SelectProps) {
 // ── Option item ────────────────────────────────────────────────────────────────
 
 function OptionItem({ option }: { option: SelectOption }) {
+  const haptic = useWebHaptics();
   return (
     <BaseSelect.Item
       value={option.value}
       disabled={option.disabled}
+      onClick={() => !option.disabled && haptic.trigger("selection")}
       className={cn(
         "select-item relative flex items-center gap-2.5 px-3 py-2 mx-1 rounded-lg",
         "text-sm font-sans cursor-default outline-none select-none",

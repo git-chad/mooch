@@ -11,6 +11,7 @@ import { QRDemo } from "./QRDemo";
 import { SelectDemo } from "./SelectDemo";
 import { IconPickerDemo } from "./IconPickerDemo";
 import { InviteCodeDemo } from "./InviteCodeDemo";
+import { QRScannerDemo } from "./QRScannerDemo";
 
 // Design system preview — dev only
 // All components are showcased here as they're built
@@ -296,6 +297,16 @@ export default function DesignPage() {
         <SectionLabel name="InviteCodeInput" variant="6-cell" note="auto-advance · paste · backspace · haptic on complete" />
         <div className="mt-5">
           <InviteCodeDemo />
+        </div>
+      </section>
+
+      {/* ── QR Scanner ───────────────────────────────────────────────── */}
+      <Divider label="QR / Invite · QRScanner" />
+
+      <section className="mb-12 px-8">
+        <SectionLabel name="QRScanner" variant="camera" note="getUserMedia · jsqr · scan line · permission states · haptic on decode" />
+        <div className="mt-5">
+          <QRScannerDemo />
         </div>
       </section>
 

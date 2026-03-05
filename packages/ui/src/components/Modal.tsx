@@ -1,7 +1,9 @@
 "use client";
 
 import { Dialog } from "@base-ui-components/react";
+import { useWebHaptics } from "web-haptics/react";
 import { cn } from "../lib/cn";
+import { useScrollLock } from "../lib/useScrollLock";
 
 export type ModalSize = "sm" | "md" | "lg";
 
@@ -33,20 +35,22 @@ export function Modal({
   className,
   children,
 }: ModalProps) {
+  useScrollLock(open);
+  const haptic = useWebHaptics();
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         {/* Backdrop — dark overlay, no blur */}
         <Dialog.Backdrop className="modal-backdrop fixed inset-0 bg-black/40" />
 
-        {/* Viewport — centers popup, handles scroll on tall modals */}
-        <Dialog.Viewport className="fixed inset-0 overflow-y-auto flex items-end sm:items-center justify-center sm:p-4 p-0">
+        {/* Viewport — always centered on all screen sizes */}
+        <Dialog.Viewport className="fixed inset-0 overflow-y-auto flex items-center justify-center p-4">
           <Dialog.Popup
             className={cn(
               "modal-popup",
               "relative w-full bg-[#FDFCFB] outline-none",
-              // mobile: card from bottom with rounded top
-              "rounded-t-2xl sm:rounded-2xl",
+              "rounded-2xl",
               // max-width on desktop
               sizeClasses[size],
               // shadow
@@ -76,6 +80,7 @@ export function Modal({
                   "focus-visible:ring-2 focus-visible:ring-[#7FBE44] focus-visible:ring-offset-1",
                 )}
                 aria-label="Close"
+                onClick={() => haptic.trigger("light")}
               >
                 <CloseIcon />
               </Dialog.Close>
