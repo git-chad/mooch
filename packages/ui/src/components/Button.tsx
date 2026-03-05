@@ -1,26 +1,75 @@
+"use client";
+
 import type { ButtonHTMLAttributes } from "react";
+import { cn } from "../lib/cn";
+
+export type ButtonVariant = "primary" | "secondary" | "ghost";
+export type ButtonSize = "sm" | "md" | "lg";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  // loading: blocks interaction but keeps full visual style + cursor-wait
+  loading?: boolean;
+};
+
+// Sizes live in globals.css as .btn-sm/md/lg — not Tailwind arbitrary values,
+// so they're guaranteed to generate regardless of which app scans this file.
+const sizeClasses: Record<ButtonSize, string> = {
+  sm: "btn-sm",
+  md: "btn-md",
+  lg: "btn-lg",
+};
+
+const variantClasses: Record<ButtonVariant, string> = {
+  primary: cn("btn-primary", "border border-[#5A9629]", "text-[#F4FBFF] font-medium"),
+  secondary: cn("btn-secondary", "border border-[#D8C8BC]", "text-[#4D6480]"),
+  ghost: cn("btn-ghost", "bg-[#F1F9E8] border border-[#C7DEB0]", "text-[#4F7330]"),
 };
 
 export function Button({
   variant = "primary",
-  className = "",
+  size = "md",
+  className,
+  disabled,
+  loading,
   children,
   ...props
 }: ButtonProps) {
-  const base =
-    "inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none";
-  const variants = {
-    primary: "bg-foreground text-background hover:opacity-90",
-    secondary: "bg-foreground/10 text-foreground hover:bg-foreground/20",
-    ghost: "hover:bg-foreground/10 text-foreground",
-  };
-
   return (
-    <button className={`${base} ${variants[variant]} ${className}`} {...props}>
-      {children}
-    </button>
+    // Wrapper carries cursor so it's visible even when the
+    // button itself has pointer-events:none (which suppresses :hover styles)
+    <span
+      className={cn(
+        "inline-flex",
+        disabled && "cursor-not-allowed",
+        loading && "cursor-wait",
+      )}
+    >
+      <button
+        // loading: don't pass disabled attr (avoids opacity/grayout), block clicks via pointer-events-none
+        disabled={disabled}
+        className={cn(
+          // layout
+          "inline-flex items-center justify-center gap-2 whitespace-nowrap",
+          // shape & font — font-sans uses --font-sans → --font-geist-sans
+          "rounded-full font-sans",
+          // interaction
+          "select-none outline-none",
+          "focus-visible:ring-2 focus-visible:ring-[#7FBE44] focus-visible:ring-offset-2",
+          // disabled: no pointer events (prevents hover styles), reduced opacity
+          "disabled:opacity-50 disabled:pointer-events-none",
+          // loading: block interaction, keep full visual style
+          loading && "pointer-events-none",
+          // size & variant
+          sizeClasses[size],
+          variantClasses[variant],
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </button>
+    </span>
   );
 }

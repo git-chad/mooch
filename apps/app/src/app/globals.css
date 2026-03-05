@@ -1,8 +1,32 @@
 @import "tailwindcss";
+@source "../../../../packages/ui/src/**/*.{ts,tsx}";
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* ── Design system: lime action gradient ─────────────────────────────── */
+  --action-gradient: linear-gradient(
+    in oklab 180deg,
+    oklab(87.7% -0.085 0.109) 0%,
+    oklab(73.4% -0.113 0.123) 100%
+  );
+
+  /* ── Design system: shadow stacks ────────────────────────────────────── */
+  --shadow-btn-primary: #e2fbc2c7 0px 1px 0px inset, #587b3357 0px 6px 14px,
+    #527f2b 0px 3px 0px;
+  --shadow-btn-primary-pressed: #e2fbc2c7 0px 1px 0px inset, #527f2b 0px 1px 0px;
+  --shadow-glass: #ffffffde 0px 1px 0px inset, #84664f2e 0px 9px 22px,
+    #cfaf97a6 0px 2px 0px;
+  --shadow-elevated: #ffffffd9 0px 1px 0px inset, #84664f2b 0px 8px 16px;
+  --shadow-toast: #ffffffcc 0px 1px 0px inset, #5a8b3633 0px 8px 16px;
+
+  /* ── Design system: surface glass gradient ───────────────────────────── */
+  --surface-glass: linear-gradient(
+    in oklab 160deg,
+    oklab(100% 0 0.0001 / 74%) 0%,
+    oklab(95.5% 0.004 0.008 / 50%) 100%
+  );
 }
 
 @theme inline {
@@ -27,4 +51,55 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ── Button: sizes ───────────────────────────────────────────────────────── */
+.btn-sm { padding: 6px 12px; font-size: 12px; line-height: 16px; }
+.btn-md { padding: 10px 14px; font-size: 13px; line-height: 16px; }
+.btn-lg { padding: 12px 20px; font-size: 14px; line-height: 20px; }
+
+/* ── Button: primary ─────────────────────────────────────────────────────── */
+.btn-primary {
+  background: var(--action-gradient);
+  box-shadow: var(--shadow-btn-primary);
+  transition: box-shadow 80ms ease, transform 80ms ease, filter 80ms ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.btn-primary:active:not(:disabled) {
+  box-shadow: var(--shadow-btn-primary-pressed);
+  transform: translateY(2px);
+}
+
+/* ── Button: secondary ───────────────────────────────────────────────────── */
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: #ffffff80 0px 1px 0px inset;
+  transition: background 80ms ease, transform 80ms ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.btn-secondary:active:not(:disabled) {
+  background: rgba(240, 236, 232, 0.9);
+  transform: translateY(1px);
+}
+
+/* ── Button: ghost ───────────────────────────────────────────────────────── */
+.btn-ghost {
+  transition: background 80ms ease, transform 80ms ease;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: #e8f5dd;
+}
+
+.btn-ghost:active:not(:disabled) {
+  background: #d9eeb9;
+  transform: translateY(1px);
 }

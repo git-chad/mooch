@@ -1,4 +1,9 @@
-import { Container } from "@mooch/ui";
+import { Button, Container } from "@mooch/ui";
+import {
+  ButtonTextMorphDemo,
+  StatusTextMorphDemo,
+  BalanceTextMorphDemo,
+} from "./TextMorphDemo";
 
 // Design system preview — dev only
 // All components are showcased here as they're built
@@ -18,9 +23,55 @@ export default function DesignPage() {
         </p>
       </div>
 
+      {/* ── Buttons ─────────────────────────────────────────────────────── */}
+      <Divider label="Primitives · Button" />
+
+      <section className="mb-12 px-8 space-y-8">
+
+        {/* Variants */}
+        <div>
+          <SectionLabel name="Button" variant="variants" note="primary · secondary · ghost" />
+          <div className="mt-5 flex flex-wrap items-center gap-4">
+            <Button variant="primary">Create Squad</Button>
+            <Button variant="secondary">Finances</Button>
+            <Button variant="ghost">Learn more</Button>
+          </div>
+        </div>
+
+        {/* Sizes */}
+        <div>
+          <SectionLabel name="Button" variant="sizes" note="sm · md · lg" />
+          <div className="mt-5 flex flex-wrap items-end gap-4">
+            <Button variant="primary" size="sm">Small</Button>
+            <Button variant="primary" size="md">Medium</Button>
+            <Button variant="primary" size="lg">Large</Button>
+          </div>
+          <div className="mt-3 flex flex-wrap items-end gap-4">
+            <Button variant="secondary" size="sm">Small</Button>
+            <Button variant="secondary" size="md">Medium</Button>
+            <Button variant="secondary" size="lg">Large</Button>
+          </div>
+        </div>
+
+        {/* Disabled */}
+        <div>
+          <SectionLabel name="Button" variant="disabled" note="all variants · disabled state" />
+          <div className="mt-5 flex flex-wrap items-center gap-4">
+            <Button variant="primary" disabled>Create Squad</Button>
+            <Button variant="secondary" disabled>Finances</Button>
+            <Button variant="ghost" disabled>Learn more</Button>
+          </div>
+        </div>
+
+        {/* Press hint */}
+        <p className="text-xs font-mono text-[#8C7463]">
+          ↑ click and hold to see press states
+        </p>
+      </section>
+
+      {/* ── Container ───────────────────────────────────────────────────── */}
       <Divider label="Layout · Container" />
 
-      {/* Container / site variant */}
       <section className="mb-12 px-8">
         <SectionLabel
           name="Container"
@@ -35,13 +86,10 @@ export default function DesignPage() {
                 key={i}
                 className="col-span-1 h-10 rounded-md bg-[#BEE28B]/60 border border-[#A8C97A] flex items-center justify-center"
               >
-                <span className="text-[10px] font-mono text-[#3C5331]">
-                  {i + 1}
-                </span>
+                <span className="text-[10px] font-mono text-[#3C5331]">{i + 1}</span>
               </div>
             ))}
           </Container>
-          {/* Example content span */}
           <Container variant="site" className="py-3 border-t border-[#D8C8BC]">
             <div className="col-span-8 h-10 rounded-md bg-[#D9EEB9] border border-[#C0D99A] flex items-center px-3">
               <span className="text-xs font-mono text-[#3C5331]">col-span-8</span>
@@ -51,20 +99,19 @@ export default function DesignPage() {
             </div>
           </Container>
           <Container variant="site" className="py-3 border-t border-[#D8C8BC]">
-            <div className="col-span-4 h-10 rounded-md bg-[#D9EEB9] border border-[#C0D99A] flex items-center px-3">
-              <span className="text-xs font-mono text-[#3C5331]">col-span-4</span>
-            </div>
-            <div className="col-span-4 h-10 rounded-md bg-[#D9EEB9] border border-[#C0D99A] flex items-center px-3">
-              <span className="text-xs font-mono text-[#3C5331]">col-span-4</span>
-            </div>
-            <div className="col-span-4 h-10 rounded-md bg-[#D9EEB9] border border-[#C0D99A] flex items-center px-3">
-              <span className="text-xs font-mono text-[#3C5331]">col-span-4</span>
-            </div>
+            {[0, 1, 2].map((i) => (
+              <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: preview grid
+                key={i}
+                className="col-span-4 h-10 rounded-md bg-[#D9EEB9] border border-[#C0D99A] flex items-center px-3"
+              >
+                <span className="text-xs font-mono text-[#3C5331]">col-span-4</span>
+              </div>
+            ))}
           </Container>
         </div>
       </section>
 
-      {/* Container / app variant */}
       <section className="mb-12 px-8">
         <SectionLabel
           name="Container"
@@ -79,9 +126,7 @@ export default function DesignPage() {
                 key={i}
                 className="col-span-1 h-10 rounded-md bg-[#CCDDF0]/80 border border-[#94B8D5] flex items-center justify-center"
               >
-                <span className="text-[10px] font-mono text-[#3A536B]">
-                  {i + 1}
-                </span>
+                <span className="text-[10px] font-mono text-[#3A536B]">{i + 1}</span>
               </div>
             ))}
           </Container>
@@ -90,25 +135,49 @@ export default function DesignPage() {
               <span className="text-xs font-mono text-[#3A536B]">col-span-3 · sidebar</span>
             </div>
             <div className="col-span-9 h-10 rounded-md bg-[#DDE6EF] border border-[#B8C6D4] flex items-center px-3">
-              <span className="text-xs font-mono text-[#3A536B]">col-span-9 · main content</span>
+              <span className="text-xs font-mono text-[#3A536B]">col-span-9 · main</span>
             </div>
           </Container>
         </div>
       </section>
 
+      {/* ── TextMorph ────────────────────────────────────────────────────── */}
+      <Divider label="Animation · TextMorph" />
+
+      <section className="mb-12 px-8 space-y-8">
+
+        {/* Button label transition */}
+        <div>
+          <SectionLabel name="TextMorph" variant="button label" note="click to trigger Save → Saving… → Saved!" />
+          <div className="mt-5 flex flex-wrap items-center gap-4">
+            <ButtonTextMorphDemo />
+          </div>
+        </div>
+
+        {/* Status label cycling */}
+        <div>
+          <SectionLabel name="TextMorph" variant="status label" note="auto-cycles every 1.6s" />
+          <div className="mt-5 flex flex-wrap items-center gap-4">
+            <StatusTextMorphDemo />
+          </div>
+        </div>
+
+        {/* Balance amount */}
+        <div>
+          <SectionLabel name="TextMorph" variant="balance amount" note="auto-cycles every 1.8s" />
+          <div className="mt-5 flex flex-wrap items-center gap-4">
+            <BalanceTextMorphDemo />
+          </div>
+        </div>
+
+      </section>
+
+      {/* ── Coming soon ─────────────────────────────────────────────────── */}
       <Divider label="Coming soon" />
 
       {[
-        "Button",
-        "Modal",
-        "Sheet",
-        "Toast",
-        "Avatar",
-        "Badge",
-        "Chip",
-        "Input",
-        "Toggle",
-        "NavTabs",
+        "Modal", "Sheet", "Toast", "Avatar", "Badge",
+        "Chip", "Input", "Toggle", "NavTabs",
       ].map((name) => (
         <section key={name} className="mb-2 px-8">
           <div className="rounded-xl border border-dashed border-[#D8C8BC] px-6 py-4 flex items-center gap-3">
@@ -127,7 +196,7 @@ export default function DesignPage() {
 
 function Divider({ label }: { label: string }) {
   return (
-    <div className="px-8 mb-6 mt-2 flex items-center gap-4">
+    <div className="px-8 mb-6 mt-10 flex items-center gap-4">
       <span className="text-[11px] font-mono text-[#8C7463] uppercase tracking-widest whitespace-nowrap">
         {label}
       </span>
