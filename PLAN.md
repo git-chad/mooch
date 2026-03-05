@@ -524,6 +524,46 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ---
 
+# Interlude: Shell Layout & Navigation Overhaul
+
+**Goal:** Replace the flat `ShellTopNav` with a proper navigation shell: persistent sidebar on desktop, bottom tab bar on mobile, mobile top bar, and a root dashboard page. Implemented between Phase 2 and Phase 3 as a prerequisite for all section pages.
+
+**Status:** 🟢 **COMPLETE**
+
+---
+
+### What was built
+
+- [x] `components/layout/Sidebar.tsx` — desktop 240px sidebar: groups list with active indicator, create/join buttons (open modals), section nav (Overview → Insights + Settings), profile footer
+- [x] `components/layout/BottomTabBar.tsx` — mobile fixed bottom nav: 4 primary tabs (Overview, Feed, Expenses, Plans) + "More" Sheet (Polls, Events, Insights); active tab highlighted in brand green
+- [x] `components/layout/MobileTopBar.tsx` — mobile sticky header: active group emoji + name (tappable → Sheet group switcher), avatar → `/profile`
+- [x] `(shell)/layout.tsx` — refactored to fetch profile + groups server-side; wires Sidebar / MobileTopBar / BottomTabBar with responsive visibility
+- [x] `(shell)/page.tsx` — root dashboard: squad grid or empty state with create/join CTAs (client component reading from Zustand store)
+- [x] `(shell)/[groupId]/page.tsx` — canonical group overview reusing `GroupDetailClient`
+- [x] `(shell)/[groupId]/feed|expenses|polls|plans|events|insights/page.tsx` — 6 placeholder section pages
+- [x] `middleware.ts` — removed `/` redirect to `/groups`; authenticated + auth-route fallback now goes to `/`
+- [x] `GroupDetailClient.tsx` — Overview tab link updated from `/groups/${id}` → `/${id}` (canonical route)
+- [x] `app/page.tsx` — deleted (replaced by `(shell)/page.tsx`)
+
+### Route structure
+
+| URL | File | Purpose |
+|-----|------|---------|
+| `/` | `(shell)/page.tsx` | Root dashboard |
+| `/[groupId]` | `(shell)/[groupId]/page.tsx` | Group overview (canonical) |
+| `/[groupId]/feed` | `(shell)/[groupId]/feed/page.tsx` | Feed placeholder |
+| `/[groupId]/expenses` | `(shell)/[groupId]/expenses/page.tsx` | Expenses placeholder |
+| `/[groupId]/polls` | `(shell)/[groupId]/polls/page.tsx` | Polls placeholder |
+| `/[groupId]/plans` | `(shell)/[groupId]/plans/page.tsx` | Plans placeholder |
+| `/[groupId]/events` | `(shell)/[groupId]/events/page.tsx` | Events placeholder |
+| `/[groupId]/insights` | `(shell)/[groupId]/insights/page.tsx` | Insights placeholder |
+| `/groups` | `(shell)/groups/page.tsx` | Groups list (unchanged) |
+| `/groups/[groupId]/settings` | `(shell)/groups/[groupId]/settings/page.tsx` | Settings (unchanged) |
+
+---
+
+---
+
 # Phase 3: Expense Tracker & Balances
 
 **Goal:** Full expense splitting with equal/percentage/exact splits, real-time balance calculation, balance matrix, and settle-up flow. This is the core value loop.

@@ -29,22 +29,15 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // Root "/" → redirect based on auth state
-  if (pathname === "/") {
-    return NextResponse.redirect(
-      new URL(session ? "/groups" : "/login", request.url),
-    );
-  }
-
   // Unauthenticated + protected route → /login
   if (!session && !isAuthRoute) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Authenticated + auth route → /groups
+  // Authenticated + auth route → /
   if (session && isAuthRoute) {
     const nextPath = request.nextUrl.searchParams.get("next");
-    const safeNextPath = nextPath?.startsWith("/") ? nextPath : "/groups";
+    const safeNextPath = nextPath?.startsWith("/") ? nextPath : "/";
     return NextResponse.redirect(new URL(safeNextPath, request.url));
   }
 

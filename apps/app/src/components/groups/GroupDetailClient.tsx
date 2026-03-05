@@ -21,7 +21,7 @@ export function GroupDetailClient({
 
   const tabs = useMemo(
     () => [
-      { label: "Overview", href: `/groups/${group.id}`, enabled: true },
+      { label: "Overview", href: `/${group.id}`, enabled: true },
       { label: "Expenses", enabled: false },
       { label: "Polls", enabled: false },
       { label: "Plans", enabled: false },

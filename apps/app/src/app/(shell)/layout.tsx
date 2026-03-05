@@ -1,8 +1,11 @@
+import { getProfile } from "@mooch/db";
 import { createClient } from "@mooch/db/server";
 import type { Group } from "@mooch/types";
 import { redirect } from "next/navigation";
+import { BottomTabBar } from "@/components/layout/BottomTabBar";
 import { GroupsProvider } from "@/components/layout/GroupsProvider";
-import { ShellTopNav } from "@/components/layout/ShellTopNav";
+import { MobileTopBar } from "@/components/layout/MobileTopBar";
+import { Sidebar } from "@/components/layout/Sidebar";
 import { createAdminClient } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
@@ -41,11 +44,25 @@ export default async function ShellLayout({
     groups = groupsData ?? [];
   }
 
+  const profile = await getProfile(supabase, session.user.id);
+  const profileData = profile
+    ? { display_name: profile.display_name, photo_url: profile.photo_url }
+    : null;
+
   return (
     <GroupsProvider groups={groups}>
-      <div className="min-h-screen bg-[#F8F6F1]">
-        <ShellTopNav />
-        <main className="pb-8">{children}</main>
+      <div className="flex h-screen overflow-hidden bg-[#F8F6F1]">
+        <Sidebar
+          className="hidden md:flex flex-col w-60 shrink-0"
+          profile={profileData}
+        />
+        <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+          <MobileTopBar className="md:hidden" profile={profileData} />
+          <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
+            {children}
+          </main>
+          <BottomTabBar className="md:hidden" />
+        </div>
       </div>
     </GroupsProvider>
   );
