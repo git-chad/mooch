@@ -14,14 +14,14 @@ export default async function GroupOverviewPage({
 
   const supabase = await createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) redirect("/login");
+  if (!user) redirect("/login");
 
   const group = await getGroupById(supabase, groupId);
 
   if (!group) notFound();
 
-  return <GroupDetailClient group={group} currentUserId={session.user.id} />;
+  return <GroupDetailClient group={group} currentUserId={user.id} />;
 }

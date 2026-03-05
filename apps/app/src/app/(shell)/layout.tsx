@@ -19,17 +19,17 @@ export default async function ShellLayout({
   const supabase = await createClient();
   const admin = createAdminClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) redirect("/login");
+  if (!user) redirect("/login");
 
   let groups: Group[] = [];
 
   const { data: memberships, error: membershipsError } = await admin
     .from("group_members")
     .select("group_id")
-    .eq("user_id", session.user.id);
+    .eq("user_id", user.id);
 
   if (!membershipsError && memberships?.length) {
     const groupIds = Array.from(
@@ -44,7 +44,7 @@ export default async function ShellLayout({
     groups = groupsData ?? [];
   }
 
-  const profile = await getProfile(supabase, session.user.id);
+  const profile = await getProfile(supabase, user.id);
   const profileData = profile
     ? { display_name: profile.display_name, photo_url: profile.photo_url }
     : null;

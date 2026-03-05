@@ -14,10 +14,10 @@ export default async function GroupSettingsPage({
 
   const supabase = await createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect("/login");
   }
 
@@ -28,7 +28,7 @@ export default async function GroupSettingsPage({
   }
 
   const currentMember = group.members.find(
-    (member) => member.user_id === session.user.id,
+    (member) => member.user_id === user.id,
   );
 
   const currentUserRole =
@@ -37,7 +37,7 @@ export default async function GroupSettingsPage({
   return (
     <GroupSettingsClient
       group={group}
-      currentUserId={session.user.id}
+      currentUserId={user.id}
       currentUserRole={currentUserRole}
     />
   );

@@ -10,32 +10,34 @@ const PUBLIC_ROUTES = [
   "/join",
 ];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const response = NextResponse.next({ request });
   const supabase = createMiddlewareClient(request, response);
 
-  // Refresh session — required for Server Components to read up-to-date auth state
+  // Refresh session cookies — required for Server Components to read auth state
+  await supabase.auth.getSession();
+
+  // Verify the user with the Supabase Auth server (secure)
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
 
   const isAuthRoute = AUTH_ROUTES.some((r) => pathname.startsWith(r));
   const isPublicRoute = PUBLIC_ROUTES.some((r) => pathname.startsWith(r));
 
-  // Always allow public routes (OAuth callbacks, etc.)
   if (isPublicRoute) {
     return response;
   }
 
   // Unauthenticated + protected route → /login
-  if (!session && !isAuthRoute) {
+  if (!user && !isAuthRoute) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
   // Authenticated + auth route → /
-  if (session && isAuthRoute) {
+  if (user && isAuthRoute) {
     const nextPath = request.nextUrl.searchParams.get("next");
     const safeNextPath = nextPath?.startsWith("/") ? nextPath : "/";
     return NextResponse.redirect(new URL(safeNextPath, request.url));
@@ -46,10 +48,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except static files and api routes handled
-     * by Next.js internals.
-     */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

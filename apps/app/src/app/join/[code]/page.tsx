@@ -50,8 +50,8 @@ export default async function JoinByCodePage({
 
   const supabase = await createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
   async function handleJoin() {
     "use server";
@@ -64,7 +64,7 @@ export default async function JoinByCodePage({
       );
     }
 
-    redirect(`/groups/${result.groupId}`);
+    redirect(`/${result.groupId}`);
   }
 
   const nextPath = `/join/${normalizedCode}`;
@@ -93,7 +93,7 @@ export default async function JoinByCodePage({
         )}
 
         <div className="mt-6">
-          {!session ? (
+          {!user ? (
             <Link
               href={`/login?next=${encodeURIComponent(nextPath)}`}
               className="inline-flex w-full items-center justify-center rounded-full border border-[#5A9629] px-4 py-2.5 text-sm font-medium text-[#F4FBFF] bg-[var(--action-gradient)] shadow-[var(--shadow-btn-primary)]"

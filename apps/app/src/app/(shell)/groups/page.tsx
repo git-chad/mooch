@@ -10,17 +10,17 @@ export default async function GroupsPage() {
   const supabase = await createClient();
   const admin = createAdminClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect("/login");
   }
 
   const { data: memberships, error: membershipsError } = await admin
     .from("group_members")
     .select("group_id")
-    .eq("user_id", session.user.id);
+    .eq("user_id", user.id);
 
   if (membershipsError || !memberships?.length) {
     return <GroupsPageClient groups={[]} />;

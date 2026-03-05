@@ -12,10 +12,10 @@ export default async function GroupPage({ params }: GroupPageProps) {
 
   const supabase = await createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect("/login");
   }
 
@@ -25,5 +25,5 @@ export default async function GroupPage({ params }: GroupPageProps) {
     notFound();
   }
 
-  return <GroupDetailClient group={group} currentUserId={session.user.id} />;
+  return <GroupDetailClient group={group} currentUserId={user.id} />;
 }

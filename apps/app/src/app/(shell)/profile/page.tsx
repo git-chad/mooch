@@ -6,19 +6,19 @@ import ProfileForm from "./ProfileForm";
 export default async function ProfilePage() {
   const supabase = await createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) redirect("/login");
+  if (!user) redirect("/login");
 
-  const profile = await getProfile(supabase, session.user.id);
+  const profile = await getProfile(supabase, user.id);
 
   if (!profile) redirect("/login");
 
   return (
     <div>
       <h1>Profile</h1>
-      <ProfileForm profile={profile} email={session.user.email ?? ""} />
+      <ProfileForm profile={profile} email={user.email ?? ""} />
     </div>
   );
 }
