@@ -1,0 +1,157 @@
+import { Container } from "@mooch/ui";
+
+// Design system preview — dev only
+// All components are showcased here as they're built
+
+export default function DesignPage() {
+  return (
+    <div className="min-h-screen bg-[#F5F3F0] py-16 font-[family-name:var(--font-geist-sans)]">
+
+      {/* Page header */}
+      <div className="px-8 mb-16">
+        <p className="text-xs font-mono text-[#8C7463] uppercase tracking-widest mb-2">
+          mooch / design system
+        </p>
+        <h1 className="geist-pixel text-4xl text-[#1F2A23]">Components</h1>
+        <p className="mt-2 text-sm text-[#556B82]">
+          Live preview of every component as it's built.
+        </p>
+      </div>
+
+      <Divider label="Layout · Container" />
+
+      {/* Container / site variant */}
+      <section className="mb-12 px-8">
+        <SectionLabel
+          name="Container"
+          variant="site"
+          note="max-w-[1280px] · mx-auto · 12 cols · gap-2 · px-8"
+        />
+        <div className="mt-4 rounded-xl border border-[#D8C8BC] overflow-hidden">
+          <Container variant="site" className="py-3">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: preview grid
+                key={i}
+                className="col-span-1 h-10 rounded-md bg-[#BEE28B]/60 border border-[#A8C97A] flex items-center justify-center"
+              >
+                <span className="text-[10px] font-mono text-[#3C5331]">
+                  {i + 1}
+                </span>
+              </div>
+            ))}
+          </Container>
+          {/* Example content span */}
+          <Container variant="site" className="py-3 border-t border-[#D8C8BC]">
+            <div className="col-span-8 h-10 rounded-md bg-[#D9EEB9] border border-[#C0D99A] flex items-center px-3">
+              <span className="text-xs font-mono text-[#3C5331]">col-span-8</span>
+            </div>
+            <div className="col-span-4 h-10 rounded-md bg-[#ECF7DF] border border-[#D2E5B6] flex items-center px-3">
+              <span className="text-xs font-mono text-[#48603D]">col-span-4</span>
+            </div>
+          </Container>
+          <Container variant="site" className="py-3 border-t border-[#D8C8BC]">
+            <div className="col-span-4 h-10 rounded-md bg-[#D9EEB9] border border-[#C0D99A] flex items-center px-3">
+              <span className="text-xs font-mono text-[#3C5331]">col-span-4</span>
+            </div>
+            <div className="col-span-4 h-10 rounded-md bg-[#D9EEB9] border border-[#C0D99A] flex items-center px-3">
+              <span className="text-xs font-mono text-[#3C5331]">col-span-4</span>
+            </div>
+            <div className="col-span-4 h-10 rounded-md bg-[#D9EEB9] border border-[#C0D99A] flex items-center px-3">
+              <span className="text-xs font-mono text-[#3C5331]">col-span-4</span>
+            </div>
+          </Container>
+        </div>
+      </section>
+
+      {/* Container / app variant */}
+      <section className="mb-12 px-8">
+        <SectionLabel
+          name="Container"
+          variant="app"
+          note="full-width · 12 cols · gap-2 · px-8"
+        />
+        <div className="mt-4 rounded-xl border border-[#D8C8BC] overflow-hidden">
+          <Container variant="app" className="py-3">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div
+                // biome-ignore lint/suspicious/noArrayIndexKey: preview grid
+                key={i}
+                className="col-span-1 h-10 rounded-md bg-[#CCDDF0]/80 border border-[#94B8D5] flex items-center justify-center"
+              >
+                <span className="text-[10px] font-mono text-[#3A536B]">
+                  {i + 1}
+                </span>
+              </div>
+            ))}
+          </Container>
+          <Container variant="app" className="py-3 border-t border-[#D8C8BC]">
+            <div className="col-span-3 h-10 rounded-md bg-[#EEF3F8] border border-[#CED9E3] flex items-center px-3">
+              <span className="text-xs font-mono text-[#3A536B]">col-span-3 · sidebar</span>
+            </div>
+            <div className="col-span-9 h-10 rounded-md bg-[#DDE6EF] border border-[#B8C6D4] flex items-center px-3">
+              <span className="text-xs font-mono text-[#3A536B]">col-span-9 · main content</span>
+            </div>
+          </Container>
+        </div>
+      </section>
+
+      <Divider label="Coming soon" />
+
+      {[
+        "Button",
+        "Modal",
+        "Sheet",
+        "Toast",
+        "Avatar",
+        "Badge",
+        "Chip",
+        "Input",
+        "Toggle",
+        "NavTabs",
+      ].map((name) => (
+        <section key={name} className="mb-2 px-8">
+          <div className="rounded-xl border border-dashed border-[#D8C8BC] px-6 py-4 flex items-center gap-3">
+            <span className="text-xs font-mono text-[#8C7463]">—</span>
+            <span className="text-sm text-[#6F859B]">{name}</span>
+          </div>
+        </section>
+      ))}
+
+      <div className="h-24" />
+    </div>
+  );
+}
+
+// ─── local helpers ────────────────────────────────────────────────────────────
+
+function Divider({ label }: { label: string }) {
+  return (
+    <div className="px-8 mb-6 mt-2 flex items-center gap-4">
+      <span className="text-[11px] font-mono text-[#8C7463] uppercase tracking-widest whitespace-nowrap">
+        {label}
+      </span>
+      <div className="h-px flex-1 bg-[#D8C8BC]" />
+    </div>
+  );
+}
+
+function SectionLabel({
+  name,
+  variant,
+  note,
+}: {
+  name: string;
+  variant: string;
+  note: string;
+}) {
+  return (
+    <div className="flex items-baseline gap-3">
+      <span className="text-sm font-medium text-[#2B3D51]">{name}</span>
+      <span className="text-xs font-mono text-[#7FBE44] bg-[#F1F9E8] border border-[#C7DEB0] rounded-full px-2 py-0.5">
+        {variant}
+      </span>
+      <span className="text-xs text-[#6F859B] font-mono">{note}</span>
+    </div>
+  );
+}

@@ -46,6 +46,7 @@ Zustand stores that need to be built alongside components.
 
 ### Primitives / UI Kit (`packages/ui`)
 
+- [x] **`Container`** — `site` variant: `max-w-[1280px]`, `mx-auto`, 12-col grid, `gap-2`, `px-8`. `app` variant: same grid, no max-width. Accepts `as` prop. Uses `cn`.
 - [ ] **`Button`** — Primary / Secondary / Ghost variants; tactile press scale + shadow (design system 3D style); ✦ TextMorph for label transitions (e.g. "Save" → "Saving…" → "Saved"); 📳 haptic on primary press
 - [ ] **`Modal`** — Base overlay; backdrop blur; close-on-Escape and backdrop tap; slide-up on mobile, fade-scale on desktop (spring physics, not tween)
 - [ ] **`Sheet`** — Bottom-sheet; swipe-to-dismiss with velocity detection; 📳 haptic on open and on dismiss snap
