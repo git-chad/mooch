@@ -5,6 +5,7 @@ import {
   BalanceTextMorphDemo,
 } from "./TextMorphDemo";
 import { ModalDemo } from "./ModalDemo";
+import { SheetDemo } from "./SheetDemo";
 
 // Design system preview — dev only
 // All components are showcased here as they're built
@@ -200,6 +201,16 @@ export default function DesignPage() {
           </div>
         </div>
 
+      </section>
+
+      {/* ── Sheet ────────────────────────────────────────────────────────── */}
+      <Divider label="Overlay · Sheet" />
+
+      <section className="mb-12 px-8">
+        <SectionLabel name="Sheet" variant="bottom-sheet" note="slide-up · drag handle · swipe or flick to dismiss" />
+        <div className="mt-5">
+          <SheetDemo />
+        </div>
       </section>
 
       {/* ── Modal ────────────────────────────────────────────────────────── */}

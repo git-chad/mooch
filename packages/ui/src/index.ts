@@ -1,6 +1,8 @@
 export { Button } from "./components/Button";
 export { Container } from "./components/Container";
 export { Modal } from "./components/Modal";
+export { Sheet } from "./components/Sheet";
+export type { SheetVariant } from "./components/Sheet";
 export { ConfirmDialog } from "./components/ConfirmDialog";
 export { Avatar } from "./components/Avatar";
 export type { AvatarSize } from "./components/Avatar";

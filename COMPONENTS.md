@@ -49,10 +49,11 @@ Zustand stores that need to be built alongside components.
 - [x] **`Container`** — `site` variant: `max-w-[1280px]`, `mx-auto`, 12-col grid, `gap-2`, `px-8`. `app` variant: same grid, no max-width. Accepts `as` prop. Uses `cn`.
 - [x] **`Button`** — Primary / Secondary / Ghost variants; tactile press scale + shadow (design system 3D style); ✦ TextMorph for label transitions (e.g. "Save" → "Saving…" → "Saved"); 📳 haptic on primary press
 - [x] **`Modal`** — Base overlay; no backdrop blur; close-on-Escape and backdrop tap; slide-up on mobile, fade-scale on desktop
-- [ ] **`Sheet`** — Bottom-sheet; swipe-to-dismiss with velocity detection; 📳 haptic on open and on dismiss snap
+- [x] **`Sheet`** — Bottom-sheet; swipe-to-dismiss with velocity detection; `default` + `receipt` variant (scalloped edges, Geist Pixel header, Geist Mono body, dashed perforations); 📳 haptic on open and on dismiss snap
 - [x] **`ConfirmDialog`** — Destructive-action modal; shakes on dismiss attempt; 📳 heavy haptic on destructive confirm
 - [ ] **`Toast`** — Success / error / info; lime aero style; auto-dismiss with progress bar; 🔊 notification sound on show; 📳 light haptic
-- [x] **`Avatar`** — Circular user photo with fallback initials; size variants (`sm`, `md`, `lg`); subtle border per design system
+- [x] **`Avatar`** — Circular user photo with fallback initials; size variants (`sm`, `md`, `lg`); gradient border + gloss inner shadow; name tooltip
+- [x] **`Tooltip`** — Warm white glass surface; Base UI Tooltip; `TooltipProvider` in root layout; 120ms fade
 - [ ] **`Badge`** — Role (admin/member), status (settled, closed, past), role-color per design system
 - [ ] **`Chip`** — Pill label: tags, categories, emoji+name group chips; press state
 - [ ] **`EmptyState`** — SVG illustration + heading + body + CTA button; every section has its own copy/illustration
