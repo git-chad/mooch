@@ -1,41 +1,45 @@
 "use client";
 
+import { Tooltip } from "@base-ui-components/react";
 import { Button } from "@mooch/ui";
+import { motion } from "motion/react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import { GroupIcon } from "./group-icon";
 import { InviteSheet } from "./InviteSheet";
 import { MemberList } from "./MemberList";
 import type { GroupWithMembers } from "./types";
+import { Settings } from "lucide-react";
 
 type GroupDetailClientProps = {
   group: GroupWithMembers;
   currentUserId: string;
 };
 
+const NAV_TABS = [
+  { label: "Overview", slug: "" },
+  { label: "Expenses", slug: "expenses" },
+  { label: "Polls", slug: "polls" },
+  { label: "Plans", slug: "plans" },
+  { label: "Feed", slug: "feed" },
+  { label: "Events", slug: "events" },
+  { label: "Insights", slug: "insights" },
+] as const;
+
+const ENABLED_SLUGS = new Set([""]);
+
 export function GroupDetailClient({
   group,
   currentUserId,
 }: GroupDetailClientProps) {
   const [inviteOpen, setInviteOpen] = useState(false);
+  const pathname = usePathname();
 
-  const tabs = useMemo(
-    () => [
-      { label: "Overview", href: `/${group.id}`, enabled: true },
-      { label: "Expenses", enabled: false },
-      { label: "Polls", enabled: false },
-      { label: "Plans", enabled: false },
-      { label: "Feed", enabled: false },
-      { label: "Events", enabled: false },
-      { label: "Insights", enabled: false },
-      {
-        label: "Settings",
-        href: `/groups/${group.id}/settings`,
-        enabled: true,
-      },
-    ],
-    [group.id],
-  );
+  const activeSlug = useMemo(() => {
+    const after = pathname.replace(`/${group.id}`, "").replace(/^\//, "");
+    return after;
+  }, [pathname, group.id]);
 
   return (
     <section className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
@@ -64,31 +68,86 @@ export function GroupDetailClient({
         </Button>
       </header>
 
-      <nav className="flex gap-2 overflow-x-auto rounded-xl border border-[#EDE3DA] bg-[#F8F6F1] p-2">
-        {tabs.map((tab) =>
-          tab.enabled && tab.href ? (
-            <Link
-              key={tab.label}
-              href={tab.href}
-              className={[
-                "shrink-0 rounded-full border px-3 py-2 text-xs font-medium font-sans",
-                tab.label === "Overview"
-                  ? "border-accent-strong bg-accent-strong text-btn-primary-fg"
-                  : "border-edge bg-surface text-ink-label",
-              ].join(" ")}
-            >
-              {tab.label}
-            </Link>
-          ) : (
-            <span
-              key={tab.label}
-              className="shrink-0 rounded-full border border-[#E5DED7] bg-[#F3EEE8] px-3 py-2 text-xs font-medium text-[#A19184] font-sans"
-              aria-disabled="true"
-            >
-              {tab.label}
-            </span>
-          ),
-        )}
+      <nav className="flex items-center gap-0.5 overflow-x-auto rounded-[14px] border border-edge-subtle bg-[#F2EDE7] p-1">
+        {NAV_TABS.map((tab) => {
+          const isActive = activeSlug === tab.slug;
+          const isEnabled = ENABLED_SLUGS.has(tab.slug);
+          const href = tab.slug ? `/${group.id}/${tab.slug}` : `/${group.id}`;
+
+          return (
+            <div key={tab.label} className="relative shrink-0">
+              {isActive && (
+                <motion.div
+                  layoutId="tab-indicator"
+                  className="absolute inset-0 rounded-[10px] bg-surface"
+                  style={{
+                    boxShadow:
+                      "inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 0 rgba(200,184,168,0.45), 0 1px 3px rgba(0,0,0,0.07)",
+                  }}
+                  transition={{ type: "spring", stiffness: 400, damping: 35 }}
+                />
+              )}
+              {isEnabled ? (
+                <Link
+                  href={href}
+                  className={[
+                    "relative z-10 block rounded-[10px] px-3.5 py-1.5 text-xs font-medium font-sans transition-colors duration-150",
+                    isActive ? "text-ink" : "text-ink-sub hover:text-ink-label",
+                  ].join(" ")}
+                >
+                  {tab.label}
+                </Link>
+              ) : (
+                <span className="relative z-10 block rounded-[10px] px-3.5 py-1.5 text-xs font-medium font-sans text-ink-placeholder cursor-default select-none">
+                  {tab.label}
+                </span>
+              )}
+            </div>
+          );
+        })}
+
+        {/* Spacer pushes settings to the right */}
+        <div className="flex-1" />
+
+        {/* Settings — cog icon with tooltip */}
+        <div className="relative shrink-0">
+          {activeSlug === "settings" && (
+            <motion.div
+              layoutId="tab-indicator"
+              className="absolute inset-0 rounded-[10px] bg-surface"
+              style={{
+                boxShadow:
+                  "inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 0 rgba(200,184,168,0.45), 0 1px 3px rgba(0,0,0,0.07)",
+              }}
+              transition={{ type: "spring", stiffness: 400, damping: 35 }}
+            />
+          )}
+          <Tooltip.Root>
+            <Tooltip.Trigger
+              render={
+                <Link
+                  href={`/groups/${group.id}/settings`}
+                  className={[
+                    "relative z-10 flex items-center justify-center rounded-[10px] w-8 h-8 transition-colors duration-150",
+                    activeSlug === "settings"
+                      ? "text-ink"
+                      : "text-ink-sub hover:text-ink-label",
+                  ].join(" ")}
+                  aria-label="Settings"
+                >
+                  <Settings size={16} className="shrink-0" />
+                </Link>
+              }
+            />
+            <Tooltip.Portal>
+              <Tooltip.Positioner sideOffset={6}>
+                <Tooltip.Popup className="avatar-tooltip">
+                  Settings
+                </Tooltip.Popup>
+              </Tooltip.Positioner>
+            </Tooltip.Portal>
+          </Tooltip.Root>
+        </div>
       </nav>
 
       <div className="space-y-3">
