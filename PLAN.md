@@ -713,7 +713,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
   - Submit → receipt upload (if any) → `addExpense(tabId, ...)` action; animated step transitions
   - Now receives `tabId` prop instead of `groupId` for expense creation
 
-- [ ] 3.4.8 — `apps/app/src/app/(shell)/[groupId]/expenses/[tabId]/[expenseId]/page.tsx`:
+- [x] 3.4.8 — `apps/app/src/app/(shell)/[groupId]/expenses/[tabId]/[expenseId]/page.tsx`:
   - Full breakdown (all participants + shares)
   - Edit button (creator/admin) → pre-filled edit modal
   - Delete with confirm dialog
@@ -727,7 +727,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 #### Tab Receipt
 
-- [ ] 3.4.11 — `apps/app/src/components/expenses/TabReceipt.tsx`:
+- [x] 3.4.11 — `apps/app/src/components/expenses/TabReceipt.tsx`:
   - Opens `Sheet` component in `receipt` variant
   - Receipt content: tab name as "store name", date range, all expenses listed (description + amount + paid by), divider, per-person totals, balance summary (who owes who), grand total
   - "Download as image" button — uses `html-to-image` to capture the receipt DOM and trigger a PNG download
@@ -746,15 +746,22 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 - [ ] 3.5.9 — Per-tab settle-up: settle between two users within a tab → tab debts clear.
 - [ ] 3.5.10 — Global settle-up: settle between two users across tabs → all relevant tab debts clear.
 - [ ] 3.5.11 — Realtime: user A adds expense → user B (other browser tab) sees it without refresh.
-- [ ] 3.5.12 — Edit expense → amounts and participants update correctly.
-- [ ] 3.5.13 — Delete expense → balances recalculate.
-- [ ] 3.5.14 — Close tab → cannot add new expenses; can still view and generate receipt.
-- [ ] 3.5.15 — Tab receipt renders correctly and downloads as PNG.
+- [ ] 3.5.12 — Edit expense → amounts and participants update correctly. Implemented via expense detail route + shared edit modal; manual browser verification pending.
+- [ ] 3.5.13 — Delete expense → balances recalculate. Implemented via expense detail route + existing delete action; manual browser verification pending.
+- [ ] 3.5.14 — Close tab → cannot add new expenses; can still view and generate receipt. Receipt access path is implemented from tab detail; manual browser verification pending.
+- [ ] 3.5.15 — Tab receipt renders correctly and downloads as PNG. Implemented with receipt `Sheet` variant + `html-to-image`; manual browser verification pending.
 - [ ] 3.5.16 — Non-member cannot read tabs or expenses (RLS).
 
 ---
 
 **Phase 3 Testing Checklist (must all pass before APPROVED):**
+
+Implementation coverage added in this pass:
+- Expense detail page with edit/delete flow
+- Receipt sheet from tab detail
+- PNG export for receipts
+
+These checklist items stay unchecked until browser/manual verification is completed.
 
 - [ ] Tab CRUD works (create, edit, close, reopen, delete empty)
 - [ ] Expenses always live inside a tab

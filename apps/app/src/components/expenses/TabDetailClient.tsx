@@ -10,6 +10,7 @@ import { AddExpenseModal } from "./AddExpenseModal";
 import { BalanceCard } from "./BalanceCard";
 import { BalanceMatrix } from "./BalanceMatrix";
 import { ExpenseList } from "./ExpenseList";
+import { TabReceipt } from "./TabReceipt";
 
 type Member = GroupMember & { profile: Profile };
 type GroupWithMembers = Group & { members: Member[] };
@@ -33,6 +34,7 @@ export function TabDetailClient({
 }: Props) {
   const [view, setView] = useState<ViewTab>("activity");
   const [addOpen, setAddOpen] = useState(false);
+  const [receiptOpen, setReceiptOpen] = useState(false);
 
   const isClosed = tab.status === "closed";
 
@@ -67,16 +69,26 @@ export function TabDetailClient({
             </div>
           </div>
 
-          {!isClosed && (
+          <div className="flex items-center gap-2">
             <Button
               type="button"
-              variant="primary"
+              variant="secondary"
               size="sm"
-              onClick={() => setAddOpen(true)}
+              onClick={() => setReceiptOpen(true)}
             >
-              + Add expense
+              View receipt
             </Button>
-          )}
+            {!isClosed && (
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={() => setAddOpen(true)}
+              >
+                + Add expense
+              </Button>
+            )}
+          </div>
         </header>
 
         {/* Tab switcher */}
@@ -116,6 +128,7 @@ export function TabDetailClient({
         {/* Content */}
         {view === "activity" ? (
           <ExpenseList
+            groupId={groupId}
             tabId={tabId}
             members={group.members}
             currentUserId={currentUserId}
@@ -147,6 +160,14 @@ export function TabDetailClient({
           tabId={tabId}
           members={group.members}
           currentUserId={currentUserId}
+          groupCurrency={group.currency}
+          locale={group.locale}
+        />
+        <TabReceipt
+          open={receiptOpen}
+          onOpenChange={setReceiptOpen}
+          tab={tab}
+          members={group.members}
           groupCurrency={group.currency}
           locale={group.locale}
         />

@@ -2,6 +2,7 @@
 
 import { useExpenseStore } from "@mooch/stores";
 import type {
+  Expense,
   ExpenseCategory,
   GroupMember,
   Profile,
@@ -9,9 +10,13 @@ import type {
 } from "@mooch/types";
 import { Avatar, Button, IconPicker, Modal, Text } from "@mooch/ui";
 import { AnimatePresence, motion } from "motion/react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { TextMorph } from "torph/react";
-import { addExpense, uploadReceiptPhoto } from "@/app/actions/expenses";
+import {
+  addExpense,
+  updateExpense,
+  uploadReceiptPhoto,
+} from "@/app/actions/expenses";
 import { CATEGORY_CONFIG, formatCurrency } from "@/lib/expenses";
 
 type Member = GroupMember & { profile: Profile };
@@ -25,6 +30,10 @@ type Props = {
   currentUserId: string;
   groupCurrency: string;
   locale: string;
+  mode?: "create" | "edit";
+  expenseId?: string;
+  initialExpense?: ExpenseEditorInitialData;
+  onSaved?: () => void;
 };
 
 type Participant = {
@@ -34,12 +43,124 @@ type Participant = {
   exact: number;
 };
 
+export type ExpenseEditorInitialData = Pick<
+  Expense,
+  | "amount"
+  | "currency"
+  | "description"
+  | "notes"
+  | "category"
+  | "custom_category"
+  | "paid_by"
+  | "split_type"
+  | "photo_url"
+> & {
+  participants: { user_id: string; share_amount: number }[];
+};
+
+type FormState = {
+  amount: string;
+  currency: string;
+  description: string;
+  notes: string;
+  category: ExpenseCategory;
+  customCategory: string;
+  paidBy: string;
+  splitType: SplitType;
+  participants: Participant[];
+};
+
 const SUPPORTED_CURRENCIES = ["ARS", "USD", "EUR", "BRL", "GBP"];
 
 const CATEGORIES = Object.entries(CATEGORY_CONFIG) as [
   ExpenseCategory,
   { emoji: string; label: string },
 ][];
+
+function buildDefaultParticipants(members: Member[]): Participant[] {
+  const percentage =
+    members.length > 0 ? Math.round((100 / members.length) * 10) / 10 : 0;
+
+  return members.map((member) => ({
+    user_id: member.user_id,
+    included: true,
+    percentage,
+    exact: 0,
+  }));
+}
+
+function buildParticipantsFromExisting(
+  members: Member[],
+  splitType: SplitType,
+  totalAmount: number,
+  participants: { user_id: string; share_amount: number }[],
+): Participant[] {
+  const sharesByUser = new Map(
+    participants.map((participant) => [
+      participant.user_id,
+      Number(participant.share_amount),
+    ]),
+  );
+
+  return members.map((member) => {
+    const share = sharesByUser.get(member.user_id) ?? 0;
+
+    return {
+      user_id: member.user_id,
+      included: share > 0,
+      percentage:
+        splitType === "percentage" && totalAmount > 0
+          ? Math.round((share / totalAmount) * 100 * 10) / 10
+          : 0,
+      exact: splitType === "exact" ? share : 0,
+    };
+  });
+}
+
+function buildInitialFormState({
+  members,
+  currentUserId,
+  groupCurrency,
+  mode,
+  initialExpense,
+}: {
+  members: Member[];
+  currentUserId: string;
+  groupCurrency: string;
+  mode: "create" | "edit";
+  initialExpense?: ExpenseEditorInitialData;
+}): FormState {
+  if (mode === "edit" && initialExpense) {
+    return {
+      amount: String(initialExpense.amount),
+      currency: initialExpense.currency,
+      description: initialExpense.description,
+      notes: initialExpense.notes ?? "",
+      category: initialExpense.category,
+      customCategory: initialExpense.custom_category ?? "",
+      paidBy: initialExpense.paid_by,
+      splitType: initialExpense.split_type,
+      participants: buildParticipantsFromExisting(
+        members,
+        initialExpense.split_type,
+        Number(initialExpense.amount),
+        initialExpense.participants,
+      ),
+    };
+  }
+
+  return {
+    amount: "",
+    currency: groupCurrency,
+    description: "",
+    notes: "",
+    category: "bar",
+    customCategory: "",
+    paidBy: currentUserId,
+    splitType: "equal",
+    participants: buildDefaultParticipants(members),
+  };
+}
 
 export function AddExpenseModal({
   open,
@@ -50,33 +171,46 @@ export function AddExpenseModal({
   currentUserId,
   groupCurrency,
   locale,
+  mode = "create",
+  expenseId,
+  initialExpense,
+  onSaved,
 }: Props) {
+  const isEditMode = mode === "edit";
   const upsertExpense = useExpenseStore((s) => s.upsertExpense);
+  const initialFormState = buildInitialFormState({
+    members,
+    currentUserId,
+    groupCurrency,
+    mode,
+    initialExpense,
+  });
 
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1);
 
   // Step 1
-  const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState(groupCurrency);
-  const [description, setDescription] = useState("");
-  const [notes, setNotes] = useState("");
+  const [amount, setAmount] = useState(initialFormState.amount);
+  const [currency, setCurrency] = useState(initialFormState.currency);
+  const [description, setDescription] = useState(initialFormState.description);
+  const [notes, setNotes] = useState(initialFormState.notes);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
 
   // Step 2
-  const [category, setCategory] = useState<ExpenseCategory>("bar");
-  const [customCategory, setCustomCategory] = useState<string>("");
+  const [category, setCategory] = useState<ExpenseCategory>(
+    initialFormState.category,
+  );
+  const [customCategory, setCustomCategory] = useState<string>(
+    initialFormState.customCategory,
+  );
 
   // Step 3
-  const [paidBy, setPaidBy] = useState(currentUserId);
-  const [splitType, setSplitType] = useState<SplitType>("equal");
-  const [participants, setParticipants] = useState<Participant[]>(() =>
-    members.map((m) => ({
-      user_id: m.user_id,
-      included: true,
-      percentage: Math.round(100 / members.length),
-      exact: 0,
-    })),
+  const [paidBy, setPaidBy] = useState(initialFormState.paidBy);
+  const [splitType, setSplitType] = useState<SplitType>(
+    initialFormState.splitType,
+  );
+  const [participants, setParticipants] = useState<Participant[]>(
+    initialFormState.participants,
   );
 
   const [loading, setLoading] = useState(false);
@@ -85,28 +219,36 @@ export function AddExpenseModal({
   const receiptInputRef = useRef<HTMLInputElement>(null);
 
   function resetState() {
+    const next = buildInitialFormState({
+      members,
+      currentUserId,
+      groupCurrency,
+      mode,
+      initialExpense,
+    });
+
     setStep(1);
     setDirection(1);
-    setAmount("");
-    setCurrency(groupCurrency);
-    setDescription("");
-    setNotes("");
+    setAmount(next.amount);
+    setCurrency(next.currency);
+    setDescription(next.description);
+    setNotes(next.notes);
     setReceiptFile(null);
-    setCategory("bar");
-    setCustomCategory("");
-    setPaidBy(currentUserId);
-    setSplitType("equal");
-    setParticipants(
-      members.map((m) => ({
-        user_id: m.user_id,
-        included: true,
-        percentage: Math.round(100 / members.length),
-        exact: 0,
-      })),
-    );
+    setCategory(next.category);
+    setCustomCategory(next.customCategory);
+    setPaidBy(next.paidBy);
+    setSplitType(next.splitType);
+    setParticipants(next.participants);
     setLoading(false);
     setError(null);
   }
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: resetting from incoming props is intentional here
+  useEffect(() => {
+    if (open) {
+      resetState();
+    }
+  }, [open, mode, initialExpense, members, currentUserId, groupCurrency]);
 
   function goNext() {
     setDirection(1);
@@ -175,6 +317,11 @@ export function AddExpenseModal({
   }
 
   async function handleSubmit() {
+    if (isEditMode && !expenseId) {
+      setError("Expense id is required.");
+      return;
+    }
+
     const builtParticipants = buildParticipants();
     if (!builtParticipants) {
       setError(getStep3Error() ?? "Invalid split.");
@@ -195,6 +342,41 @@ export function AddExpenseModal({
         return;
       }
       photoUrl = uploadResult.path;
+    }
+
+    if (isEditMode) {
+      const currentExpenseId = expenseId;
+      if (!currentExpenseId) {
+        setLoading(false);
+        setError("Expense id is required.");
+        return;
+      }
+
+      const result = await updateExpense(currentExpenseId, {
+        description: description.trim(),
+        notes: notes.trim() ? notes.trim() : null,
+        amount: Number.parseFloat(amount),
+        currency,
+        category,
+        custom_category:
+          category === "other" && customCategory ? customCategory : null,
+        paid_by: paidBy,
+        split_type: splitType,
+        participants: builtParticipants,
+        ...(photoUrl ? { photo_url: photoUrl } : {}),
+      });
+
+      setLoading(false);
+
+      if (result && "error" in result) {
+        setError(result.error);
+        return;
+      }
+
+      onOpenChange(false);
+      resetState();
+      onSaved?.();
+      return;
     }
 
     const result = await addExpense(groupId, tabId, {
@@ -221,6 +403,7 @@ export function AddExpenseModal({
     upsertExpense(result.expense);
     onOpenChange(false);
     resetState();
+    onSaved?.();
   }
 
   const stepTitles = ["Amount", "Category", "Split"];
@@ -232,7 +415,7 @@ export function AddExpenseModal({
         onOpenChange(next);
         if (!next) resetState();
       }}
-      title="Add expense"
+      title={isEditMode ? "Edit expense" : "Add expense"}
       description={`Step ${step} of 3 — ${stepTitles[step - 1]}`}
       size="md"
     >
@@ -272,7 +455,9 @@ export function AddExpenseModal({
                 receiptFile={receiptFile}
                 setReceiptFile={setReceiptFile}
                 receiptInputRef={receiptInputRef}
+                existingReceipt={Boolean(initialExpense?.photo_url)}
                 groupCurrency={groupCurrency}
+                isEditMode={isEditMode}
               />
             )}
             {step === 2 && (
@@ -337,7 +522,15 @@ export function AddExpenseModal({
             loading={loading}
             onClick={handleSubmit}
           >
-            <TextMorph>{loading ? "Adding..." : "Add expense"}</TextMorph>
+            <TextMorph>
+              {loading
+                ? isEditMode
+                  ? "Saving..."
+                  : "Adding..."
+                : isEditMode
+                  ? "Save changes"
+                  : "Add expense"}
+            </TextMorph>
           </Button>
         )}
       </div>
@@ -361,7 +554,9 @@ function Step1({
   receiptFile,
   setReceiptFile,
   receiptInputRef,
+  existingReceipt,
   groupCurrency,
+  isEditMode,
 }: {
   amount: string;
   setAmount: (v: string) => void;
@@ -374,7 +569,9 @@ function Step1({
   receiptFile: File | null;
   setReceiptFile: (f: File | null) => void;
   receiptInputRef: React.RefObject<HTMLInputElement | null>;
+  existingReceipt: boolean;
   groupCurrency: string;
+  isEditMode: boolean;
 }) {
   return (
     <div className="space-y-4">
@@ -485,6 +682,25 @@ function Step1({
               className="text-[12px] text-ink-sub hover:text-ink px-2 py-1"
             >
               Remove
+            </button>
+          </div>
+        ) : existingReceipt ? (
+          <div className="flex items-center gap-2">
+            <div
+              className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl text-[13px] text-ink-sub"
+              style={{ background: "#F7F2ED", border: "1px solid #DCCBC0" }}
+            >
+              <span>📎</span>
+              <span className="truncate">
+                {isEditMode ? "Current receipt attached" : "Receipt attached"}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => receiptInputRef.current?.click()}
+              className="text-[12px] text-ink-sub hover:text-ink px-2 py-1"
+            >
+              Replace
             </button>
           </div>
         ) : (

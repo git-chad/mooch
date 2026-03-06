@@ -10,6 +10,7 @@ import { ExpenseCard } from "./ExpenseCard";
 type Member = GroupMember & { profile: Profile };
 
 type Props = {
+  groupId: string;
   tabId: string;
   members: Member[];
   currentUserId: string;
@@ -18,6 +19,7 @@ type Props = {
 };
 
 export function ExpenseList({
+  groupId,
   tabId,
   members,
   currentUserId,
@@ -62,6 +64,8 @@ export function ExpenseList({
       {expenses.map((expense) => (
         <ExpenseCard
           key={expense.id}
+          groupId={groupId}
+          tabId={tabId}
           expense={expense}
           members={members}
           currentUserId={currentUserId}

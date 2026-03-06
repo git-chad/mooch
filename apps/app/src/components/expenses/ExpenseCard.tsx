@@ -2,11 +2,14 @@
 
 import type { Expense, GroupMember, Profile } from "@mooch/types";
 import { Avatar, LucideIconByName, Text } from "@mooch/ui";
+import Link from "next/link";
 import { CATEGORY_CONFIG, formatCurrency, relativeTime } from "@/lib/expenses";
 
 type Member = GroupMember & { profile: Profile };
 
 type Props = {
+  groupId: string;
+  tabId: string;
   expense: Expense;
   members: Member[];
   currentUserId: string;
@@ -15,6 +18,8 @@ type Props = {
 };
 
 export function ExpenseCard({
+  groupId,
+  tabId,
   expense,
   members,
   currentUserId,
@@ -34,7 +39,8 @@ export function ExpenseCard({
       : { emoji: "📦", label: "Other" };
 
   return (
-    <div
+    <Link
+      href={`/${groupId}/expenses/${tabId}/${expense.id}`}
       className="flex items-center gap-3 px-4 py-3 rounded-2xl transition-colors cursor-pointer"
       style={{
         background:
@@ -100,6 +106,6 @@ export function ExpenseCard({
           size="sm"
         />
       </div>
-    </div>
+    </Link>
   );
 }

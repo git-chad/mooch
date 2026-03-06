@@ -1,13 +1,13 @@
 "use server";
 
-import { createAdminClient } from "@/lib/supabase-admin";
-import {
-  recalculateBalances,
-  recalculateAllBalances,
-} from "@/lib/recalculate-balances";
 import { createClient } from "@mooch/db/server";
 import type { Expense, ExpenseCategory, SplitType } from "@mooch/types";
 import { revalidatePath } from "next/cache";
+import {
+  recalculateAllBalances,
+  recalculateBalances,
+} from "@/lib/recalculate-balances";
+import { createAdminClient } from "@/lib/supabase-admin";
 
 const RECEIPT_MAX_SIZE_BYTES = 5 * 1024 * 1024;
 const RECEIPT_ALLOWED_TYPES = new Set([
@@ -31,8 +31,10 @@ async function ensureReceiptsBucket() {
 
   const isNotFound =
     bucketError?.message?.toLowerCase().includes("not found") ||
-    (bucketError as { statusCode?: number | string } | null)?.statusCode === 404 ||
-    (bucketError as { statusCode?: number | string } | null)?.statusCode === "404";
+    (bucketError as { statusCode?: number | string } | null)?.statusCode ===
+      404 ||
+    (bucketError as { statusCode?: number | string } | null)?.statusCode ===
+      "404";
 
   if (bucketError && !isNotFound) return;
 
@@ -124,8 +126,7 @@ export async function addExpense(
     .eq("id", tabId)
     .single();
 
-  if (!tab || tab.group_id !== groupId)
-    return { error: "Tab not found" };
+  if (!tab || tab.group_id !== groupId) return { error: "Tab not found" };
   if (tab.status === "closed")
     return { error: "Cannot add expenses to a closed tab" };
 
@@ -142,7 +143,8 @@ export async function addExpense(
       converted_amount: data.converted_amount ?? null,
       rate_fetched_at: data.rate_fetched_at ?? null,
       category: data.category,
-      custom_category: data.category === "other" ? (data.custom_category ?? null) : null,
+      custom_category:
+        data.category === "other" ? (data.custom_category ?? null) : null,
       paid_by: data.paid_by,
       split_type: data.split_type,
       photo_url: data.photo_url ?? null,
@@ -179,9 +181,13 @@ export async function addExpense(
 // Update expense
 // ─────────────────────────────────────────────
 
-type UpdateExpenseInput = Partial<
-  Omit<AddExpenseInput, "participants">
+type UpdateExpenseInput = Omit<
+  Partial<AddExpenseInput>,
+  "participants" | "notes" | "custom_category" | "photo_url"
 > & {
+  notes?: string | null;
+  custom_category?: string | null;
+  photo_url?: string | null;
   participants?: ParticipantInput[];
 };
 
@@ -219,9 +225,19 @@ export async function updateExpense(
   const { participants, ...fields } = data;
 
   if (Object.keys(fields).length > 0) {
+    const updatePayload: Record<string, string | number | null> = {
+      updated_at: new Date().toISOString(),
+    };
+
+    for (const [key, value] of Object.entries(fields)) {
+      if (value !== undefined) {
+        updatePayload[key] = value as string | number | null;
+      }
+    }
+
     const { error } = await admin
       .from("expenses")
-      .update({ ...fields, updated_at: new Date().toISOString() })
+      .update(updatePayload)
       .eq("id", expenseId);
 
     if (error) return { error: error.message };
@@ -283,10 +299,7 @@ export async function deleteExpense(
   if (expense.created_by !== user.id && member?.role !== "admin")
     return { error: "Only the creator or an admin can delete this expense" };
 
-  const { error } = await admin
-    .from("expenses")
-    .delete()
-    .eq("id", expenseId);
+  const { error } = await admin.from("expenses").delete().eq("id", expenseId);
 
   if (error) return { error: error.message };
 
@@ -329,7 +342,9 @@ export async function applyExchangeRate(
     .single();
 
   if (expense.created_by !== user.id && member?.role !== "admin")
-    return { error: "Only the creator or an admin can update the exchange rate" };
+    return {
+      error: "Only the creator or an admin can update the exchange rate",
+    };
 
   const converted_amount =
     Math.round(Number(expense.amount) * exchangeRate * 100) / 100;
