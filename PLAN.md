@@ -590,27 +590,36 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
   3. Compute net balance per user (owed − owing − settlements)
   4. Greedy simplification: match largest creditor with largest debtor
   5. Delete existing balances for the group, insert fresh rows via service-role client
-- [ ] 3.1.3 — Add `Expense`, `ExpenseParticipant`, `Balance`, `SettlementPayment` types to `packages/types`.
+- [x] 3.1.3 — Added `ExpenseCategory`, `SplitType`, `Expense`, `ExpenseParticipant`, `Balance`, `SettlementPayment` types to `packages/types/src/index.ts`.
 
 ### 3.2 — Expense Queries & Server Actions
 
-- [ ] 3.2.1 — `packages/db/src/queries/expenses.ts`:
-  - `getExpenses(supabase, groupId, cursor?)` — paginated desc by `created_at`
-  - `getExpenseById(supabase, expenseId)` — with participants + profile data
-  - `getBalances(supabase, groupId)` — all simplified balances with profile data
-  - `getUserNetBalance(supabase, groupId, userId)` — total owed/owing for current user
-- [ ] 3.2.2 — `apps/app/src/app/actions/expenses.ts` (Server Actions):
-  - `addExpense(groupId, data)` — inserts expense + participants (triggers balance recalc)
-  - `updateExpense(expenseId, data)` — updates expense + participants
-  - `deleteExpense(expenseId)` — only creator or admin
-  - `settleExpense(expenseId)` — marks as settled
-  - `settleAllBetween(groupId, fromUser, toUser)` — settle all debts between two users
+- [x] 3.2.1 — `packages/db/src/queries/expenses.ts`:
+  - `getExpenses(supabase, groupId, cursor?)` — paginated 20/page, cursor by `created_at`
+  - `getExpenseById(supabase, expenseId)` — with participants + profile data + payer profile
+  - `getBalances(supabase, groupId)` — all simplified balances with `from_profile` + `to_profile`
+  - `getUserNetBalance(supabase, groupId, userId)` — net in group currency (positive = owed, negative = owes)
+  - `getSettlementPayments(supabase, groupId)` — all settlements with profile data, desc
+  - All exported from `packages/db/src/index.ts`
+- [x] 3.2.2 — `apps/app/src/lib/recalculate-balances.ts` — TypeScript greedy debt simplification:
+  - Fetches expenses + settlements via admin client
+  - Handles multi-currency: uses `converted_amount` when set, falls back to `amount` when currencies match, skips unconverted foreign-currency expenses with a console warn
+  - Greedy simplification produces minimal set of transfers
+  - Deletes + re-inserts `balances` rows atomically via service-role client
+- [x] 3.2.3 — `apps/app/src/app/actions/expenses.ts` (Server Actions):
+  - `uploadReceiptPhoto(formData)` — uploads to `receipts` bucket (5 MB, private), returns storage path
+  - `addExpense(groupId, data)` — inserts expense + participants, calls `recalculateBalances`
+  - `updateExpense(expenseId, data)` — creator/admin only, updates fields + participants, recalculates
+  - `deleteExpense(expenseId)` — creator/admin only, recalculates
+  - `applyExchangeRate(expenseId, rate)` — sets `exchange_rate`, `converted_amount`, `rate_fetched_at`; recalculates
+  - `settleUp(groupId, data)` — creates `settlement_payments` record (audit trail), recalculates
+- [x] 3.2.4 — Added `custom_category` (nullable Lucide icon name) to `expenses` via `0007_expense_custom_category.sql`. Only populated when `category = 'other'`. Standard categories use fixed icon mappings in the UI; "other" opens the `IconPicker` and stores the chosen icon name string.
 
 ### 3.3 — Client State & Real-time
 
-- [ ] 3.3.1 — `packages/stores/src/expenses.ts`: `useExpenseStore` with optimistic add/delete.
-- [ ] 3.3.2 — Subscribe to Supabase Realtime on `expenses` table for active group. Update list on `INSERT`/`UPDATE`/`DELETE`.
-- [ ] 3.3.3 — Same real-time subscription for `balances` table.
+- [x] 3.3.1 — `packages/stores/src/expenses.ts`: `useExpenseStore` with `expenses`, `balances`, `setExpenses`, `setBalances`, `upsertExpense`, `removeExpense`, `clear`. Exported `BalanceWithProfiles` type (`Balance & { from_profile, to_profile }`). Exported from `packages/stores/src/index.ts`.
+- [x] 3.3.2 — `apps/app/src/components/expenses/ExpensesProvider.tsx`: subscribes to `postgres_changes` on `expenses` table (INSERT/UPDATE → `upsertExpense`, DELETE → `removeExpense`). Hydrates store from server-fetched `initialExpenses` + `initialBalances` props. Clears store on unmount.
+- [x] 3.3.3 — Same provider also subscribes to `balances` table. On any change, refetches full balance list with profile joins via `getBalances` (realtime payloads lack joins).
 
 ### 3.4 — Expenses UI
 
