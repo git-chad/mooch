@@ -1,7 +1,7 @@
 "use client";
 
 import { Tooltip } from "@base-ui-components/react";
-import { Button } from "@mooch/ui";
+import { Button, Text } from "@mooch/ui";
 import { motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -49,13 +49,13 @@ export function GroupDetailClient({
             <GroupIcon value={group.emoji} size={30} />
           </span>
           <div className="min-w-0">
-            <h1 className="truncate text-2xl font-semibold text-[#1F2A23] font-sans">
+            <Text variant="title" className="truncate">
               {group.name}
-            </h1>
-            <p className="text-sm text-[#6F859B] font-sans">
+            </Text>
+            <Text variant="body" color="info">
               {group.members.length} member
               {group.members.length === 1 ? "" : "s"}
-            </p>
+            </Text>
           </div>
         </div>
 
@@ -151,9 +151,7 @@ export function GroupDetailClient({
       </nav>
 
       <div className="space-y-3">
-        <h2 className="text-lg font-semibold text-[#1F2A23] font-sans">
-          Members
-        </h2>
+        <Text variant="heading">Members</Text>
         <MemberList members={group.members} currentUserId={currentUserId} />
       </div>
 

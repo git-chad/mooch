@@ -1,7 +1,7 @@
 "use client";
 
 import { useGroupStore } from "@mooch/stores";
-import { Button, InviteCodeInput, Modal } from "@mooch/ui";
+import { Button, InviteCodeInput, Modal, Text } from "@mooch/ui";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { joinGroupByCode } from "@/app/actions/groups";
@@ -154,12 +154,10 @@ export function JoinGroupModal({ open, onOpenChange }: JoinGroupModalProps) {
         ) : (
           <div className="space-y-3">
             <QRScanner onScan={handleScan} />
-            <p className="text-xs text-[#7A6E65] font-sans text-center">
+            <Text variant="caption" color="muted" className="text-center">
               Point your camera to a mooch invite QR code.
-            </p>
-            {error && (
-              <p className="text-xs text-[#C0392B] font-sans">{error}</p>
-            )}
+            </Text>
+            {error && <Text variant="caption" color="danger">{error}</Text>}
           </div>
         )}
       </div>

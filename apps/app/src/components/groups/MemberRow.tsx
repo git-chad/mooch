@@ -1,7 +1,7 @@
 "use client";
 
 import type { GroupMember, Profile } from "@mooch/types";
-import { Avatar, Badge, Button, cn } from "@mooch/ui";
+import { Avatar, Badge, Button, Text, cn } from "@mooch/ui";
 
 type MemberRowProps = {
   member: GroupMember & { profile: Profile };
@@ -37,10 +37,10 @@ export function MemberRow({
           size="sm"
         />
         <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-[#1F2A23] font-sans">
+          <Text variant="body" className="truncate font-medium">
             {member.profile.display_name}
             {isSelf ? " (you)" : ""}
-          </p>
+          </Text>
           <div className="mt-1">
             <Badge
               label={member.role}

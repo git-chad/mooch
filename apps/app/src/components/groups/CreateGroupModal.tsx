@@ -8,6 +8,7 @@ import {
   Input,
   Modal,
   Select,
+  Text,
 } from "@mooch/ui";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -157,9 +158,7 @@ export function CreateGroupModal({
       <form className="space-y-4" onSubmit={handleSubmit}>
         <div className="grid grid-cols-[auto,minmax(0,1fr)] items-end gap-3">
           <div className="space-y-2">
-            <p className="text-xs font-medium text-[#4A3728] font-sans">
-              Group icon
-            </p>
+            <Text variant="label">Group icon</Text>
             <IconPicker
               label={undefined}
               value={
@@ -218,7 +217,7 @@ export function CreateGroupModal({
           type="url"
         />
 
-        {error && <p className="text-xs text-[#C0392B] font-sans">{error}</p>}
+        {error && <Text variant="caption" color="danger">{error}</Text>}
 
         <div className="flex justify-end gap-2">
           <Button

@@ -1,7 +1,7 @@
 "use client";
 
 import { useGroupStore } from "@mooch/stores";
-import { Avatar, cn } from "@mooch/ui";
+import { Avatar, Text, cn } from "@mooch/ui";
 import {
   BarChart2,
   Calendar,
@@ -72,9 +72,7 @@ export function Sidebar({ className, profile }: SidebarProps) {
 
         {/* Squads section */}
         <div className="shrink-0 px-3 pb-2">
-          <p className="px-2 mb-1.5 text-[10px] font-semibold tracking-widest text-[#A19184] uppercase font-sans">
-            Squads
-          </p>
+          <Text as="p" variant="overline" className="px-2 mb-1.5">Squads</Text>
 
           <div className="space-y-0.5 max-h-40 overflow-y-auto">
             {groups.map((group) => {
@@ -103,9 +101,9 @@ export function Sidebar({ className, profile }: SidebarProps) {
             })}
 
             {groups.length === 0 && (
-              <p className="px-2 py-2 text-xs text-[#A19184] font-sans">
+              <Text as="p" variant="caption" color="subtle" className="px-2 py-2">
                 No squads yet
-              </p>
+              </Text>
             )}
           </div>
 
@@ -134,9 +132,7 @@ export function Sidebar({ className, profile }: SidebarProps) {
         {/* This Squad nav */}
         <div className="flex-1 overflow-y-auto px-3 py-2">
           {activeGroupId && (
-            <p className="px-2 mb-1.5 text-[10px] font-semibold tracking-widest text-[#A19184] uppercase font-sans">
-              This Squad
-            </p>
+            <Text as="p" variant="overline" className="px-2 mb-1.5">This Squad</Text>
           )}
 
           <nav className="space-y-0.5">

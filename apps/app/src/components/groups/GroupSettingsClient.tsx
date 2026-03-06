@@ -8,6 +8,7 @@ import {
   IconPicker,
   Input,
   Select,
+  Text,
 } from "@mooch/ui";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -249,12 +250,10 @@ export function GroupSettingsClient({
   return (
     <section className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold text-[#1F2A23] font-sans">
-          Group settings
-        </h1>
-        <p className="text-sm text-[#6F859B] font-sans">
+        <Text variant="title">Group settings</Text>
+        <Text variant="body" color="info">
           Manage squad details, members, and invites.
-        </p>
+        </Text>
       </header>
 
       <form
@@ -271,9 +270,7 @@ export function GroupSettingsClient({
         />
 
         <div className="space-y-2">
-          <p className="text-xs font-medium text-[#4A3728] font-sans">
-            Group icon
-          </p>
+          <Text variant="label">Group icon</Text>
           <div className="flex items-end gap-3 rounded-xl border border-[#EDE3DA] bg-[#F8F6F1] p-3">
             <IconPicker
               label=""
@@ -358,9 +355,9 @@ export function GroupSettingsClient({
           )}
         </div>
 
-        {error && <p className="text-xs text-[#C0392B] font-sans">{error}</p>}
+        {error && <Text variant="caption" color="danger">{error}</Text>}
         {saved && !error && (
-          <p className="text-xs text-[#3D6B1A] font-sans">Changes saved.</p>
+          <Text variant="caption" className="text-[#3D6B1A]">Changes saved.</Text>
         )}
 
         {isAdmin && (
@@ -377,9 +374,7 @@ export function GroupSettingsClient({
       </form>
 
       <div className="space-y-3 rounded-2xl border border-[#EDE3DA] bg-[#FDFCFB] p-5 shadow-[var(--shadow-elevated)]">
-        <h2 className="text-lg font-semibold text-[#1F2A23] font-sans">
-          Members
-        </h2>
+        <Text variant="heading">Members</Text>
         <MemberList
           members={members}
           currentUserId={currentUserId}
@@ -393,18 +388,12 @@ export function GroupSettingsClient({
       </div>
 
       <div className="space-y-4 rounded-2xl border border-[#EDE3DA] bg-[#FDFCFB] p-5 shadow-[var(--shadow-elevated)]">
-        <h2 className="text-lg font-semibold text-[#1F2A23] font-sans">
-          Danger zone
-        </h2>
+        <Text variant="heading">Danger zone</Text>
 
         <div className="flex items-center justify-between gap-3 rounded-xl border border-[#EDE3DA] bg-[#F8F6F1] p-3">
           <div>
-            <p className="text-sm font-medium text-[#4A3728] font-sans">
-              Leave group
-            </p>
-            <p className="text-xs text-[#7A6E65] font-sans">
-              You can rejoin later with an invite code.
-            </p>
+            <Text variant="body" className="font-medium">Leave group</Text>
+            <Text variant="caption" color="muted">You can rejoin later with an invite code.</Text>
           </div>
           <Button
             type="button"
@@ -417,13 +406,10 @@ export function GroupSettingsClient({
 
         {isAdmin && (
           <div className="space-y-3 rounded-xl border border-[#E7CACA] bg-[#FFF8F8] p-3">
-            <p className="text-sm font-medium text-[#7F1D1D] font-sans">
-              Delete group
-            </p>
-            <p className="text-xs text-[#9D4D4D] font-sans">
-              Type <strong>{group.name}</strong> to permanently delete this
-              group.
-            </p>
+            <Text variant="body" color="danger" className="font-medium">Delete group</Text>
+            <Text variant="caption" className="text-[#9D4D4D]">
+              Type <strong>{group.name}</strong> to permanently delete this group.
+            </Text>
             <Input
               label="Confirm group name"
               value={deleteConfirmText}

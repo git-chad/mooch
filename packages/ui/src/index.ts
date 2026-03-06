@@ -25,4 +25,6 @@ export type {
 export { Select } from "./components/Select";
 export type { SheetVariant } from "./components/Sheet";
 export { Sheet } from "./components/Sheet";
+export type { TextColor, TextVariant } from "./components/Text";
+export { Text } from "./components/Text";
 export { cn } from "./lib/cn";

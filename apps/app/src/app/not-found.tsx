@@ -1,4 +1,4 @@
-import { Button } from "@mooch/ui";
+import { Button, Text } from "@mooch/ui";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -14,12 +14,12 @@ export default function NotFound() {
           priority
         />
       </div>
-      <h1 className="geist-pixel text-4xl text-ink mb-3 leading-tight">
+      <Text as="h1" variant="display" className="mb-3">
         404 - Page not found.
-      </h1>
-      <p className="text-sm text-ink-sub font-sans mb-8 max-w-xs leading-tight text-balance">
+      </Text>
+      <Text variant="body" color="subtle" className="mb-8 max-w-xs leading-tight text-balance">
         Page not found. You, however, have been found by Bibi. Run, nigga.
-      </p>
+      </Text>
       {/* <Link
         href="/"
         className="inline-flex items-center gap-2 rounded-[14px] bg-accent-strong px-4 py-2.5 text-sm font-medium text-btn-primary-fg font-sans shadow-[var(--shadow-btn-primary)] transition-opacity hover:opacity-90"

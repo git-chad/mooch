@@ -3,6 +3,7 @@
 import type { ButtonHTMLAttributes } from "react";
 import { useWebHaptics } from "web-haptics/react";
 import { cn } from "../lib/cn";
+import { Text } from "./Text";
 
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 export type ButtonSize = "sm" | "md" | "lg";
@@ -21,6 +22,12 @@ const sizeClasses: Record<ButtonSize, string> = {
   md: "btn-md",
   lg: "btn-lg",
 };
+
+const sizeTextVariant = {
+  sm: "label",
+  md: "body",
+  lg: "subheading",
+} as const;
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary: cn("btn-primary", "border border-accent-strong", "text-btn-primary-fg font-medium"),
@@ -86,7 +93,9 @@ export function Button({
         onClick={handleClick}
         {...props}
       >
-        {children}
+        <Text as="span" variant={sizeTextVariant[size]} color="inherit">
+          {children}
+        </Text>
       </button>
     </span>
   );

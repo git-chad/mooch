@@ -1,5 +1,5 @@
 import { createClient } from "@mooch/db/server";
-import { Button } from "@mooch/ui";
+import { Button, Text } from "@mooch/ui";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { joinGroupByCode } from "@/app/actions/groups";
@@ -72,25 +72,19 @@ export default async function JoinByCodePage({
   return (
     <section className="mx-auto min-h-screen w-full max-w-xl grid place-items-center p-4">
       <div className="w-full rounded-2xl border border-[#EDE3DA] bg-[#FDFCFB] p-6 text-center shadow-[var(--shadow-elevated)]">
-        <p className="text-sm text-[#7A6E65] font-sans">
-          You were invited to join
-        </p>
+        <Text variant="body" color="muted">You were invited to join</Text>
         <div className="mt-3 flex items-center justify-center gap-3">
           <span className="grid h-12 w-12 place-items-center rounded-xl border border-[#D8C8BC] bg-[#F8F6F1] text-[#4A3728]">
             <GroupIcon value={groupPreview.emoji} size={24} />
           </span>
-          <h1 className="text-2xl font-semibold text-[#1F2A23] font-sans">
-            {groupPreview.name}
-          </h1>
+          <Text as="h1" variant="title">{groupPreview.name}</Text>
         </div>
 
         <p className="mt-2 text-xs text-[#7A6E65] font-mono tracking-widest uppercase">
           Code: {normalizedCode}
         </p>
 
-        {error && (
-          <p className="mt-4 text-xs text-[#C0392B] font-sans">{error}</p>
-        )}
+        {error && <Text variant="caption" color="danger" className="mt-4">{error}</Text>}
 
         <div className="mt-6">
           {!user ? (
@@ -117,12 +111,10 @@ function InvalidCodeState() {
   return (
     <section className="mx-auto min-h-screen w-full max-w-xl grid place-items-center p-4">
       <div className="w-full rounded-2xl border border-[#EDE3DA] bg-[#FDFCFB] p-6 text-center shadow-[var(--shadow-elevated)]">
-        <h1 className="text-xl font-semibold text-[#1F2A23] font-sans">
-          Invite not found
-        </h1>
-        <p className="mt-2 text-sm text-[#7A6E65] font-sans">
+        <Text as="h1" variant="heading">Invite not found</Text>
+        <Text variant="body" color="muted" className="mt-2">
           This invite link is invalid or expired.
-        </p>
+        </Text>
         <div className="mt-5">
           <Link
             href="/groups"
