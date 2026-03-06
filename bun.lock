@@ -35,6 +35,7 @@
         "@mooch/stores": "*",
         "@mooch/types": "*",
         "@mooch/ui": "*",
+        "dither-plugin": "^1.1.1",
         "lucide-react": "^0.577.0",
         "qrcode": "^1.5.4",
       },
@@ -346,6 +347,8 @@
     "detect-libc": ["detect-libc@2.1.2", "", {}, "sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ=="],
 
     "dijkstrajs": ["dijkstrajs@1.0.3", "", {}, "sha512-qiSlmBq9+BCdCA/L46dw8Uy93mloxsPSbwnm5yrKn2vMPiy8KyAskTF6zuV/j5BMsmOGZDPs7KjU+mjb670kfA=="],
+
+    "dither-plugin": ["dither-plugin@1.1.1", "", {}, "sha512-PsgAcSoNVKkwh+Q/OopRn/2qb9HW1LRyGqT1bQe8iooYvVY1FIIqePFN9JkEIVK9rkfZdj7nXn9EUB4B7mNh6g=="],
 
     "draco3d": ["draco3d@1.5.7", "", {}, "sha512-m6WCKt/erDXcw+70IJXnG7M3awwQPAsZvJGX5zY7beBqpELw6RDGkYVU0W43AFxye4pDZ5i2Lbyc/NNGqwjUVQ=="],
 

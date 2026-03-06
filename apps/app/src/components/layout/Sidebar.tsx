@@ -44,9 +44,13 @@ export function Sidebar({ className, profile }: SidebarProps) {
   const [joinOpen, setJoinOpen] = useState(false);
 
   const groups = useGroupStore((state) => state.groups);
-  const activeGroupId = useGroupStore((state) => state.activeGroupId);
+  const storeActiveGroupId = useGroupStore((state) => state.activeGroupId);
   const setActiveGroup = useGroupStore((state) => state.setActiveGroup);
   const pathname = usePathname();
+
+  // Derive active group from URL first — keeps sidebar in sync after redirects
+  const activeGroupId =
+    groups.find((g) => pathname.includes(g.id))?.id ?? storeActiveGroupId;
 
   return (
     <>

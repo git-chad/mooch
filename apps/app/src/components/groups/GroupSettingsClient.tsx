@@ -1,5 +1,6 @@
 "use client";
 
+import { useGroupStore } from "@mooch/stores";
 import {
   AssetUpload,
   Button,
@@ -44,6 +45,7 @@ export function GroupSettingsClient({
   currentUserRole,
 }: GroupSettingsClientProps) {
   const router = useRouter();
+  const removeGroup = useGroupStore((state) => state.removeGroup);
   const isAdmin = currentUserRole === "admin";
 
   const [name, setName] = useState(group.name);
@@ -220,7 +222,8 @@ export function GroupSettingsClient({
       return;
     }
 
-    router.push("/groups");
+    removeGroup(group.id);
+    router.push("/");
     router.refresh();
   }
 
@@ -238,7 +241,8 @@ export function GroupSettingsClient({
       return;
     }
 
-    router.push("/groups");
+    removeGroup(group.id);
+    router.push("/");
     router.refresh();
   }
 

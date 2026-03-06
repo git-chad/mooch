@@ -3,7 +3,7 @@
 > **"Track the chaos, keep the vibes: expenses, plans, votes & memories — all in one squad app."**
 >
 > Web app (Next.js 16 + Supabase) · Monorepo · English & Spanish
-> Structure: `mooch.com` (marketing) + `app.mooch.com` (app)
+> Structure: `mooch.me` (marketing) + `app.mooch.me` (app)
 
 ---
 
@@ -54,8 +54,8 @@
 ```
 mooch/
 ├── apps/
-│   ├── app/          → Next.js app — app.mooch.com
-│   └── web/          → Next.js marketing site — mooch.com
+│   ├── app/          → Next.js app — app.mooch.me
+│   └── web/          → Next.js marketing site — mooch.me
 ├── packages/
 │   ├── db/           → Supabase client, queries, types
 │   ├── types/        → Shared TypeScript types & Zod schemas
@@ -471,7 +471,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
   - Large monospace invite code display
   - "Copy code" button
   - QR code (generated with `qrcode` npm package)
-  - "Share link" button → `navigator.share()` with `https://app.mooch.com/join/{code}`
+  - "Share link" button → `navigator.share()` with `https://app.mooch.me/join/{code}`
 - [x] 2.4.6 — `apps/app/src/app/join/[code]/page.tsx` (public, no auth required):
   - Shows group name + emoji from invite code lookup
   - "Join this squad" CTA → if not logged in, redirect to `/login?next=/join/{code}`; if logged in, call `joinGroupByCode`
@@ -495,16 +495,16 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 2.6 — Verify & Test
 
-- [ ] 2.6.1 — Create a group → appears in groups list.
-- [ ] 2.6.2 — Invite code generated (6 chars, alphanumeric).
-- [ ] 2.6.3 — Copy invite code → paste into join modal → joins group.
-- [ ] 2.6.4 — QR code displays correctly and is scannable.
-- [ ] 2.6.5 — Deep link `/join/{code}` shows group preview and allows joining.
-- [ ] 2.6.6 — Group switcher switches active group.
-- [ ] 2.6.7 — Group settings: edit name/emoji → changes saved.
-- [ ] 2.6.8 — Leave group removes user from members.
-- [ ] 2.6.9 — Delete group cascades (no orphaned data).
-- [ ] 2.6.10 — Non-members cannot access group data (RLS check in Supabase Studio).
+- [x] 2.6.1 — Create a group → appears in groups list.
+- [x] 2.6.2 — Invite code generated (6 chars, alphanumeric).
+- [x] 2.6.3 — Copy invite code → paste into join modal → joins group.
+- [x] 2.6.4 — QR code displays correctly and is scannable.
+- [x] 2.6.5 — Deep link `/join/{code}` shows group preview and allows joining.
+- [x] 2.6.6 — Group switcher switches active group.
+- [x] 2.6.7 — Group settings: edit name/emoji → changes saved.
+- [x] 2.6.8 — Leave group removes user from members.
+- [x] 2.6.9 — Delete group cascades (no orphaned data).
+- [x] 2.6.10 — Non-members cannot access group data (RLS check in Supabase Studio).
 
 ---
 
@@ -1466,11 +1466,11 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 ### 9.6 — Marketing Site (apps/web)
 
 - [ ] 9.6.1 — `apps/web/src/app/page.tsx` home page:
-  - Hero: tagline + CTA → `app.mooch.com/signup`
+  - Hero: tagline + CTA → `app.mooch.me/signup`
   - Feature sections: Expenses, Polls, Plans, Feed, Events, Insights
   - Footer: Privacy, Terms, support email
 - [ ] 9.6.2 — `/privacy` and `/terms` static pages.
-- [ ] 9.6.3 — `/join/{code}` → redirect to `app.mooch.com/join/{code}`.
+- [ ] 9.6.3 — `/join/{code}` → redirect to `app.mooch.me/join/{code}`.
 - [ ] 9.6.4 — Open Graph meta tags on all pages.
 - [ ] 9.6.5 — Favicon + apple-touch-icon.
 - [ ] 9.6.6 — `sitemap.xml` and `robots.txt`.
@@ -1574,10 +1574,10 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 - [ ] 10.6.1 — Create Vercel project for `apps/app`:
   - Root: `apps/app`
   - All env vars set
-  - Custom domain: `app.mooch.com`
+  - Custom domain: `app.mooch.me`
 - [ ] 10.6.2 — Create Vercel project for `apps/web`:
   - Root: `apps/web`
-  - Custom domains: `mooch.com` + `www.mooch.com`
+  - Custom domains: `mooch.me` + `www.mooch.me`
 - [ ] 10.6.3 — Configure Turborepo remote cache in Vercel.
 - [ ] 10.6.4 — Set up preview deployments on pull requests.
 

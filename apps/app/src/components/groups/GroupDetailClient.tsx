@@ -68,7 +68,7 @@ export function GroupDetailClient({
         </Button>
       </header>
 
-      <nav className="flex items-center gap-0.5 overflow-x-auto rounded-[14px] border border-edge-subtle bg-[#F2EDE7] p-1">
+      <nav className="isolate flex items-center gap-0.5 overflow-x-auto rounded-[14px] border border-edge-subtle bg-[#F2EDE7] p-1">
         {NAV_TABS.map((tab) => {
           const isActive = activeSlug === tab.slug;
           const isEnabled = ENABLED_SLUGS.has(tab.slug);
