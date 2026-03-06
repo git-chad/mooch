@@ -781,11 +781,122 @@ These checklist items stay unchecked until browser/manual verification is comple
 
 ---
 
+# Phase 3A: Motion Foundation & Transition Pilot
+
+**Goal:** Apply the UX direction from `UX.md` to the real expense surfaces first, using `motion/react`, layout animations, and selective transition polish. This is a pilot phase: if the results are strong, the same motion system becomes the standard for the rest of the app in Phases 4-9.
+
+**Status:** ⬜
+
+**Intent:**
+- Prove the motion language on real screens instead of abstract demos.
+- Improve clarity and delight without slowing high-frequency actions.
+- Create reusable transition primitives that later phases can inherit.
+
+---
+
+### 3A.1 — Motion Foundation
+
+- [x] 3A.1.1 — Create shared motion tokens / helpers (durations, easing, spring presets, reduced-motion fallbacks).
+- [x] 3A.1.2 — Define a small transition vocabulary:
+  - `fast`
+  - `standard`
+  - `layout`
+  - `sheet`
+  - `delight`
+- [x] 3A.1.3 — Ensure all new motion respects `prefers-reduced-motion`.
+
+### 3A.2 — Navigation & View Switching
+
+- [x] 3A.2.1 — `apps/app/src/components/expenses/TabDetailClient.tsx`:
+  - Upgrade `Activity` / `Balances` switch with shared moving indicator (`layoutId`)
+  - Add clear, low-latency content transition that preserves context
+- [x] 3A.2.2 — `apps/app/src/components/layout/BottomTabBar.tsx`:
+  - Introduce animated active indicator / shared movement language
+  - Keep transitions interruptible and under ~200ms for frequent actions
+- [x] 3A.2.3 — `apps/app/src/components/groups/GroupDetailClient.tsx`:
+  - Align top nav active-state motion with bottom nav behavior
+  - Remove any mismatch in indicator timing/easing
+
+### 3A.3 — Expense List Layout Animation
+
+- [x] 3A.3.1 — `apps/app/src/components/expenses/ExpenseList.tsx`:
+  - Add list-level layout animation so add/edit/delete operations settle smoothly
+- [x] 3A.3.2 — `apps/app/src/components/expenses/ExpenseCard.tsx`:
+  - Add subtle press feedback and layout participation
+  - Keep card interaction fast and tactile
+- [x] 3A.3.3 — First-load list reveal:
+  - Optional stagger on initial load only
+  - Must not replay annoyingly on routine revisits
+
+### 3A.4 — Expense Card to Detail Continuity
+
+- [x] 3A.4.1 — Connect `ExpenseCard` and `ExpenseDetailClient` with shared-element continuity:
+  - category icon
+  - title/description block
+  - amount block
+- [x] 3A.4.2 — Add supporting content fade/settle around the shared transition without relying on generic page crossfades.
+- [x] 3A.4.3 — Ensure navigation still feels correct when motion is reduced or unsupported.
+
+### 3A.5 — Modal & Sheet Choreography
+
+- [x] 3A.5.1 — `apps/app/src/components/expenses/AddExpenseModal.tsx`:
+  - Refine step transitions so they feel directional and interruptible
+  - Preserve responsiveness during back/next changes
+- [x] 3A.5.2 — `apps/app/src/components/expenses/TabReceipt.tsx`:
+  - Improve receipt sheet entrance and internal reveal
+  - Keep receipt download action clear and immediate
+- [ ] 3A.5.3 — Review shared modal/sheet timing against mobile-first expectations (`cubic-bezier(0.32, 0.72, 0, 1)` where appropriate).
+
+### 3A.6 — Reusable Transition Architecture
+
+- [x] 3A.6.1 — Decide whether to introduce lightweight shared primitives now or in Phase 9:
+  - `AppTransitionProvider`
+  - `TransitionLink`
+  - `TransitionSlot`
+- [x] 3A.6.2 — If introduced now, use progressive enhancement:
+  - Browser View Transitions API where supported
+  - `motion/react` fallback everywhere else
+- [x] 3A.6.3 — Keep the architecture minimal; do not add full-page transitions everywhere by default.
+
+### 3A.7 — Rollout Rule For Later Phases
+
+- [x] 3A.7.1 — This phase is approved. The motion system created here is now the default implementation standard for Polls, Plans, Feed, Events, Insights, auth/navigation refinements, and final polish work.
+- [x] 3A.7.2 — Later phases must reuse the same motion tokens, shared-element patterns, route transition wrapper, and reduced-motion behavior rather than inventing one-off transitions.
+- [x] 3A.7.3 — Motion coverage is a required delivery criterion for all remaining user-facing surfaces, not optional follow-up polish. New flows should ship with transitions/layout animation in the initial implementation unless there is a concrete performance or accessibility reason not to.
+
+### 3A.8 — Verify & Test
+
+- [x] 3A.8.1 — Segmented/tab indicators animate smoothly with no visible jitter.
+- [x] 3A.8.2 — Expense list add/edit/delete operations reflow smoothly with no layout jump.
+- [x] 3A.8.3 — Expense card -> expense detail transition feels continuous and remains understandable with reduced motion.
+- [x] 3A.8.4 — Bottom nav and top nav feel like the same motion system.
+- [x] 3A.8.5 — Modal and sheet transitions remain interruptible and responsive.
+- [x] 3A.8.6 — No major CLS/layout-shift regressions introduced by motion.
+- [x] 3A.8.7 — Mobile interaction still feels fast on repeated use.
+
+---
+
+**Phase 3A Testing Checklist (must all pass before APPROVED):**
+
+- [x] Shared motion tokens are defined and reused
+- [x] Navigation indicators feel consistent across surfaces
+- [x] Expense list layout animation is smooth
+- [x] Expense detail continuity transition works well
+- [x] Modal/sheet motion feels native enough for mobile-first use
+- [x] Reduced-motion behavior remains clear and usable
+- [x] Motion system is good enough to roll forward into the rest of the app
+
+**Phase 3A Status: 🟢 — APPROVED on 2026-03-06. Motion system is now mandatory across the rest of the app.**
+
+---
+
+---
+
 # Phase 4: Voting & Polls
 
 **Goal:** Create polls with single or multi-choice voting, anonymous option, live animated results, and auto-close.
 
-**Status:** ⬜ — _Blocked until Phase 3 is APPROVED_
+**Status:** ⬜ — _Blocked until Phase 3 is APPROVED. Phase 3A motion standards are already approved and must be included in Phase 4 implementation._
 
 ---
 
@@ -1707,6 +1818,7 @@ _(Do not start until Phase 10 is APPROVED and shipped)_
 | Phase 1: Auth & Profiles     | ⬜     | —           | —    | —     |
 | Phase 2: Groups System       | 🟢     | Tobias      | 2026-03-05 | All tests passed, RLS verified |
 | Phase 3: Expense Tracker     | ⬜     | —           | —    | —     |
+| Phase 3A: Motion & Transitions | 🟢   | Tobias      | 2026-03-06 | Expense surfaces pilot approved; motion/layout transitions now required across remaining user-facing surfaces |
 | Phase 4: Voting & Polls      | ⬜     | —           | —    | —     |
 | Phase 5: Plans Board         | ⬜     | —           | —    | —     |
 | Phase 6: Squad Feed          | ⬜     | —           | —    | —     |

@@ -9,7 +9,7 @@ import type {
   SplitType,
 } from "@mooch/types";
 import { Avatar, Button, IconPicker, Modal, Text } from "@mooch/ui";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { TextMorph } from "torph/react";
 import {
@@ -18,6 +18,7 @@ import {
   uploadReceiptPhoto,
 } from "@/app/actions/expenses";
 import { CATEGORY_CONFIG, formatCurrency } from "@/lib/expenses";
+import { getSurfaceTransition, motionDuration } from "@/lib/motion";
 
 type Member = GroupMember & { profile: Profile };
 
@@ -76,6 +77,7 @@ const CATEGORIES = Object.entries(CATEGORY_CONFIG) as [
   ExpenseCategory,
   { emoji: string; label: string },
 ][];
+const STEP_VIEWPORT_HEIGHT = "min(24rem, 52vh)";
 
 function buildDefaultParticipants(members: Member[]): Participant[] {
   const percentage =
@@ -178,6 +180,7 @@ export function AddExpenseModal({
 }: Props) {
   const isEditMode = mode === "edit";
   const upsertExpense = useExpenseStore((s) => s.upsertExpense);
+  const reducedMotion = useReducedMotion() ?? false;
   const initialFormState = buildInitialFormState({
     members,
     currentUserId,
@@ -407,6 +410,11 @@ export function AddExpenseModal({
   }
 
   const stepTitles = ["Amount", "Category", "Split"];
+  const stepDescriptions = [
+    "Enter the basics before we split anything.",
+    "Pick a label that keeps the tab easy to scan later.",
+    "Confirm who paid and how the total should be shared.",
+  ];
 
   return (
     <Modal
@@ -419,121 +427,170 @@ export function AddExpenseModal({
       description={`Step ${step} of 3 — ${stepTitles[step - 1]}`}
       size="md"
     >
-      {/* Step progress bar */}
-      <div className="flex items-center gap-1.5 mb-5">
-        {[1, 2, 3].map((s) => (
-          <div
-            key={s}
-            className="h-1 flex-1 rounded-full transition-colors duration-200"
-            style={{
-              background: s <= step ? "var(--action-gradient)" : "#E8E0D8",
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Animated step content */}
-      <div className="overflow-hidden" style={{ minHeight: 240 }}>
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={step}
-            initial={{ x: direction * 24, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: direction * -24, opacity: 0 }}
-            transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-          >
-            {step === 1 && (
-              <Step1
-                amount={amount}
-                setAmount={setAmount}
-                currency={currency}
-                setCurrency={setCurrency}
-                description={description}
-                setDescription={setDescription}
-                notes={notes}
-                setNotes={setNotes}
-                receiptFile={receiptFile}
-                setReceiptFile={setReceiptFile}
-                receiptInputRef={receiptInputRef}
-                existingReceipt={Boolean(initialExpense?.photo_url)}
-                groupCurrency={groupCurrency}
-                isEditMode={isEditMode}
-              />
-            )}
-            {step === 2 && (
-              <Step2
-                category={category}
-                setCategory={setCategory}
-                customCategory={customCategory}
-                setCustomCategory={setCustomCategory}
-              />
-            )}
-            {step === 3 && (
-              <Step3
-                amount={Number.parseFloat(amount) || 0}
-                members={members}
-                currentUserId={currentUserId}
-                paidBy={paidBy}
-                setPaidBy={setPaidBy}
-                splitType={splitType}
-                setSplitType={setSplitType}
-                participants={participants}
-                setParticipants={setParticipants}
-                currency={currency}
-                locale={locale}
-              />
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-
-      {error && (
-        <Text variant="caption" color="danger" className="mt-3 block">
-          {error}
-        </Text>
-      )}
-
-      {/* Footer navigation */}
-      <div className="flex justify-between items-center mt-5">
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          onClick={step === 1 ? () => onOpenChange(false) : goBack}
+      <motion.div
+        initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={getSurfaceTransition(reducedMotion, motionDuration.fast)}
+      >
+        <div
+          className="mb-4 rounded-2xl border border-[#E6DDD4] bg-[#FAF7F3] px-4 py-3"
+          style={{
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.75)",
+          }}
         >
-          {step === 1 ? "Cancel" : "Back"}
-        </Button>
+          <Text variant="overline" color="subtle" className="block">
+            What we need now
+          </Text>
+          <Text variant="body" className="mt-1">
+            {stepDescriptions[step - 1]}
+          </Text>
+        </div>
 
-        {step < 3 ? (
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            disabled={step === 1 && !canProceedStep1()}
-            onClick={goNext}
-          >
-            Next
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            variant="primary"
-            size="sm"
-            loading={loading}
-            onClick={handleSubmit}
-          >
-            <TextMorph>
-              {loading
-                ? isEditMode
-                  ? "Saving..."
-                  : "Adding..."
-                : isEditMode
-                  ? "Save changes"
-                  : "Add expense"}
-            </TextMorph>
-          </Button>
+        {/* Step progress bar */}
+        <div className="flex items-center gap-1.5 mb-5">
+          {[1, 2, 3].map((s) => (
+            <motion.div
+              key={s}
+              className="h-1 flex-1 rounded-full"
+              initial={false}
+              animate={{
+                opacity: s <= step ? 1 : 0.55,
+                scaleX: s <= step ? 1 : 0.92,
+              }}
+              style={{
+                transformOrigin: "left center",
+                background: s <= step ? "var(--action-gradient)" : "#E8E0D8",
+              }}
+              transition={getSurfaceTransition(
+                reducedMotion,
+                motionDuration.fast,
+              )}
+            />
+          ))}
+        </div>
+
+        {/* Animated step content */}
+        <div
+          className="overflow-hidden"
+          style={{ minHeight: STEP_VIEWPORT_HEIGHT }}
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={step}
+              className="overflow-y-auto pr-1"
+              initial={
+                reducedMotion
+                  ? { opacity: 0 }
+                  : { x: direction * 28, opacity: 0, filter: "blur(6px)" }
+              }
+              animate={{ x: 0, opacity: 1, filter: "blur(0px)" }}
+              exit={
+                reducedMotion
+                  ? { opacity: 0 }
+                  : { x: direction * -22, opacity: 0, filter: "blur(4px)" }
+              }
+              style={{
+                minHeight: STEP_VIEWPORT_HEIGHT,
+                maxHeight: STEP_VIEWPORT_HEIGHT,
+              }}
+              transition={getSurfaceTransition(
+                reducedMotion,
+                motionDuration.fast,
+              )}
+            >
+              {step === 1 && (
+                <Step1
+                  amount={amount}
+                  setAmount={setAmount}
+                  currency={currency}
+                  setCurrency={setCurrency}
+                  description={description}
+                  setDescription={setDescription}
+                  notes={notes}
+                  setNotes={setNotes}
+                  receiptFile={receiptFile}
+                  setReceiptFile={setReceiptFile}
+                  receiptInputRef={receiptInputRef}
+                  existingReceipt={Boolean(initialExpense?.photo_url)}
+                  groupCurrency={groupCurrency}
+                  isEditMode={isEditMode}
+                />
+              )}
+              {step === 2 && (
+                <Step2
+                  category={category}
+                  setCategory={setCategory}
+                  customCategory={customCategory}
+                  setCustomCategory={setCustomCategory}
+                />
+              )}
+              {step === 3 && (
+                <Step3
+                  amount={Number.parseFloat(amount) || 0}
+                  members={members}
+                  currentUserId={currentUserId}
+                  paidBy={paidBy}
+                  setPaidBy={setPaidBy}
+                  splitType={splitType}
+                  setSplitType={setSplitType}
+                  participants={participants}
+                  setParticipants={setParticipants}
+                  currency={currency}
+                  locale={locale}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {error && (
+          <Text variant="caption" color="danger" className="mt-3 block">
+            {error}
+          </Text>
         )}
-      </div>
+
+        {/* Footer navigation */}
+        <div className="flex justify-between items-center mt-5">
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={step === 1 ? () => onOpenChange(false) : goBack}
+          >
+            {step === 1 ? "Cancel" : "Back"}
+          </Button>
+
+          {step < 3 ? (
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              disabled={step === 1 && !canProceedStep1()}
+              onClick={goNext}
+            >
+              <TextMorph>Next</TextMorph>
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              loading={loading}
+              onClick={handleSubmit}
+            >
+              <TextMorph>
+                {loading
+                  ? isEditMode
+                    ? "Saving..."
+                    : "Adding..."
+                  : isEditMode
+                    ? "Save changes"
+                    : "Add expense"}
+              </TextMorph>
+            </Button>
+          )}
+        </div>
+      </motion.div>
     </Modal>
   );
 }

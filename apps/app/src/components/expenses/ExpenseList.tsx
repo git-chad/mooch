@@ -4,7 +4,13 @@ import { createBrowserClient, getExpenses } from "@mooch/db";
 import { useExpenseStore } from "@mooch/stores";
 import type { GroupMember, Profile } from "@mooch/types";
 import { Text } from "@mooch/ui";
-import { useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  getLayoutTransition,
+  getSurfaceTransition,
+  motionDuration,
+} from "@/lib/motion";
 import { ExpenseCard } from "./ExpenseCard";
 
 type Member = GroupMember & { profile: Profile };
@@ -18,6 +24,8 @@ type Props = {
   locale: string;
 };
 
+const revealedTabs = new Set<string>();
+
 export function ExpenseList({
   groupId,
   tabId,
@@ -30,6 +38,21 @@ export function ExpenseList({
   const appendExpenses = useExpenseStore((s) => s.appendExpenses);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(expenses.length === 20);
+  const reducedMotion = useReducedMotion() ?? false;
+  const shouldAnimateIn = !revealedTabs.has(tabId);
+
+  useEffect(() => {
+    revealedTabs.add(tabId);
+  }, [tabId]);
+
+  const itemTransition = useMemo(
+    () => getSurfaceTransition(reducedMotion, motionDuration.fast),
+    [reducedMotion],
+  );
+  const layoutTransition = useMemo(
+    () => getLayoutTransition(reducedMotion),
+    [reducedMotion],
+  );
 
   async function handleLoadMore() {
     const last = expenses[expenses.length - 1];
@@ -60,22 +83,66 @@ export function ExpenseList({
   }
 
   return (
-    <div className="space-y-2">
-      {expenses.map((expense) => (
-        <ExpenseCard
-          key={expense.id}
-          groupId={groupId}
-          tabId={tabId}
-          expense={expense}
-          members={members}
-          currentUserId={currentUserId}
-          currency={currency}
-          locale={locale}
-        />
-      ))}
+    <motion.div
+      layout
+      className="flex flex-col gap-2"
+      initial={shouldAnimateIn ? "hidden" : false}
+      animate="show"
+      variants={{
+        hidden: {},
+        show: {
+          transition: reducedMotion
+            ? undefined
+            : {
+                staggerChildren: 0.04,
+                delayChildren: 0.03,
+              },
+        },
+      }}
+    >
+      <AnimatePresence initial={false}>
+        {expenses.map((expense) => (
+          <motion.div
+            key={expense.id}
+            layout="position"
+            variants={{
+              hidden: reducedMotion
+                ? { opacity: 0 }
+                : { opacity: 0, y: 12, filter: "blur(6px)" },
+              show: { opacity: 1, y: 0, filter: "blur(0px)" },
+            }}
+            initial={
+              shouldAnimateIn
+                ? undefined
+                : reducedMotion
+                  ? { opacity: 0 }
+                  : { opacity: 0, y: 8 }
+            }
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={
+              reducedMotion
+                ? { opacity: 0 }
+                : { opacity: 0, y: -10, scale: 0.985 }
+            }
+            transition={itemTransition}
+            layoutDependency={expenses.length}
+          >
+            <ExpenseCard
+              groupId={groupId}
+              tabId={tabId}
+              expense={expense}
+              members={members}
+              currentUserId={currentUserId}
+              currency={currency}
+              locale={locale}
+              layoutTransition={layoutTransition}
+            />
+          </motion.div>
+        ))}
+      </AnimatePresence>
 
       {hasMore && (
-        <div className="flex justify-center pt-2">
+        <motion.div layout className="flex justify-center pt-2">
           <button
             type="button"
             onClick={handleLoadMore}
@@ -84,8 +151,8 @@ export function ExpenseList({
           >
             {loadingMore ? "Loading..." : "Load more"}
           </button>
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }

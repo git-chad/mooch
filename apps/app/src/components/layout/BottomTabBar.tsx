@@ -1,7 +1,7 @@
 "use client";
 
 import { useGroupStore } from "@mooch/stores";
-import { Sheet, cn } from "@mooch/ui";
+import { cn, Sheet } from "@mooch/ui";
 import {
   BarChart2,
   Calendar,
@@ -12,9 +12,11 @@ import {
   Receipt,
   Sparkles,
 } from "lucide-react";
-import Link from "next/link";
+import { motion, useReducedMotion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { TransitionLink } from "@/components/TransitionLink";
+import { getLayoutTransition } from "@/lib/motion";
 
 type TabItem = {
   label: string;
@@ -43,6 +45,12 @@ export function BottomTabBar({ className }: BottomTabBarProps) {
   const [moreOpen, setMoreOpen] = useState(false);
   const activeGroupId = useGroupStore((state) => state.activeGroupId);
   const pathname = usePathname();
+  const reducedMotion = useReducedMotion() ?? false;
+  const isMoreRouteActive = activeGroupId
+    ? MORE_TABS.some(({ path }) =>
+        pathname.startsWith(`/${activeGroupId}${path}`),
+      )
+    : false;
 
   return (
     <>
@@ -68,37 +76,70 @@ export function BottomTabBar({ className }: BottomTabBarProps) {
                   className="flex flex-1 flex-col items-center gap-0.5 px-1 py-2 text-[#C8BAB0] pointer-events-none select-none"
                 >
                   <Icon size={22} />
-                  <span className="text-[9px] font-medium font-sans">{label}</span>
+                  <span className="text-[9px] font-medium font-sans">
+                    {label}
+                  </span>
                 </span>
               );
             }
 
             return (
-              <Link
-                key={label}
-                href={href}
-                className={cn(
-                  "flex flex-1 flex-col items-center gap-0.5 px-1 py-2 transition-colors",
-                  isActive ? "text-[#5A9629]" : "text-[#8C7463]",
+              <div key={label} className="relative flex flex-1">
+                {isActive && (
+                  <motion.div
+                    layoutId="bottom-nav-indicator"
+                    className="absolute inset-x-1 inset-y-0 rounded-[18px] bg-[#EFF8E3]"
+                    style={{
+                      border: "1px solid #C7DEB0",
+                      boxShadow:
+                        "inset 0 1px 0 rgba(255,255,255,0.75), 0 2px 6px rgba(90,150,41,0.12)",
+                    }}
+                    transition={getLayoutTransition(reducedMotion)}
+                  />
                 )}
-              >
-                <Icon size={22} />
-                <span className="text-[9px] font-medium font-sans">{label}</span>
-              </Link>
+                <TransitionLink
+                  href={href}
+                  className={cn(
+                    "relative z-10 flex flex-1 flex-col items-center gap-0.5 px-1 py-2 transition-colors",
+                    isActive ? "text-[#5A9629]" : "text-[#8C7463]",
+                  )}
+                >
+                  <Icon size={22} />
+                  <span className="text-[9px] font-medium font-sans">
+                    {label}
+                  </span>
+                </TransitionLink>
+              </div>
             );
           })}
 
-          <button
-            type="button"
-            onClick={() => setMoreOpen(true)}
-            className={cn(
-              "flex flex-1 flex-col items-center gap-0.5 px-1 py-2 transition-colors",
-              moreOpen ? "text-[#5A9629]" : "text-[#8C7463]",
+          <div className="relative flex flex-1">
+            {(moreOpen || isMoreRouteActive) && (
+              <motion.div
+                layoutId="bottom-nav-indicator"
+                className="absolute inset-x-1 inset-y-0 rounded-[18px] bg-[#EFF8E3]"
+                style={{
+                  border: "1px solid #C7DEB0",
+                  boxShadow:
+                    "inset 0 1px 0 rgba(255,255,255,0.75), 0 2px 6px rgba(90,150,41,0.12)",
+                }}
+                transition={getLayoutTransition(reducedMotion)}
+              />
             )}
-          >
-            <MoreHorizontal size={22} />
-            <span className="text-[9px] font-medium font-sans">More</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setMoreOpen(true)}
+              className={cn(
+                "relative z-10 flex flex-1 flex-col items-center gap-0.5 px-1 py-2 transition-colors",
+                moreOpen || isMoreRouteActive
+                  ? "text-[#5A9629]"
+                  : "text-[#8C7463]",
+              )}
+            >
+              <MoreHorizontal size={22} />
+              <span className="text-[9px] font-medium font-sans">More</span>
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -121,7 +162,7 @@ export function BottomTabBar({ className }: BottomTabBarProps) {
             }
 
             return (
-              <Link
+              <TransitionLink
                 key={label}
                 href={href}
                 onClick={() => setMoreOpen(false)}
@@ -134,7 +175,7 @@ export function BottomTabBar({ className }: BottomTabBarProps) {
               >
                 <Icon size={20} />
                 <span className="text-sm font-medium font-sans">{label}</span>
-              </Link>
+              </TransitionLink>
             );
           })}
         </div>

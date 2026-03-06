@@ -4,6 +4,7 @@ import { useExpenseStore } from "@mooch/stores";
 import type { Group, GroupMember, Profile } from "@mooch/types";
 import { Button, Container, Text } from "@mooch/ui";
 import { useState } from "react";
+import { TransitionSlot } from "@/components/TransitionSlot";
 import { BalanceCard } from "./BalanceCard";
 import { CreateTabModal } from "./CreateTabModal";
 import { TabCard } from "./TabCard";
@@ -26,7 +27,10 @@ export function TabListClient({ groupId, group, currentUserId }: Props) {
 
   return (
     <Container as="section" className="py-4 sm:py-6">
-      <div className="col-span-6 sm:col-span-12 mx-auto w-full max-w-5xl space-y-5">
+      <TransitionSlot
+        className="col-span-6 sm:col-span-12 mx-auto w-full max-w-5xl space-y-5"
+        variant="context"
+      >
         {/* Page header */}
         <header className="flex items-center justify-between gap-3">
           <Text variant="title">Expenses</Text>
@@ -111,7 +115,7 @@ export function TabListClient({ groupId, group, currentUserId }: Props) {
           onOpenChange={setCreateOpen}
           groupId={groupId}
         />
-      </div>
+      </TransitionSlot>
     </Container>
   );
 }

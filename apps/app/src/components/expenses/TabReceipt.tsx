@@ -5,8 +5,10 @@ import { useExpenseStore } from "@mooch/stores";
 import type { GroupMember, Profile } from "@mooch/types";
 import { Button, Sheet, Text } from "@mooch/ui";
 import { toPng } from "html-to-image";
+import { motion, useReducedMotion } from "motion/react";
 import { useMemo, useRef, useState } from "react";
 import { formatCurrency } from "@/lib/expenses";
+import { getSurfaceTransition, motionDuration } from "@/lib/motion";
 
 type Member = GroupMember & { profile: Profile };
 
@@ -40,6 +42,7 @@ export function TabReceipt({
   const receiptRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const reducedMotion = useReducedMotion() ?? false;
 
   const orderedExpenses = useMemo(
     () =>
@@ -133,158 +136,218 @@ export function TabReceipt({
       description="Tab summary"
     >
       <div className="space-y-4">
-        <div ref={receiptRef} className="space-y-4">
-          <div className="text-center">
-            <p className="geist-pixel text-[20px] uppercase tracking-[0.12em] text-[#1A1714]">
-              {tab.name}
-            </p>
-            <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-[#7A6E65]">
-              {dateRange}
-            </p>
-          </div>
-
-          <div className="space-y-1.5 text-[11px]">
-            <div className="flex justify-between gap-3">
-              <span className="text-[#7A6E65]">STATUS</span>
-              <span className="font-semibold uppercase">{tab.status}</span>
-            </div>
-            <div className="flex justify-between gap-3">
-              <span className="text-[#7A6E65]">EXPENSES</span>
-              <span className="font-semibold">{orderedExpenses.length}</span>
-            </div>
-            <div className="flex justify-between gap-3">
-              <span className="text-[#7A6E65]">CURRENCY</span>
-              <span className="font-semibold">{groupCurrency}</span>
-            </div>
-          </div>
-
-          <div className="border-t border-dashed border-[var(--receipt-edge)] pt-3">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-[#7A6E65]">
-              Expenses
-            </p>
-            {orderedExpenses.length === 0 ? (
-              <p className="mt-2 text-[11px] text-[#7A6E65]">
-                No expenses recorded yet.
+        <div className="max-h-[min(56vh,32rem)] overflow-y-auto pr-1 overscroll-contain">
+          <motion.div
+            ref={receiptRef}
+            className="space-y-4 pb-1"
+            initial={reducedMotion ? false : { opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={getSurfaceTransition(
+              reducedMotion,
+              motionDuration.fast,
+            )}
+          >
+            <motion.div
+              className="text-center"
+              initial={reducedMotion ? false : { opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={getSurfaceTransition(
+                reducedMotion,
+                motionDuration.fast,
+              )}
+            >
+              <p className="geist-pixel text-[20px] uppercase tracking-[0.12em] text-[#1A1714]">
+                {tab.name}
               </p>
-            ) : (
-              <div className="mt-2 space-y-2.5">
-                {orderedExpenses.map((expense) => {
-                  const payer =
-                    members.find((member) => member.user_id === expense.paid_by)
-                      ?.profile.display_name ?? "Unknown";
-                  const displayAmount =
-                    expense.converted_amount ?? expense.amount;
-                  const displayCurrency =
-                    expense.converted_amount != null
-                      ? groupCurrency
-                      : expense.currency;
+              <p className="mt-1 text-[10px] uppercase tracking-[0.16em] text-[#7A6E65]">
+                {dateRange}
+              </p>
+            </motion.div>
 
-                  return (
-                    <div key={expense.id} className="space-y-0.5">
-                      <div className="flex justify-between gap-3">
-                        <span className="truncate">{expense.description}</span>
-                        <span className="font-semibold">
-                          {formatCurrency(
-                            displayAmount,
-                            displayCurrency,
-                            locale,
-                          )}
-                        </span>
+            <motion.div
+              className="space-y-1.5 text-[11px]"
+              initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={getSurfaceTransition(
+                reducedMotion,
+                motionDuration.standard,
+              )}
+            >
+              <div className="flex justify-between gap-3">
+                <span className="text-[#7A6E65]">STATUS</span>
+                <span className="font-semibold uppercase">{tab.status}</span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-[#7A6E65]">EXPENSES</span>
+                <span className="font-semibold">{orderedExpenses.length}</span>
+              </div>
+              <div className="flex justify-between gap-3">
+                <span className="text-[#7A6E65]">CURRENCY</span>
+                <span className="font-semibold">{groupCurrency}</span>
+              </div>
+            </motion.div>
+
+            <ReceiptSection
+              reducedMotion={reducedMotion}
+              delay={0.03}
+              title="Expenses"
+            >
+              {orderedExpenses.length === 0 ? (
+                <p className="mt-2 text-[11px] text-[#7A6E65]">
+                  No expenses recorded yet.
+                </p>
+              ) : (
+                <div className="mt-2 space-y-2.5">
+                  {orderedExpenses.map((expense) => {
+                    const payer =
+                      members.find(
+                        (member) => member.user_id === expense.paid_by,
+                      )?.profile.display_name ?? "Unknown";
+                    const displayAmount =
+                      expense.converted_amount ?? expense.amount;
+                    const displayCurrency =
+                      expense.converted_amount != null
+                        ? groupCurrency
+                        : expense.currency;
+
+                    return (
+                      <div key={expense.id} className="space-y-0.5">
+                        <div className="flex justify-between gap-3">
+                          <span className="truncate">
+                            {expense.description}
+                          </span>
+                          <span className="font-semibold">
+                            {formatCurrency(
+                              displayAmount,
+                              displayCurrency,
+                              locale,
+                            )}
+                          </span>
+                        </div>
+                        <div className="flex justify-between gap-3 text-[10px] text-[#7A6E65]">
+                          <span className="truncate">Paid by {payer}</span>
+                          <span>{formatDate(expense.created_at, locale)}</span>
+                        </div>
                       </div>
-                      <div className="flex justify-between gap-3 text-[10px] text-[#7A6E65]">
-                        <span className="truncate">Paid by {payer}</span>
-                        <span>{formatDate(expense.created_at, locale)}</span>
-                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </ReceiptSection>
+
+            <ReceiptSection
+              reducedMotion={reducedMotion}
+              delay={0.05}
+              title="Per-person totals"
+            >
+              {paidTotals.length === 0 ? (
+                <p className="mt-2 text-[11px] text-[#7A6E65]">
+                  Totals will appear after the first expense.
+                </p>
+              ) : (
+                <div className="mt-2 space-y-1.5">
+                  {paidTotals.map((entry) => (
+                    <div
+                      key={entry.user_id}
+                      className="flex justify-between gap-3"
+                    >
+                      <span>{entry.name}</span>
+                      <span className="font-semibold">
+                        {formatCurrency(entry.total, groupCurrency, locale)}
+                      </span>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                  ))}
+                </div>
+              )}
+            </ReceiptSection>
 
-          <div className="border-t border-dashed border-[var(--receipt-edge)] pt-3">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-[#7A6E65]">
-              Per-person totals
-            </p>
-            {paidTotals.length === 0 ? (
-              <p className="mt-2 text-[11px] text-[#7A6E65]">
-                Totals will appear after the first expense.
-              </p>
-            ) : (
-              <div className="mt-2 space-y-1.5">
-                {paidTotals.map((entry) => (
-                  <div
-                    key={entry.user_id}
-                    className="flex justify-between gap-3"
-                  >
-                    <span>{entry.name}</span>
-                    <span className="font-semibold">
-                      {formatCurrency(entry.total, groupCurrency, locale)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+            <ReceiptSection
+              reducedMotion={reducedMotion}
+              delay={0.07}
+              title="Balance summary"
+            >
+              {balances.length === 0 ? (
+                <p className="mt-2 text-[11px] text-[#7A6E65]">
+                  Everyone is settled up.
+                </p>
+              ) : (
+                <div className="mt-2 space-y-1.5">
+                  {balances.map((balance) => (
+                    <div
+                      key={balance.id}
+                      className="flex justify-between gap-3"
+                    >
+                      <span className="truncate">
+                        {balance.from_profile.display_name} owes{" "}
+                        {balance.to_profile.display_name}
+                      </span>
+                      <span className="font-semibold">
+                        {formatCurrency(
+                          Number(balance.amount),
+                          groupCurrency,
+                          locale,
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ReceiptSection>
 
-          <div className="border-t border-dashed border-[var(--receipt-edge)] pt-3">
-            <p className="text-[10px] uppercase tracking-[0.16em] text-[#7A6E65]">
-              Balance summary
-            </p>
-            {balances.length === 0 ? (
-              <p className="mt-2 text-[11px] text-[#7A6E65]">
-                Everyone is settled up.
-              </p>
-            ) : (
-              <div className="mt-2 space-y-1.5">
-                {balances.map((balance) => (
-                  <div key={balance.id} className="flex justify-between gap-3">
-                    <span className="truncate">
-                      {balance.from_profile.display_name} owes{" "}
-                      {balance.to_profile.display_name}
-                    </span>
-                    <span className="font-semibold">
-                      {formatCurrency(
-                        Number(balance.amount),
+            <ReceiptSection
+              reducedMotion={reducedMotion}
+              delay={0.09}
+              title={null}
+            >
+              <div className="flex justify-between gap-3 text-[12px]">
+                <span className="font-semibold uppercase tracking-[0.16em]">
+                  Grand total
+                </span>
+                <span className="font-semibold">
+                  {hasMixedCurrencyItems
+                    ? "Mixed currencies"
+                    : formatCurrency(
+                        totalInGroupCurrency,
                         groupCurrency,
                         locale,
                       )}
-                    </span>
-                  </div>
-                ))}
+                </span>
               </div>
-            )}
-          </div>
-
-          <div className="border-t border-dashed border-[var(--receipt-edge)] pt-3">
-            <div className="flex justify-between gap-3 text-[12px]">
-              <span className="font-semibold uppercase tracking-[0.16em]">
-                Grand total
-              </span>
-              <span className="font-semibold">
-                {hasMixedCurrencyItems
-                  ? "Mixed currencies"
-                  : formatCurrency(totalInGroupCurrency, groupCurrency, locale)}
-              </span>
-            </div>
-            {hasMixedCurrencyItems && (
-              <p className="mt-1 text-[10px] text-[#7A6E65]">
-                Some foreign-currency items are excluded until converted.
-              </p>
-            )}
-          </div>
+              {hasMixedCurrencyItems && (
+                <p className="mt-1 text-[10px] text-[#7A6E65]">
+                  Some foreign-currency items are excluded until converted.
+                </p>
+              )}
+            </ReceiptSection>
+          </motion.div>
         </div>
 
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          className="w-full"
-          onClick={handleDownload}
-          disabled={downloading}
+        {orderedExpenses.length > 8 && (
+          <Text variant="caption" color="subtle" className="block text-center">
+            Long receipt: scroll to inspect all lines. Download captures the
+            full receipt.
+          </Text>
+        )}
+
+        <motion.div
+          initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={getSurfaceTransition(
+            reducedMotion,
+            motionDuration.standard,
+          )}
         >
-          {downloading ? "Generating..." : "Download as image"}
-        </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            className="w-full"
+            onClick={handleDownload}
+            disabled={downloading}
+          >
+            {downloading ? "Generating..." : "Download as image"}
+          </Button>
+        </motion.div>
 
         {error && (
           <Text variant="caption" color="danger" className="block text-center">
@@ -293,5 +356,36 @@ export function TabReceipt({
         )}
       </div>
     </Sheet>
+  );
+}
+
+function ReceiptSection({
+  reducedMotion,
+  delay,
+  title,
+  children,
+}: {
+  reducedMotion: boolean;
+  delay: number;
+  title: string | null;
+  children: React.ReactNode;
+}) {
+  return (
+    <motion.div
+      className="border-t border-dashed border-[var(--receipt-edge)] pt-3"
+      initial={reducedMotion ? false : { opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        ...getSurfaceTransition(reducedMotion, motionDuration.standard),
+        delay: reducedMotion ? 0 : delay,
+      }}
+    >
+      {title && (
+        <p className="text-[10px] uppercase tracking-[0.16em] text-[#7A6E65]">
+          {title}
+        </p>
+      )}
+      {children}
+    </motion.div>
   );
 }

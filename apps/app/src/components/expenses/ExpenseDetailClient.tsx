@@ -10,12 +10,18 @@ import {
   LucideIconByName,
   Text,
 } from "@mooch/ui";
-import Link from "next/link";
+import { motion, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { startTransition, useState } from "react";
 import { deleteExpense } from "@/app/actions/expenses";
 import { GroupIcon } from "@/components/groups/group-icon";
+import { TransitionLink } from "@/components/TransitionLink";
+import { TransitionSlot } from "@/components/TransitionSlot";
 import { CATEGORY_CONFIG, formatCurrency, relativeTime } from "@/lib/expenses";
+import {
+  getExpenseTransitionNames,
+  navigateWithViewTransition,
+} from "@/lib/view-transition";
 import {
   AddExpenseModal,
   type ExpenseEditorInitialData,
@@ -63,6 +69,7 @@ export function ExpenseDetailClient({
   canManage,
 }: Props) {
   const router = useRouter();
+  const reducedMotion = useReducedMotion() ?? false;
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -77,6 +84,7 @@ export function ExpenseDetailClient({
     expense.category === "other"
       ? { emoji: "📦", label: "Other" }
       : CATEGORY_CONFIG[expense.category];
+  const transitionNames = getExpenseTransitionNames(expense.id);
 
   async function handleDelete() {
     setDeleting(true);
@@ -93,28 +101,37 @@ export function ExpenseDetailClient({
 
     setDeleteOpen(false);
     startTransition(() => {
-      router.push(`/${groupId}/expenses/${tabId}`);
+      navigateWithViewTransition(router, `/${groupId}/expenses/${tabId}`, {
+        reducedMotion,
+      });
       router.refresh();
     });
   }
 
   return (
     <Container as="section" className="py-4 sm:py-6">
-      <div className="col-span-6 sm:col-span-12 mx-auto w-full max-w-5xl space-y-5">
-        <Link
+      <TransitionSlot
+        className="col-span-6 sm:col-span-12 mx-auto w-full max-w-5xl space-y-5"
+        variant="context"
+      >
+        <TransitionLink
           href={`/${groupId}/expenses/${tabId}`}
           className="inline-flex items-center gap-1.5 text-[13px] font-medium transition-colors"
           style={{ color: "#8c7463" }}
         >
           <span aria-hidden="true">&larr;</span>
           Back to {tabName}
-        </Link>
+        </TransitionLink>
 
         <header className="flex flex-col gap-4 rounded-2xl border border-[#EDE3DA] bg-[#FDFCFB] p-5 shadow-[var(--shadow-elevated)] sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
-            <div
+            <motion.div
               className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
-              style={{ background: "#F7F2ED", border: "1px solid #DCCBC0" }}
+              style={{
+                background: "#F7F2ED",
+                border: "1px solid #DCCBC0",
+                viewTransitionName: transitionNames.icon,
+              }}
             >
               {expense.category === "other" && expense.custom_category ? (
                 <LucideIconByName
@@ -128,8 +145,11 @@ export function ExpenseDetailClient({
                   {categoryConfig.emoji}
                 </span>
               )}
-            </div>
-            <div className="min-w-0">
+            </motion.div>
+            <motion.div
+              className="min-w-0"
+              style={{ viewTransitionName: transitionNames.title }}
+            >
               <div className="flex flex-wrap items-center gap-2">
                 <Text variant="title" className="truncate">
                   {expense.description}
@@ -143,7 +163,7 @@ export function ExpenseDetailClient({
                 {" · "}
                 {relativeTime(expense.created_at)}
               </Text>
-            </div>
+            </motion.div>
           </div>
 
           {canManage && (
@@ -234,7 +254,9 @@ export function ExpenseDetailClient({
                 Summary
               </Text>
               <div className="mt-3 flex items-start justify-between gap-3">
-                <div>
+                <motion.div
+                  style={{ viewTransitionName: transitionNames.amount }}
+                >
                   <Text variant="caption" color="subtle">
                     Display amount
                   </Text>
@@ -245,7 +267,7 @@ export function ExpenseDetailClient({
                       group.locale,
                     )}
                   </Text>
-                </div>
+                </motion.div>
                 <div
                   className="w-11 h-11 rounded-2xl flex items-center justify-center shrink-0"
                   style={{ background: "#F7F2ED", border: "1px solid #DCCBC0" }}
@@ -348,7 +370,7 @@ export function ExpenseDetailClient({
           onConfirm={handleDelete}
           onCancel={() => setDeleteOpen(false)}
         />
-      </div>
+      </TransitionSlot>
     </Container>
   );
 }

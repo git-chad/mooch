@@ -3,10 +3,12 @@
 import { Tooltip } from "@base-ui-components/react";
 import { Button, Container, Text } from "@mooch/ui";
 import { Settings } from "lucide-react";
-import { motion } from "motion/react";
-import Link from "next/link";
+import { motion, useReducedMotion } from "motion/react";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
+import { TransitionLink } from "@/components/TransitionLink";
+import { TransitionSlot } from "@/components/TransitionSlot";
+import { getLayoutTransition } from "@/lib/motion";
 import { GroupIcon } from "./group-icon";
 import { InviteSheet } from "./InviteSheet";
 import { MemberList } from "./MemberList";
@@ -27,7 +29,6 @@ const NAV_TABS = [
   { label: "Insights", slug: "insights" },
 ] as const;
 
-
 const ENABLED_SLUGS = new Set(["", "expenses"]);
 
 export function GroupDetailClient({
@@ -36,6 +37,7 @@ export function GroupDetailClient({
 }: GroupDetailClientProps) {
   const [inviteOpen, setInviteOpen] = useState(false);
   const pathname = usePathname();
+  const reducedMotion = useReducedMotion() ?? false;
 
   const activeSlug = useMemo(() => {
     const after = pathname.replace(`/${group.id}`, "").replace(/^\//, "");
@@ -44,14 +46,16 @@ export function GroupDetailClient({
 
   return (
     <Container as="section" className="py-4 sm:py-6">
-      <div className="col-span-6 sm:col-span-12 mx-auto w-full max-w-5xl space-y-6">
+      <TransitionSlot
+        className="col-span-6 sm:col-span-12 mx-auto w-full max-w-5xl space-y-6"
+        variant="context"
+      >
         {group.cover_photo_url && (
           <div className="overflow-hidden rounded-2xl border border-[#EDE3DA] shadow-[var(--shadow-elevated)]">
             {/* biome-ignore lint/performance/noImgElement: cover photo */}
-            {/* biome-ignore lint/a11y/noRedundantAlt: descriptive alt */}
             <img
               src={group.cover_photo_url}
-              alt={`${group.name} cover photo`}
+              alt={`${group.name} cover`}
               className="aspect-3/1 w-full object-cover"
             />
           </div>
@@ -92,17 +96,17 @@ export function GroupDetailClient({
               <div key={tab.label} className="relative shrink-0">
                 {isActive && (
                   <motion.div
-                    layoutId="tab-indicator"
+                    layoutId="group-nav-indicator"
                     className="absolute inset-0 rounded-[10px] bg-surface"
                     style={{
                       boxShadow:
                         "inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 0 rgba(200,184,168,0.45), 0 1px 3px rgba(0,0,0,0.07)",
                     }}
-                    transition={{ type: "spring", stiffness: 400, damping: 35 }}
+                    transition={getLayoutTransition(reducedMotion)}
                   />
                 )}
                 {isEnabled ? (
-                  <Link
+                  <TransitionLink
                     href={href}
                     className={[
                       "relative z-10 block rounded-[10px] px-3.5 py-1.5 text-xs font-medium font-sans transition-colors duration-150",
@@ -112,7 +116,7 @@ export function GroupDetailClient({
                     ].join(" ")}
                   >
                     {tab.label}
-                  </Link>
+                  </TransitionLink>
                 ) : (
                   <span className="relative z-10 block rounded-[10px] px-3.5 py-1.5 text-xs font-medium font-sans text-ink-placeholder cursor-default select-none">
                     {tab.label}
@@ -129,19 +133,19 @@ export function GroupDetailClient({
           <div className="relative shrink-0">
             {activeSlug === "settings" && (
               <motion.div
-                layoutId="tab-indicator"
+                layoutId="group-nav-indicator"
                 className="absolute inset-0 rounded-[10px] bg-surface"
                 style={{
                   boxShadow:
                     "inset 0 1px 0 rgba(255,255,255,0.8), 0 2px 0 rgba(200,184,168,0.45), 0 1px 3px rgba(0,0,0,0.07)",
                 }}
-                transition={{ type: "spring", stiffness: 400, damping: 35 }}
+                transition={getLayoutTransition(reducedMotion)}
               />
             )}
             <Tooltip.Root>
               <Tooltip.Trigger
                 render={
-                  <Link
+                  <TransitionLink
                     href={`/groups/${group.id}/settings`}
                     className={[
                       "relative z-10 flex items-center justify-center rounded-[10px] w-8 h-8 transition-colors duration-150",
@@ -152,7 +156,7 @@ export function GroupDetailClient({
                     aria-label="Settings"
                   >
                     <Settings size={16} className="shrink-0" />
-                  </Link>
+                  </TransitionLink>
                 }
               />
               <Tooltip.Portal>
@@ -177,7 +181,7 @@ export function GroupDetailClient({
           inviteCode={group.invite_code}
           groupName={group.name}
         />
-      </div>
+      </TransitionSlot>
     </Container>
   );
 }
