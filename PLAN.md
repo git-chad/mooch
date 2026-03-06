@@ -586,7 +586,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
   - `balances` has SELECT-only RLS for group members; writes are done server-side via service-role.
   - Indexes added on `(group_id, created_at desc)` for expenses and settlements, and on `expense_participants (expense_id, user_id)`.
 
-- [ ] 3.1.2 — **NEW:** Create `supabase/migrations/0008_tabs.sql`:
+- [x] 3.1.2 — **NEW:** Create `supabase/migrations/0008_tabs.sql`:
   - `tabs` table: `id` (uuid PK), `group_id` (FK → groups), `name` (text, 2–60 chars), `emoji` (text, encoded same as group icons), `status` (text: `open` | `closed`, default `open`), `created_by` (FK → auth.users), `created_at`, `updated_at`
   - Add `tab_id` (FK → tabs, NOT NULL) to `expenses` table
   - Add `tab_id` (FK → tabs, NOT NULL) to `balances` table
@@ -598,7 +598,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 - [x] 3.1.3 — Added `ExpenseCategory`, `SplitType`, `Expense`, `ExpenseParticipant`, `Balance`, `SettlementPayment` types to `packages/types/src/index.ts`.
 
-- [ ] 3.1.4 — **NEW:** Add `Tab` type to `packages/types/src/index.ts`:
+- [x] 3.1.4 — **NEW:** Add `Tab` type to `packages/types/src/index.ts`:
   ```ts
   type TabStatus = "open" | "closed";
   type Tab = {
@@ -614,7 +614,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
   ```
   Update `Expense`, `Balance` types to include `tab_id`.
 
-- [x] 3.1.5 — (was 3.1.2) Implement `recalculate_balances` in TypeScript — **UPDATE:** now takes `(groupId, tabId)` and recalculates per-tab:
+- [x] 3.1.5 — (was 3.1.2) Implement `recalculateBalances` in TypeScript — **UPDATED:** now takes `(groupId, tabId)` and recalculates per-tab. Added `recalculateAllBalances(groupId)` for global settlements:
   1. Fetch all expenses for the tab (use `converted_amount` if set, else `amount` when currency matches group default; skip unconverted foreign-currency expenses with a console warning)
   2. Fetch all `settlement_payments` for the tab
   3. Compute net balance per user (owed - owing - settlements)

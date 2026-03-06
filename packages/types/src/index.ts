@@ -38,6 +38,19 @@ export type GroupMember = {
   joined_at: string;
 };
 
+export type TabStatus = "open" | "closed";
+
+export type Tab = {
+  id: string;
+  group_id: string;
+  name: string;
+  emoji: string;
+  status: TabStatus;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+};
+
 export type ExpenseCategory =
   | "bar"
   | "clubbing"
@@ -52,6 +65,7 @@ export type SplitType = "equal" | "percentage" | "exact";
 export type Expense = {
   id: string;
   group_id: string;
+  tab_id: string;
   description: string;
   notes: string | null;
   amount: number;
@@ -81,6 +95,7 @@ export type ExpenseParticipant = {
 export type Balance = {
   id: string;
   group_id: string;
+  tab_id: string;
   from_user: string;
   to_user: string;
   // Always in group currency
@@ -91,6 +106,7 @@ export type Balance = {
 export type SettlementPayment = {
   id: string;
   group_id: string;
+  tab_id: string | null;
   from_user: string;
   to_user: string;
   amount: number;

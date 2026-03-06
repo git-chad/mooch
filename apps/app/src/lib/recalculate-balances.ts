@@ -59,7 +59,15 @@ function simplify(
   return transactions;
 }
 
-export async function recalculateBalances(groupId: string): Promise<void> {
+/**
+ * Recalculate balances for a single tab.
+ * Fetches all expenses in the tab + tab-scoped settlements, computes net
+ * balances, simplifies debts, and replaces the balance rows for that tab.
+ */
+export async function recalculateBalances(
+  groupId: string,
+  tabId: string,
+): Promise<void> {
   const admin = createAdminClient();
 
   const { data: group } = await admin
@@ -71,17 +79,21 @@ export async function recalculateBalances(groupId: string): Promise<void> {
   if (!group) return;
   const groupCurrency = group.currency as string;
 
+  // Fetch expenses scoped to this tab
   const { data: expenses } = await admin
     .from("expenses")
     .select(
       "paid_by, amount, currency, exchange_rate, converted_amount, expense_participants(user_id, share_amount)",
     )
-    .eq("group_id", groupId);
+    .eq("tab_id", tabId);
 
+  // Fetch settlements scoped to this tab (tab_id match) + global settlements
+  // that affect this group (tab_id is null)
   const { data: settlements } = await admin
     .from("settlement_payments")
-    .select("from_user, to_user, amount, currency, exchange_rate, converted_amount")
-    .eq("group_id", groupId);
+    .select("tab_id, from_user, to_user, amount, currency, exchange_rate, converted_amount")
+    .eq("group_id", groupId)
+    .or(`tab_id.eq.${tabId},tab_id.is.null`);
 
   const net = new Map<string, number>();
   const add = (userId: string, delta: number) =>
@@ -97,9 +109,8 @@ export async function recalculateBalances(groupId: string): Promise<void> {
     );
 
     if (effectiveTotal === null) {
-      // Unconverted foreign-currency expense — excluded from balances until converted.
       console.warn(
-        `[recalculateBalances] Skipping unconverted expense in ${expense.currency} for group ${groupId}`,
+        `[recalculateBalances] Skipping unconverted expense in ${expense.currency} for tab ${tabId}`,
       );
       continue;
     }
@@ -115,17 +126,18 @@ export async function recalculateBalances(groupId: string): Promise<void> {
       } else if (expense.exchange_rate !== null) {
         shareInGroupCurrency = Number(p.share_amount) * Number(expense.exchange_rate);
       } else {
-        // Prorate: share / total * converted_amount
         shareInGroupCurrency =
           (Number(p.share_amount) / Number(expense.amount)) * effectiveTotal;
       }
 
-      // Each participant owes their share.
       add(p.user_id, -shareInGroupCurrency);
     }
   }
 
-  for (const s of settlements ?? []) {
+  // Only apply tab-scoped settlements to per-tab balances.
+  // Global settlements (tab_id = null) are excluded from individual tab
+  // balance calc — they only affect the global aggregated view.
+  for (const s of (settlements ?? []).filter((s) => s.tab_id !== null)) {
     const effective = toGroupCurrency(
       Number(s.amount),
       s.currency,
@@ -136,25 +148,42 @@ export async function recalculateBalances(groupId: string): Promise<void> {
 
     if (effective === null) continue;
 
-    // from_user paid → reduces their debt (increases their net)
     add(s.from_user, effective);
-    // to_user received → reduces what they're owed (decreases their net)
     add(s.to_user, -effective);
   }
 
   const transactions = simplify(net);
 
-  // Replace all existing balances for this group atomically.
-  await admin.from("balances").delete().eq("group_id", groupId);
+  // Replace all existing balances for this tab atomically.
+  await admin.from("balances").delete().eq("tab_id", tabId);
 
   if (transactions.length > 0) {
     await admin.from("balances").insert(
       transactions.map((t) => ({
         group_id: groupId,
+        tab_id: tabId,
         from_user: t.from,
         to_user: t.to,
         amount: t.amount,
       })),
     );
   }
+}
+
+/**
+ * Recalculate balances for ALL open tabs in a group.
+ * Used after a global settlement payment that affects multiple tabs.
+ */
+export async function recalculateAllBalances(groupId: string): Promise<void> {
+  const admin = createAdminClient();
+
+  const { data: tabs } = await admin
+    .from("tabs")
+    .select("id")
+    .eq("group_id", groupId)
+    .eq("status", "open");
+
+  if (!tabs || tabs.length === 0) return;
+
+  await Promise.all(tabs.map((tab) => recalculateBalances(groupId, tab.id)));
 }
