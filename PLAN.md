@@ -574,70 +574,23 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 3.1 — Database Migrations: Expenses & Balances
 
-- [ ] 3.1.1 — Create `supabase/migrations/0003_expenses.sql`:
+- [x] 3.1.1 — Created `supabase/migrations/0006_expenses.sql` (0003–0005 were taken by groups + RLS migrations):
 
-  ```sql
-  create type expense_category as enum ('bar', 'clubbing', 'bbq', 'groceries', 'transport', 'accommodation', 'other');
-  create type split_type as enum ('equal', 'percentage', 'exact');
+  **Design decisions vs. original plan:**
+  - `expenses` gains `notes` field and multi-currency fields: `exchange_rate`, `converted_amount`, `rate_fetched_at`. No auto-conversion — user triggers it manually during expense creation with an API-suggested rate (e.g. dollar blue). At settle time, a stale-rate warning is shown if `rate_fetched_at` is > 1 day old.
+  - Removed `is_settled` / `settled_at` from `expenses` — individual expenses are never flagged as settled. Debt is cleared via `settlement_payments` records instead.
+  - Added `settlement_payments` table (separate from expenses): records actual pay-back transactions between two members with full currency + exchange_rate fields, kept forever as audit trail.
+  - No `recalculate_balances` DB trigger. Balance recomputation is called explicitly from server actions and written via service-role client (bypasses RLS). Logic lives in TypeScript where multi-currency handling is easier.
+  - `balances` has SELECT-only RLS for group members; writes are done server-side via service-role.
+  - Indexes added on `(group_id, created_at desc)` for expenses and settlements, and on `expense_participants (expense_id, user_id)`.
 
-  create table public.expenses (
-    id uuid primary key default gen_random_uuid(),
-    group_id uuid references public.groups(id) on delete cascade not null,
-    description text not null,
-    amount numeric(12,2) not null check (amount > 0),
-    currency text not null,
-    category expense_category not null default 'other',
-    paid_by uuid references public.profiles(id) not null,
-    split_type split_type not null default 'equal',
-    is_settled boolean not null default false,
-    settled_at timestamptz,
-    photo_url text,
-    created_by uuid references public.profiles(id) not null,
-    created_at timestamptz not null default now(),
-    updated_at timestamptz not null default now()
-  );
-
-  create table public.expense_participants (
-    expense_id uuid references public.expenses(id) on delete cascade,
-    user_id uuid references public.profiles(id) on delete cascade,
-    share_amount numeric(12,2) not null,
-    primary key (expense_id, user_id)
-  );
-
-  create table public.balances (
-    id uuid primary key default gen_random_uuid(),
-    group_id uuid references public.groups(id) on delete cascade not null,
-    from_user uuid references public.profiles(id) not null,
-    to_user uuid references public.profiles(id) not null,
-    amount numeric(12,2) not null,
-    updated_at timestamptz not null default now(),
-    unique (group_id, from_user, to_user)
-  );
-
-  alter table public.expenses enable row level security;
-  alter table public.expense_participants enable row level security;
-  alter table public.balances enable row level security;
-
-  create policy "Group members can manage expenses"
-    on public.expenses for all using (public.is_group_member(group_id));
-
-  create policy "Group members can view expense participants"
-    on public.expense_participants for select
-    using (exists (
-      select 1 from public.expenses e
-      where e.id = expense_id and public.is_group_member(e.group_id)
-    ));
-
-  create policy "Group members can view balances"
-    on public.balances for select using (public.is_group_member(group_id));
-  ```
-
-- [ ] 3.1.2 — Create Postgres function `recalculate_balances(p_group_id uuid)`:
-  1. Compute net balance per user (owed minus owing across all unsettled expenses)
-  2. Greedy simplification: match largest creditor with largest debtor
-  3. Upsert results into `balances` table
-- [ ] 3.1.3 — Create trigger: after insert/update/delete on `expenses` or `expense_participants`, call `recalculate_balances(group_id)`.
-- [ ] 3.1.4 — Add `Expense`, `ExpenseParticipant`, `Balance` types to `packages/types`.
+- [ ] 3.1.2 — Implement `recalculate_balances(groupId)` in TypeScript (server action utility):
+  1. Fetch all expenses for the group (use `converted_amount` if set, else `amount` when currency matches group default; skip unconverted foreign-currency expenses with a console warning)
+  2. Fetch all `settlement_payments` for the group
+  3. Compute net balance per user (owed − owing − settlements)
+  4. Greedy simplification: match largest creditor with largest debtor
+  5. Delete existing balances for the group, insert fresh rows via service-role client
+- [ ] 3.1.3 — Add `Expense`, `ExpenseParticipant`, `Balance`, `SettlementPayment` types to `packages/types`.
 
 ### 3.2 — Expense Queries & Server Actions
 
