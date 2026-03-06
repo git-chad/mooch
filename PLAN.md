@@ -1463,7 +1463,14 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 - [ ] 9.5.4 — Touch targets: all interactive elements ≥ 44px height on mobile.
 - [ ] 9.5.5 — Accessibility: semantic HTML, `aria-label` on icon-only buttons, keyboard navigation in modals.
 
-### 9.6 — Marketing Site (apps/web)
+### 9.6 — Receipt OCR Auto-fill
+
+- [ ] 9.6.1 — On `AddExpenseModal`, add an optional "Scan Receipt" button that opens a file/camera picker.
+- [ ] 9.6.2 — Run OCR client-side (Tesseract.js) or via a cloud vision API on the uploaded image.
+- [ ] 9.6.3 — Extract total amount and merchant/description from receipt → pre-fill form fields. User confirms before submitting.
+- [ ] 9.6.4 — Keep the existing receipt photo attachment (from Phase 3) as the stored proof — OCR is just a UX convenience layer on top.
+
+### 9.7 — Marketing Site (apps/web)
 
 - [ ] 9.6.1 — `apps/web/src/app/page.tsx` home page:
   - Hero: tagline + CTA → `app.mooch.me/signup`
@@ -1486,6 +1493,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 - [ ] 9.7.7 — Marketing site complete: all links work, CTAs point to correct URLs.
 - [ ] 9.7.8 — Dark mode toggles correctly.
 - [ ] 9.7.9 — Keyboard navigation works in all modals (Tab, Escape).
+- [ ] 9.7.10 — Receipt OCR auto-fill works end to end (scan → pre-fill → confirm).
 
 ---
 
@@ -1498,6 +1506,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 - [ ] App works on 375px viewport
 - [ ] Marketing site complete with Privacy + Terms pages
 - [ ] All animations present and smooth
+- [ ] Receipt OCR scan → pre-fill flow works
 
 **Phase 9 Status: ⬜ — Awaiting approval**
 
@@ -1623,14 +1632,14 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 _(Do not start until Phase 10 is APPROVED and shipped)_
 
-| Feature                | Notes                                                   |
-| ---------------------- | ------------------------------------------------------- |
-| Squad Pro subscription | Stripe or LemonSqueezy, feature gates                   |
-| Receipt OCR            | Tesseract.js or cloud vision for expense photo scanning |
-| AI weekly recaps       | LLM-generated fun facts (Claude API)                    |
-| Custom group themes    | Color palettes, profile cosmetics                       |
-| PDF exports            | Monthly expense reports, event summaries                |
-| PWA offline support    | Service Worker caching for offline viewing              |
+| Feature                   | Notes                                                                                                      |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Squad Pro subscription    | Stripe or LemonSqueezy, feature gates                                                                      |
+| AI weekly recaps          | LLM-generated fun facts (Claude API)                                                                       |
+| Custom group themes       | Color palettes, profile cosmetics                                                                          |
+| PDF exports               | Monthly expense reports, event summaries                                                                   |
+| PWA offline support       | Service Worker caching for offline viewing                                                                 |
+| Item-level receipt splitting | OCR extracts line items → each item assigned to specific members → generates per-person exact splits. E.g. alcohol buyers vs non-drinkers on the same receipt. Builds on Phase 9 OCR foundation. |
 
 ---
 
