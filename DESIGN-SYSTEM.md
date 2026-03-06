@@ -108,7 +108,7 @@ Used inside card content (`253-0`, `258-0`) and nav rail:
 - `16px`: major section cards, elevated content panels
 - `12px`: medium panels, toast, mini cards, graph container
 - `10px`: color swatches
-- `999px`: pills, chips, avatars, progress tracks/fills
+- `14px`: pills, chips, avatars, progress tracks/fills
 
 ---
 
@@ -283,7 +283,7 @@ Demo group: `239-0` (`gap: 8px`)
 
 ### Primary Button (`23A-0`)
 - Instance size in board: `77 x 38`
-- Shape: pill (`999px`)
+- Shape: pill (`14px`)
 - Padding: `10px 14px`
 - Fill: lime vertical gradient (bright top, darker bottom)
 - Border: `1px solid #5A9629`
