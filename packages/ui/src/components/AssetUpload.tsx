@@ -236,7 +236,7 @@ export function AssetUpload({
         <div
           role="img"
           aria-label={previewAlt}
-          className="h-28 w-full rounded-xl border border-[#E2D4C8] bg-cover bg-center"
+          className="aspect-[3/1] w-full rounded-xl border border-[#E2D4C8] bg-cover bg-center"
           style={{ backgroundImage: `url(${objectPreviewUrl ?? previewUrl})` }}
         />
       )}

@@ -167,7 +167,7 @@ export function Select(props: SelectProps) {
         </BaseSelect.Trigger>
 
         <BaseSelect.Portal>
-          <BaseSelect.Positioner sideOffset={6} align="start" className="z-50 min-w-[var(--anchor-width)] max-w-[360px]">
+          <BaseSelect.Positioner sideOffset={6} align="start" alignItemWithTrigger={false} className="z-50" style={{ width: 'var(--anchor-width)' }}>
             <BaseSelect.Popup className="select-popup bg-surface border border-edge-subtle rounded-xl outline-none overflow-hidden shadow-[var(--shadow-elevated)] py-1.5">
               <BaseSelect.List className="max-h-60 overflow-y-auto overflow-x-hidden space-y-1 px-0.5">
                 {groups

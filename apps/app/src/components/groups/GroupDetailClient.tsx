@@ -44,6 +44,18 @@ export function GroupDetailClient({
   return (
     <Container as="section" className="py-4 sm:py-6">
       <div className="col-span-6 sm:col-span-12 mx-auto w-full max-w-5xl space-y-6">
+        {group.cover_photo_url && (
+          <div className="overflow-hidden rounded-2xl border border-[#EDE3DA] shadow-[var(--shadow-elevated)]">
+            {/* biome-ignore lint/performance/noImgElement: cover photo */}
+            {/* biome-ignore lint/a11y/noRedundantAlt: descriptive alt */}
+            <img
+              src={group.cover_photo_url}
+              alt={`${group.name} cover photo`}
+              className="aspect-[3/1] w-full object-cover"
+            />
+          </div>
+        )}
+
         <header className="flex flex-col gap-4 rounded-2xl border border-[#EDE3DA] bg-[#FDFCFB] p-5 shadow-[var(--shadow-elevated)] sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-center gap-3">
             <span className="grid h-14 w-14 place-items-center rounded-2xl border border-[#D8C8BC] bg-[#F8F6F1] text-3xl text-[#4A3728]">
