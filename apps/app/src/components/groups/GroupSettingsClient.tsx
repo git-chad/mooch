@@ -5,6 +5,7 @@ import {
   AssetUpload,
   Button,
   ConfirmDialog,
+  Container,
   IconPicker,
   Input,
   Select,
@@ -248,200 +249,215 @@ export function GroupSettingsClient({
   }
 
   return (
-    <section className="mx-auto w-full max-w-5xl space-y-6 p-4 sm:p-6">
-      <header className="space-y-2">
-        <Text variant="title">Group settings</Text>
-        <Text variant="body" color="info">
-          Manage squad details, members, and invites.
-        </Text>
-      </header>
+    <Container as="section" className="py-4 sm:py-6">
+      <div className="col-span-6 sm:col-span-12 mx-auto w-full max-w-5xl space-y-6">
+        <header className="space-y-2">
+          <Text variant="title">Group settings</Text>
+          <Text variant="body" color="info">
+            Manage squad details, members, and invites.
+          </Text>
+        </header>
 
-      <form
-        onSubmit={handleSave}
-        className="space-y-4 rounded-2xl border border-[#EDE3DA] bg-[#FDFCFB] p-5 shadow-[var(--shadow-elevated)]"
-      >
-        <Input
-          label="Group name"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          minLength={2}
-          disabled={!isAdmin}
-          required
-        />
+        <form
+          onSubmit={handleSave}
+          className="space-y-4 rounded-2xl border border-[#EDE3DA] bg-[#FDFCFB] p-5 shadow-[var(--shadow-elevated)]"
+        >
+          <Input
+            label="Group name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            minLength={2}
+            disabled={!isAdmin}
+            required
+          />
 
-        <div className="space-y-2">
-          <Text variant="label">Group icon</Text>
-          <div className="flex items-end gap-3 rounded-xl border border-[#EDE3DA] bg-[#F8F6F1] p-3">
-            <IconPicker
-              label=""
-              value={
-                decodedIcon.kind === "lucide" ? decodedIcon.value : "Users"
-              }
-              onValueChange={(value) => {
-                if (!value || !isAdmin) return;
-                setEmoji(encodeGroupIcon(value));
-              }}
-              size="md"
-              disabled={!isAdmin}
-            />
-            <div className="flex min-w-0 items-center gap-2.5">
-              <span className="grid h-10 w-10 place-items-center rounded-xl border border-[#D8C8BC] bg-[#FDFCFB] text-[#4A3728]">
-                <GroupIcon value={emoji} size={20} />
-              </span>
-              <p className="truncate text-xs text-[#7A6E65] font-mono">
-                {decodedIcon.kind === "lucide" ? decodedIcon.value : emoji}
-              </p>
+          <div className="space-y-2">
+            <Text variant="label">Group icon</Text>
+            <div className="flex items-end gap-3 rounded-xl border border-[#EDE3DA] bg-[#F8F6F1] p-3">
+              <IconPicker
+                label=""
+                value={
+                  decodedIcon.kind === "lucide" ? decodedIcon.value : "Users"
+                }
+                onValueChange={(value) => {
+                  if (!value || !isAdmin) return;
+                  setEmoji(encodeGroupIcon(value));
+                }}
+                size="md"
+                disabled={!isAdmin}
+              />
+              <div className="flex min-w-0 items-center gap-2.5">
+                <span className="grid h-10 w-10 place-items-center rounded-xl border border-[#D8C8BC] bg-[#FDFCFB] text-[#4A3728]">
+                  <GroupIcon value={emoji} size={20} />
+                </span>
+                <p className="truncate text-xs text-[#7A6E65] font-mono">
+                  {decodedIcon.kind === "lucide" ? decodedIcon.value : emoji}
+                </p>
+              </div>
             </div>
           </div>
+
+          <Select
+            label="Currency"
+            value={currency}
+            onValueChange={setCurrency}
+            options={currencyOptions}
+            disabled={!isAdmin}
+          />
+
+          <Select
+            label="Language"
+            value={locale}
+            onValueChange={setLocale}
+            options={localeOptions}
+            disabled={!isAdmin}
+          />
+
+          <Input
+            label="Cover photo URL (optional)"
+            value={coverPhotoUrl}
+            onChange={(event) => setCoverPhotoUrl(event.target.value)}
+            placeholder="https://..."
+            type="url"
+            disabled={!isAdmin}
+          />
+
+          {isAdmin && (
+            <AssetUpload
+              label="Cover photo upload (recommended)"
+              value={coverPhotoFile}
+              onValueChange={setCoverPhotoFile}
+              accept={COVER_ACCEPT}
+              maxSizeBytes={COVER_MAX_SIZE_BYTES}
+              helperText="Upload takes priority over URL when both are set."
+              infoText="Supported: PNG, JPG, WEBP. Maximum size: 1 MB."
+              previewUrl={coverPhotoUrl.trim() || group.cover_photo_url || null}
+              previewAlt="Current group cover preview"
+            />
+          )}
+
+          <div className="rounded-xl border border-[#EDE3DA] bg-[#F8F6F1] p-3">
+            <p className="text-[10px] uppercase tracking-widest text-[#8C7463] font-mono">
+              Invite code
+            </p>
+            <p className="mt-1 font-mono text-2xl tracking-[0.2em] text-[#1F2A23]">
+              {inviteCode}
+            </p>
+            {isAdmin && (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="mt-3"
+                loading={busyAction === "regenerate"}
+                onClick={() => void handleRegenerateCode()}
+              >
+                Regenerate invite code
+              </Button>
+            )}
+          </div>
+
+          {error && (
+            <Text variant="caption" color="danger">
+              {error}
+            </Text>
+          )}
+          {saved && !error && (
+            <Text variant="caption" className="text-[#3D6B1A]">
+              Changes saved.
+            </Text>
+          )}
+
+          {isAdmin && (
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                variant="primary"
+                loading={busyAction === "save"}
+              >
+                Save changes
+              </Button>
+            </div>
+          )}
+        </form>
+
+        <div className="space-y-3 rounded-2xl border border-[#EDE3DA] bg-[#FDFCFB] p-5 shadow-[var(--shadow-elevated)]">
+          <Text variant="heading">Members</Text>
+          <MemberList
+            members={members}
+            currentUserId={currentUserId}
+            isAdmin={isAdmin}
+            onToggleRole={(member) => {
+              const nextRole = member.role === "admin" ? "member" : "admin";
+              void handleToggleRole(member.user_id, nextRole);
+            }}
+            onRemove={(member) => void handleRemoveMember(member.user_id)}
+          />
         </div>
 
-        <Select
-          label="Currency"
-          value={currency}
-          onValueChange={setCurrency}
-          options={currencyOptions}
-          disabled={!isAdmin}
-        />
+        <div className="space-y-4 rounded-2xl border border-[#EDE3DA] bg-[#FDFCFB] p-5 shadow-[var(--shadow-elevated)]">
+          <Text variant="heading">Danger zone</Text>
 
-        <Select
-          label="Language"
-          value={locale}
-          onValueChange={setLocale}
-          options={localeOptions}
-          disabled={!isAdmin}
-        />
-
-        <Input
-          label="Cover photo URL (optional)"
-          value={coverPhotoUrl}
-          onChange={(event) => setCoverPhotoUrl(event.target.value)}
-          placeholder="https://..."
-          type="url"
-          disabled={!isAdmin}
-        />
-
-        {isAdmin && (
-          <AssetUpload
-            label="Cover photo upload (recommended)"
-            value={coverPhotoFile}
-            onValueChange={setCoverPhotoFile}
-            accept={COVER_ACCEPT}
-            maxSizeBytes={COVER_MAX_SIZE_BYTES}
-            helperText="Upload takes priority over URL when both are set."
-            infoText="Supported: PNG, JPG, WEBP. Maximum size: 1 MB."
-            previewUrl={coverPhotoUrl.trim() || group.cover_photo_url || null}
-            previewAlt="Current group cover preview"
-          />
-        )}
-
-        <div className="rounded-xl border border-[#EDE3DA] bg-[#F8F6F1] p-3">
-          <p className="text-[10px] uppercase tracking-widest text-[#8C7463] font-mono">
-            Invite code
-          </p>
-          <p className="mt-1 font-mono text-2xl tracking-[0.2em] text-[#1F2A23]">
-            {inviteCode}
-          </p>
-          {isAdmin && (
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-[#EDE3DA] bg-[#F8F6F1] p-3">
+            <div>
+              <Text variant="body" className="font-medium">
+                Leave group
+              </Text>
+              <Text variant="caption" color="muted">
+                You can rejoin later with an invite code.
+              </Text>
+            </div>
             <Button
               type="button"
               variant="secondary"
-              size="sm"
-              className="mt-3"
-              loading={busyAction === "regenerate"}
-              onClick={() => void handleRegenerateCode()}
+              onClick={() => setShowLeaveConfirm(true)}
             >
-              Regenerate invite code
+              Leave
             </Button>
+          </div>
+
+          {isAdmin && (
+            <div className="space-y-3 rounded-xl border border-[#E7CACA] bg-[#FFF8F8] p-3">
+              <Text variant="body" color="danger" className="font-medium">
+                Delete group
+              </Text>
+              <Text variant="caption" className="text-[#9D4D4D]">
+                Type <strong>{group.name}</strong> to permanently delete this
+                group.
+              </Text>
+              <Input
+                label="Confirm group name"
+                value={deleteConfirmText}
+                onChange={(event) => setDeleteConfirmText(event.target.value)}
+                placeholder={group.name}
+              />
+              <Button
+                type="button"
+                variant="danger"
+                loading={busyAction === "delete"}
+                disabled={deleteConfirmText !== group.name}
+                onClick={() => void handleDeleteGroup()}
+              >
+                Delete group
+              </Button>
+            </div>
           )}
         </div>
 
-        {error && <Text variant="caption" color="danger">{error}</Text>}
-        {saved && !error && (
-          <Text variant="caption" className="text-[#3D6B1A]">Changes saved.</Text>
-        )}
-
-        {isAdmin && (
-          <div className="flex justify-end">
-            <Button
-              type="submit"
-              variant="primary"
-              loading={busyAction === "save"}
-            >
-              Save changes
-            </Button>
-          </div>
-        )}
-      </form>
-
-      <div className="space-y-3 rounded-2xl border border-[#EDE3DA] bg-[#FDFCFB] p-5 shadow-[var(--shadow-elevated)]">
-        <Text variant="heading">Members</Text>
-        <MemberList
-          members={members}
-          currentUserId={currentUserId}
-          isAdmin={isAdmin}
-          onToggleRole={(member) => {
-            const nextRole = member.role === "admin" ? "member" : "admin";
-            void handleToggleRole(member.user_id, nextRole);
+        <ConfirmDialog
+          open={showLeaveConfirm}
+          onOpenChange={setShowLeaveConfirm}
+          title="Leave this squad?"
+          description="You will lose access to this squad until you join again with a valid invite."
+          confirmLabel="Leave squad"
+          cancelLabel="Stay"
+          onConfirm={() => {
+            setShowLeaveConfirm(false);
+            void handleLeaveGroup();
           }}
-          onRemove={(member) => void handleRemoveMember(member.user_id)}
+          onCancel={() => setShowLeaveConfirm(false)}
         />
       </div>
-
-      <div className="space-y-4 rounded-2xl border border-[#EDE3DA] bg-[#FDFCFB] p-5 shadow-[var(--shadow-elevated)]">
-        <Text variant="heading">Danger zone</Text>
-
-        <div className="flex items-center justify-between gap-3 rounded-xl border border-[#EDE3DA] bg-[#F8F6F1] p-3">
-          <div>
-            <Text variant="body" className="font-medium">Leave group</Text>
-            <Text variant="caption" color="muted">You can rejoin later with an invite code.</Text>
-          </div>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => setShowLeaveConfirm(true)}
-          >
-            Leave
-          </Button>
-        </div>
-
-        {isAdmin && (
-          <div className="space-y-3 rounded-xl border border-[#E7CACA] bg-[#FFF8F8] p-3">
-            <Text variant="body" color="danger" className="font-medium">Delete group</Text>
-            <Text variant="caption" className="text-[#9D4D4D]">
-              Type <strong>{group.name}</strong> to permanently delete this group.
-            </Text>
-            <Input
-              label="Confirm group name"
-              value={deleteConfirmText}
-              onChange={(event) => setDeleteConfirmText(event.target.value)}
-              placeholder={group.name}
-            />
-            <Button
-              type="button"
-              variant="danger"
-              loading={busyAction === "delete"}
-              disabled={deleteConfirmText !== group.name}
-              onClick={() => void handleDeleteGroup()}
-            >
-              Delete group
-            </Button>
-          </div>
-        )}
-      </div>
-
-      <ConfirmDialog
-        open={showLeaveConfirm}
-        onOpenChange={setShowLeaveConfirm}
-        title="Leave this squad?"
-        description="You will lose access to this squad until you join again with a valid invite."
-        confirmLabel="Leave squad"
-        cancelLabel="Stay"
-        onConfirm={() => {
-          setShowLeaveConfirm(false);
-          void handleLeaveGroup();
-        }}
-        onCancel={() => setShowLeaveConfirm(false)}
-      />
-    </section>
+    </Container>
   );
 }

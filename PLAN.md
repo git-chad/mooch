@@ -568,7 +568,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 **Goal:** Full expense splitting with equal/percentage/exact splits, real-time balance calculation, balance matrix, and settle-up flow. This is the core value loop.
 
-**Status:** ⬜
+**Status:** 🔄
 
 ---
 
@@ -584,7 +584,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
   - `balances` has SELECT-only RLS for group members; writes are done server-side via service-role.
   - Indexes added on `(group_id, created_at desc)` for expenses and settlements, and on `expense_participants (expense_id, user_id)`.
 
-- [ ] 3.1.2 — Implement `recalculate_balances(groupId)` in TypeScript (server action utility):
+- [x] 3.1.2 — Implement `recalculate_balances(groupId)` in TypeScript (server action utility):
   1. Fetch all expenses for the group (use `converted_amount` if set, else `amount` when currency matches group default; skip unconverted foreign-currency expenses with a console warning)
   2. Fetch all `settlement_payments` for the group
   3. Compute net balance per user (owed − owing − settlements)
@@ -623,38 +623,30 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 3.4 — Expenses UI
 
-- [ ] 3.4.1 — `apps/app/src/app/(shell)/[groupId]/expenses/page.tsx`:
+- [x] 3.4.1 — `apps/app/src/app/(shell)/[groupId]/expenses/page.tsx`:
   - Two tabs: **Activity** and **Balances**
   - "Add Expense" button
-- [ ] 3.4.2 — `apps/app/src/components/expenses/ExpenseList.tsx`:
-  - Paginated expense list (20 per page), infinite scroll
+- [x] 3.4.2 — `apps/app/src/components/expenses/ExpenseList.tsx`:
+  - Paginated expense list (20 per page), cursor-based "Load more" button
   - Empty state: "No expenses yet — split your first one!"
-- [ ] 3.4.3 — `apps/app/src/components/expenses/ExpenseCard.tsx`:
-  - Category emoji, description, amount in group currency
-  - "Paid by {name}"
-  - "You owe $X" (red) or "You are owed $X" (green)
-  - Settled badge
-  - Tap → expense detail
-- [ ] 3.4.4 — `apps/app/src/components/expenses/AddExpenseModal.tsx`:
-  - **Step 1:** Large number input for amount, description field
-  - **Step 2:** Category grid (🍺 Bar, 🪩 Clubbing, 🥩 BBQ, 🛒 Groceries, 🚗 Transport, 🏠 Accommodation, 📦 Other)
-  - **Step 3:** "Paid by" selector + split type toggle (Equal / Percentage / Exact)
-    - Equal: member checkboxes (all on by default), auto-computes shares
-    - Percentage: number input per member, must sum to 100%, live validation
-    - Exact: number input per member, must sum to total, live validation
-  - Submit → optimistic update → `addExpense` action
+- [x] 3.4.3 — `apps/app/src/components/expenses/ExpenseCard.tsx`:
+  - Category emoji or custom Lucide icon (for "other"), description, amount in group currency
+  - "Paid by {name}" / "You paid"; amount color-coded green (you paid)
+- [x] 3.4.4 — `apps/app/src/components/expenses/AddExpenseModal.tsx`:
+  - **Step 1:** Large number input for amount + currency selector (ARS/USD/EUR/BRL/GBP), description, notes textarea, receipt photo attach
+  - **Step 2:** Category grid + `IconPicker` shown when category is "other" for custom icon (`custom_category` field)
+  - **Step 3:** "Paid by" selector + split type toggle (Equal / Percentage / Exact) with per-member rows and live validation
+  - Submit → receipt upload (if any) → `addExpense` action; animated step transitions via AnimatePresence
 - [ ] 3.4.5 — `apps/app/src/app/(shell)/[groupId]/expenses/[expenseId]/page.tsx`:
   - Full breakdown (all participants + shares)
   - Edit button (creator/admin) → pre-filled edit modal
   - Delete with confirm dialog
   - "Mark as Settled" button
-- [ ] 3.4.6 — `apps/app/src/components/expenses/BalanceMatrix.tsx`:
-  - Personal summary (total owed vs. total owing vs. net, color-coded)
-  - Simplified debt list: "{Name} owes {Name} ${Amount}" with "Settle Up" button
-  - Settle Up → confirm dialog → `settleAllBetween`
-- [ ] 3.4.7 — `apps/app/src/components/expenses/BalanceCard.tsx`:
-  - Net balance for current user (green/red/neutral)
-  - Animated counter on amount change
+- [x] 3.4.6 — `apps/app/src/components/expenses/BalanceMatrix.tsx`:
+  - Simplified debt list: "{Name} owes {Name} ${Amount}" with "Settle Up" button for current-user rows
+  - Settle Up → `ConfirmDialog` → `settleUp` server action; "Everyone is settled up" empty state
+- [x] 3.4.7 — `apps/app/src/components/expenses/BalanceCard.tsx`:
+  - Net balance for current user (green/red/neutral); "Everyone is settled up" empty state
 
 ### 3.5 — Verify & Test
 

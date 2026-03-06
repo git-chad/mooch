@@ -35,6 +35,7 @@ Zustand stores that need to be built alongside components.
 
 - [x] **`useAuthStore`** — `user`, `profile`, `setUser`, `setProfile`, `reset` — already exists
 - [x] **`useGroupStore`** — `groups`, `activeGroupId`, `setGroups`, `setActiveGroup` — already exists
+- [x] **`useExpenseStore`** — `expenses`, `balances`, `setExpenses`, `setBalances`, `upsertExpense`, `removeExpense`, `appendExpenses`, `clear`; `BalanceWithProfiles` type
 - [x] **`audioEngine`** — (`packages/stores/src/audio-manager.ts`) Simplified singleton `AudioManager` over howler. `play(key)`, `preload()`, `mute()`, `unmute()`, `toggleMute()`, `setVolume(n)`. SSR-safe. Sound keys in `packages/stores/src/sfx.ts`.
 - [x] **`useAudioStore`** — (`packages/stores/src/audio-store.ts`) Zustand store with `persist`. State: `ready`, `muted`, `volume`. `init()` triggers preload on first user interaction. Persists `muted` + `volume` to localStorage.
   - **SFX event keys:** `EXPENSE_ADDED` · `VOTE_CAST` · `BALANCE_SETTLED` · `GROUP_JOINED` · `REACTION_ADDED` · `NOTIFICATION` · `ERROR`
@@ -90,13 +91,13 @@ Zustand stores that need to be built alongside components.
 
 ### Expenses (`app/src/components/expenses/`)
 
-- [ ] **`ExpenseList`** — Infinite scroll (intersection observer); staggered card entrance; paginated 20/page
-- [ ] **`ExpenseCard`** — Category emoji, description, amount, "Paid by {name}", your share in red/green, settled badge; press scale
-- [ ] **`AddExpenseModal`** — 3-step flow with animated step transitions: (1) `NumberInput` + description, (2) `CategoryGrid`, (3) paid-by + `SplitTypeSelector`; on submit: 🔊 `expense-added` + 📳 haptic
-- [ ] **`SplitTypeSelector`** — Animated toggle between Equal / Percentage / Exact; per-member input rows; live validation feedback
-- [ ] **`BalanceMatrix`** — Net summary card + simplified debt list; "Settle Up" button: 🔊 `balance-settled` + 📳 heavy haptic on confirm
-- [ ] **`BalanceCard`** — Net balance; ✦ TextMorph on amount change; color-coded green/red/neutral
-- [ ] **`CategoryGrid`** — 7-emoji tap grid; selected item lifts with scale + shadow
+- [x] **`ExpenseList`** — Cursor-based "Load more" pagination (20/page); empty state; reads from `useExpenseStore`
+- [x] **`ExpenseCard`** — Category emoji or custom Lucide icon (for "other"), description, amount color-coded by payer; "Paid by {name}" / "You paid"
+- [x] **`AddExpenseModal`** — 3-step flow with AnimatePresence transitions: (1) amount + currency selector + description + notes + receipt photo attach, (2) category grid + `IconPicker` for custom category, (3) paid-by + split type (Equal/Percentage/Exact) with per-member rows and live validation; on submit: receipt upload then `addExpense`
+- [ ] **`SplitTypeSelector`** — Animated toggle between Equal / Percentage / Exact; per-member input rows; live validation feedback _(inline in AddExpenseModal, not extracted yet)_
+- [x] **`BalanceMatrix`** — Simplified debt list with "Settle Up" button for current-user rows; `ConfirmDialog` confirm flow; "Everyone settled" empty state
+- [x] **`BalanceCard`** — Net balance for current user; color-coded green/red/neutral; "Everyone settled" empty state
+- [x] **`CategoryGrid`** — 4-col emoji grid inline in AddExpenseModal step 2; selected item highlighted; `IconPicker` opens when "other" selected
 
 ---
 
