@@ -16,6 +16,8 @@ type ExpenseStore = {
   // Inserts or replaces a single expense (used for optimistic updates + realtime inserts/updates).
   upsertExpense: (expense: Expense) => void;
   removeExpense: (id: string) => void;
+  // Appends older expenses (cursor pagination / load more).
+  appendExpenses: (expenses: Expense[]) => void;
 
   clear: () => void;
 };
@@ -41,6 +43,13 @@ export const useExpenseStore = create<ExpenseStore>((set) => ({
 
   removeExpense: (id) =>
     set((s) => ({ expenses: s.expenses.filter((e) => e.id !== id) })),
+
+  appendExpenses: (expenses) =>
+    set((s) => {
+      const existingIds = new Set(s.expenses.map((e) => e.id));
+      const fresh = expenses.filter((e) => !existingIds.has(e.id));
+      return { expenses: [...s.expenses, ...fresh] };
+    }),
 
   clear: () => set({ expenses: [], balances: [] }),
 }));

@@ -1,7 +1,7 @@
 "use client";
 
 import { createBrowserClient, getBalances } from "@mooch/db";
-import { useExpenseStore, type BalanceWithProfiles } from "@mooch/stores";
+import { type BalanceWithProfiles, useExpenseStore } from "@mooch/stores";
 import type { Expense } from "@mooch/types";
 import { useEffect } from "react";
 
@@ -29,7 +29,7 @@ export function ExpensesProvider({
     setExpenses(initialExpenses);
     setBalances(initialBalances);
     return () => clear();
-  }, [groupId, initialExpenses, initialBalances, setExpenses, setBalances, clear]);
+  }, [initialExpenses, initialBalances, setExpenses, setBalances, clear]);
 
   // Realtime subscriptions for expenses and balances.
   useEffect(() => {
