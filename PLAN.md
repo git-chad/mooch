@@ -359,7 +359,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 **Goal:** Users can create squads, invite friends via invite code or QR, join groups, and switch between groups. The active group context is available throughout the app.
 
-**Status:** 🔄
+**Status:** 🟢
 
 ---
 
@@ -510,15 +510,15 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 **Phase 2 Testing Checklist (must all pass before APPROVED):**
 
-- [ ] Create group with name, emoji, currency
-- [ ] Join by invite code works
-- [ ] Join by QR code works
-- [ ] Join via `/join/{code}` deep link works (logged in + logged out flows)
-- [ ] Group switcher changes active group
-- [ ] Group settings (edit, leave, delete) work
-- [ ] RLS confirmed: unauthenticated user cannot query groups table
+- [x] Create group with name, emoji, currency
+- [x] Join by invite code works
+- [x] Join by QR code works
+- [x] Join via `/join/{code}` deep link works (logged in + logged out flows)
+- [x] Group switcher changes active group
+- [x] Group settings (edit, leave, delete) work
+- [x] RLS confirmed: unauthenticated user cannot query groups table
 
-**Phase 2 Status: ⬜ — Awaiting approval**
+**Phase 2 Status: 🟢 APPROVED**
 
 ---
 
@@ -568,7 +568,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 **Goal:** Full expense splitting with equal/percentage/exact splits, real-time balance calculation, balance matrix, and settle-up flow. This is the core value loop.
 
-**Status:** ⬜ — _Blocked until Phase 2 is APPROVED_
+**Status:** ⬜
 
 ---
 
@@ -1640,7 +1640,7 @@ _(Do not start until Phase 10 is APPROVED and shipped)_
 | ---------------------------- | ------ | ----------- | ---- | ----- |
 | Phase 0: Monorepo Foundation | ⬜     | —           | —    | —     |
 | Phase 1: Auth & Profiles     | ⬜     | —           | —    | —     |
-| Phase 2: Groups System       | ⬜     | —           | —    | —     |
+| Phase 2: Groups System       | 🟢     | Tobias      | 2026-03-05 | All tests passed, RLS verified |
 | Phase 3: Expense Tracker     | ⬜     | —           | —    | —     |
 | Phase 4: Voting & Polls      | ⬜     | —           | —    | —     |
 | Phase 5: Plans Board         | ⬜     | —           | —    | —     |
