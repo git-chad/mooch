@@ -35,7 +35,7 @@ Zustand stores that need to be built alongside components.
 
 - [x] **`useAuthStore`** — `user`, `profile`, `setUser`, `setProfile`, `reset` — already exists
 - [x] **`useGroupStore`** — `groups`, `activeGroupId`, `setGroups`, `setActiveGroup` — already exists
-- [x] **`useExpenseStore`** — `expenses`, `balances`, `setExpenses`, `setBalances`, `upsertExpense`, `removeExpense`, `appendExpenses`, `clear`; `BalanceWithProfiles` type
+- [x] **`useExpenseStore`** — `tabs`/`setTabs`/`upsertTab`/`removeTab`, `expenses`/`setExpenses`/`upsertExpense`/`removeExpense`/`appendExpenses`, `balances`/`setBalances` (per-tab), `globalBalances`/`setGlobalBalances` (cross-tab), `clear`; `BalanceWithProfiles` type
 - [x] **`audioEngine`** — (`packages/stores/src/audio-manager.ts`) Simplified singleton `AudioManager` over howler. `play(key)`, `preload()`, `mute()`, `unmute()`, `toggleMute()`, `setVolume(n)`. SSR-safe. Sound keys in `packages/stores/src/sfx.ts`.
 - [x] **`useAudioStore`** — (`packages/stores/src/audio-store.ts`) Zustand store with `persist`. State: `ready`, `muted`, `volume`. `init()` triggers preload on first user interaction. Persists `muted` + `volume` to localStorage.
   - **SFX event keys:** `EXPENSE_ADDED` · `VOTE_CAST` · `BALANCE_SETTLED` · `GROUP_JOINED` · `REACTION_ADDED` · `NOTIFICATION` · `ERROR`
@@ -91,12 +91,16 @@ Zustand stores that need to be built alongside components.
 
 ### Expenses (`app/src/components/expenses/`)
 
-- [x] **`ExpenseList`** — Cursor-based "Load more" pagination (20/page); empty state; reads from `useExpenseStore`
+- [x] **`TabCard`** — Tab emoji + name, status badge (open/closed), expense count, total amount; links to tab detail; glass gradient for open, muted flat bg for closed
+- [x] **`TabListClient`** — Expenses landing page client: global balance card, open/closed tab sections, empty state, "New tab" button
+- [x] **`TabDetailClient`** — Tab detail page client: back link, tab header (icon + name + badge), Activity/Balances view switcher, reuses ExpenseList + BalanceCard + BalanceMatrix + AddExpenseModal; hides "Add expense" when tab is closed
+- [x] **`CreateTabModal`** — Name input + `IconPicker`; creates tab via server action and upserts into store
+- [x] **`ExpenseList`** — Cursor-based "Load more" pagination (20/page); empty state; reads from `useExpenseStore`; now scoped by `tabId`
 - [x] **`ExpenseCard`** — Category emoji or custom Lucide icon (for "other"), description, amount color-coded by payer; "Paid by {name}" / "You paid"
-- [x] **`AddExpenseModal`** — 3-step flow with AnimatePresence transitions: (1) amount + currency selector + description + notes + receipt photo attach, (2) category grid + `IconPicker` for custom category, (3) paid-by + split type (Equal/Percentage/Exact) with per-member rows and live validation; on submit: receipt upload then `addExpense`
+- [x] **`AddExpenseModal`** — 3-step flow with AnimatePresence transitions: (1) amount + currency selector + description + notes + receipt photo attach, (2) category grid + `IconPicker` for custom category, (3) paid-by + split type (Equal/Percentage/Exact) with per-member rows and live validation; on submit: receipt upload then `addExpense(groupId, tabId, ...)`; now receives `tabId` prop
 - [ ] **`SplitTypeSelector`** — Animated toggle between Equal / Percentage / Exact; per-member input rows; live validation feedback _(inline in AddExpenseModal, not extracted yet)_
-- [x] **`BalanceMatrix`** — Simplified debt list with "Settle Up" button for current-user rows; `ConfirmDialog` confirm flow; "Everyone settled" empty state
-- [x] **`BalanceCard`** — Net balance for current user; color-coded green/red/neutral; "Everyone settled" empty state
+- [x] **`BalanceMatrix`** — Simplified debt list with "Settle Up" button for current-user rows; `ConfirmDialog` confirm flow; "Everyone settled" empty state; now receives `tabId` for per-tab settle-up
+- [x] **`BalanceCard`** — Net balance for current user; color-coded green/red/neutral; "Everyone settled" empty state; new `global` prop reads from `globalBalances` store
 - [x] **`CategoryGrid`** — 4-col emoji grid inline in AddExpenseModal step 2; selected item highlighted; `IconPicker` opens when "other" selected
 
 ---

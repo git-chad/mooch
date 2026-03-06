@@ -27,7 +27,8 @@ const NAV_TABS = [
   { label: "Insights", slug: "insights" },
 ] as const;
 
-const ENABLED_SLUGS = new Set([""]);
+
+const ENABLED_SLUGS = new Set(["", "expenses"]);
 
 export function GroupDetailClient({
   group,
@@ -51,7 +52,7 @@ export function GroupDetailClient({
             <img
               src={group.cover_photo_url}
               alt={`${group.name} cover photo`}
-              className="aspect-[3/1] w-full object-cover"
+              className="aspect-3/1 w-full object-cover"
             />
           </div>
         )}

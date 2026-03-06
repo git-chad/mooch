@@ -8,10 +8,13 @@ type Props = {
   currentUserId: string;
   currency: string;
   locale: string;
+  global?: boolean;
 };
 
-export function BalanceCard({ currentUserId, currency, locale }: Props) {
-  const balances = useExpenseStore((s) => s.balances);
+export function BalanceCard({ currentUserId, currency, locale, global }: Props) {
+  const tabBalances = useExpenseStore((s) => s.balances);
+  const globalBalances = useExpenseStore((s) => s.globalBalances);
+  const balances = global ? globalBalances : tabBalances;
 
   // net > 0 = owed money, net < 0 = owes money
   const net = balances.reduce((sum, b) => {
@@ -34,7 +37,7 @@ export function BalanceCard({ currentUserId, currency, locale }: Props) {
       }}
     >
       <Text variant="overline" color="subtle" className="mb-1 block">
-        Your balance
+        {global ? "Overall balance" : "Your balance"}
       </Text>
 
       {isSettled ? (
@@ -61,6 +64,7 @@ export function BalanceCard({ currentUserId, currency, locale }: Props) {
           </Text>
           <Text variant="body" color="subtle" className="mt-1 block">
             {isOwed ? "the squad owes you" : "you owe the squad"}
+            {global ? " (across all tabs)" : ""}
           </Text>
         </>
       )}

@@ -676,24 +676,24 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 #### Tab List (expenses landing page)
 
-- [ ] 3.4.1 — `apps/app/src/app/(shell)/[groupId]/expenses/page.tsx`:
+- [x] 3.4.1 — `apps/app/src/app/(shell)/[groupId]/expenses/page.tsx`:
   - Grid/list of tab cards (open tabs first, then closed)
   - Global balance summary card: "You owe X across N tabs" / "You're owed Y across N tabs" with per-person breakdown
   - "Settle up with {name}" button on global view — triggers `settleUpGlobal`
   - "New Tab" button → `CreateTabModal`
   - Empty state: "No tabs yet — open one to start tracking expenses!"
 
-- [ ] 3.4.2 — `apps/app/src/components/expenses/TabCard.tsx`:
+- [x] 3.4.2 — `apps/app/src/components/expenses/TabCard.tsx`:
   - Tab emoji + name, status badge (open/closed), expense count, total amount
   - Tap → navigates to `/{groupId}/expenses/{tabId}`
 
-- [ ] 3.4.3 — `apps/app/src/components/expenses/CreateTabModal.tsx`:
+- [x] 3.4.3 — `apps/app/src/components/expenses/CreateTabModal.tsx`:
   - Name input, emoji/icon picker (same `IconPicker` as groups)
   - Creates tab → navigates to new tab page
 
 #### Tab Detail (expenses within a tab)
 
-- [ ] 3.4.4 — `apps/app/src/app/(shell)/[groupId]/expenses/[tabId]/page.tsx`:
+- [x] 3.4.4 — `apps/app/src/app/(shell)/[groupId]/expenses/[tabId]/page.tsx`:
   - Tab header: emoji, name, status badge, "Close Tab" / "Reopen" action
   - Two sub-tabs: **Activity** and **Balances**
   - "Add Expense" button (only if tab is open)

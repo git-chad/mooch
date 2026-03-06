@@ -20,6 +20,7 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   groupId: string;
+  tabId: string;
   members: Member[];
   currentUserId: string;
   groupCurrency: string;
@@ -44,6 +45,7 @@ export function AddExpenseModal({
   open,
   onOpenChange,
   groupId,
+  tabId,
   members,
   currentUserId,
   groupCurrency,
@@ -195,7 +197,7 @@ export function AddExpenseModal({
       photoUrl = uploadResult.path;
     }
 
-    const result = await addExpense(groupId, {
+    const result = await addExpense(groupId, tabId, {
       description: description.trim(),
       notes: notes.trim() || undefined,
       amount: Number.parseFloat(amount),
@@ -391,11 +393,11 @@ function Step1({
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0.00"
-            className="flex-1 text-[36px] font-normal text-ink bg-transparent outline-none border-b-2 border-edge pb-2 placeholder:text-ink-placeholder focus:border-accent-strong transition-colors"
+            className="flex text-[36px] w-full flex-1 font-normal text-ink bg-transparent outline-none border-b-2 border-edge pb-2 placeholder:text-ink-placeholder focus:border-accent-strong transition-colors"
             style={{ fontFamily: "var(--font-display)" }}
           />
           {/* Currency selector — inline pills */}
-          <div className="flex gap-1 pb-2 flex-wrap">
+          <div className="flex flex-1 gap-1 pb-2 flex-col max-w-fit">
             {SUPPORTED_CURRENCIES.map((c) => (
               <button
                 key={c}

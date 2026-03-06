@@ -10,7 +10,7 @@ import { ExpenseCard } from "./ExpenseCard";
 type Member = GroupMember & { profile: Profile };
 
 type Props = {
-  groupId: string;
+  tabId: string;
   members: Member[];
   currentUserId: string;
   currency: string;
@@ -18,7 +18,7 @@ type Props = {
 };
 
 export function ExpenseList({
-  groupId,
+  tabId,
   members,
   currentUserId,
   currency,
@@ -35,7 +35,7 @@ export function ExpenseList({
     setLoadingMore(true);
     try {
       const supabase = createBrowserClient();
-      const older = await getExpenses(supabase, groupId, last.created_at);
+      const older = await getExpenses(supabase, tabId, last.created_at);
       appendExpenses(older);
       setHasMore(older.length === 20);
     } finally {

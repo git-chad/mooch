@@ -11,6 +11,7 @@ type Member = GroupMember & { profile: Profile };
 
 type Props = {
   groupId: string;
+  tabId: string;
   members: Member[];
   currentUserId: string;
   currency: string;
@@ -27,6 +28,7 @@ type SettleTarget = {
 
 export function BalanceMatrix({
   groupId,
+  tabId,
   members,
   currentUserId,
   currency,
@@ -54,7 +56,7 @@ export function BalanceMatrix({
     if (!settleTarget) return;
     setSettling(true);
     setError(null);
-    const result = await settleUp(groupId, {
+    const result = await settleUp(groupId, tabId, {
       from_user: settleTarget.from_user,
       to_user: settleTarget.to_user,
       amount: settleTarget.amount,
