@@ -8,6 +8,12 @@ When a problem is encountered and fixed, log it here immediately:
 - **Avoid:** what not to do next time
 - **Rule:** user-facing create/join/edit flows must reflect changes immediately in UI state (no manual reload dependency)
 
+## Active Memory
+
+- **2026-03-06 Decision Lock:** Phase 3A (Motion & Transitions) is approved.
+- **Mandatory Standard:** Reuse the shared motion system (`motion.ts`, transition provider/slot/link patterns, reduced-motion behavior) across all remaining user-facing surfaces.
+- **Immediate Next Task:** Close pending Phase 3 manual verification checklist items, then request Phase 3 approval before starting full Phase 4 implementation.
+
 ---
 
 ## Mistakes Log
