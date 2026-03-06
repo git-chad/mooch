@@ -564,15 +564,17 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ---
 
-# Phase 3: Expense Tracker & Balances
+# Phase 3: Tabs, Expenses & Balances
 
-**Goal:** Full expense splitting with equal/percentage/exact splits, real-time balance calculation, balance matrix, and settle-up flow. This is the core value loop.
+**Goal:** Expense splitting organized by **Tabs** (a "bar tab" — a group of related expenses like a BBQ, a trip, or groceries). Each tab has its own expenses, balances, and settle-up flow. A global view aggregates balances across tabs with filtering. Receipt generation per tab via Sheet receipt variant.
 
 **Status:** 🔄
 
+**Key concept — Tab:** A tab is a container for expenses within a group. Every expense belongs to exactly one tab. Examples: "BBQ at Tobi's", "Cancun Trip", "Weekly Groceries". Tabs can be open (active) or closed (settled/archived).
+
 ---
 
-### 3.1 — Database Migrations: Expenses & Balances
+### 3.1 — Database Migrations: Tabs, Expenses & Balances
 
 - [x] 3.1.1 — Created `supabase/migrations/0006_expenses.sql` (0003–0005 were taken by groups + RLS migrations):
 
@@ -584,94 +586,188 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
   - `balances` has SELECT-only RLS for group members; writes are done server-side via service-role.
   - Indexes added on `(group_id, created_at desc)` for expenses and settlements, and on `expense_participants (expense_id, user_id)`.
 
-- [x] 3.1.2 — Implement `recalculate_balances(groupId)` in TypeScript (server action utility):
-  1. Fetch all expenses for the group (use `converted_amount` if set, else `amount` when currency matches group default; skip unconverted foreign-currency expenses with a console warning)
-  2. Fetch all `settlement_payments` for the group
-  3. Compute net balance per user (owed − owing − settlements)
-  4. Greedy simplification: match largest creditor with largest debtor
-  5. Delete existing balances for the group, insert fresh rows via service-role client
+- [ ] 3.1.2 — **NEW:** Create `supabase/migrations/0008_tabs.sql`:
+  - `tabs` table: `id` (uuid PK), `group_id` (FK → groups), `name` (text, 2–60 chars), `emoji` (text, encoded same as group icons), `status` (text: `open` | `closed`, default `open`), `created_by` (FK → auth.users), `created_at`, `updated_at`
+  - Add `tab_id` (FK → tabs, NOT NULL) to `expenses` table
+  - Add `tab_id` (FK → tabs, NOT NULL) to `balances` table
+  - Add `tab_id` (FK → tabs, nullable) to `settlement_payments` (nullable so global settle-ups across tabs work too)
+  - RLS: group members can SELECT tabs; INSERT/UPDATE/DELETE for group admins + tab creator
+  - Index on `tabs (group_id, status, created_at desc)`
+  - Index on `expenses (tab_id, created_at desc)`
+  - Index on `balances (tab_id)`
+
 - [x] 3.1.3 — Added `ExpenseCategory`, `SplitType`, `Expense`, `ExpenseParticipant`, `Balance`, `SettlementPayment` types to `packages/types/src/index.ts`.
 
-### 3.2 — Expense Queries & Server Actions
+- [ ] 3.1.4 — **NEW:** Add `Tab` type to `packages/types/src/index.ts`:
+  ```ts
+  type TabStatus = "open" | "closed";
+  type Tab = {
+    id: string;
+    group_id: string;
+    name: string;
+    emoji: string;
+    status: TabStatus;
+    created_by: string;
+    created_at: string;
+    updated_at: string;
+  };
+  ```
+  Update `Expense`, `Balance` types to include `tab_id`.
 
-- [x] 3.2.1 — `packages/db/src/queries/expenses.ts`:
-  - `getExpenses(supabase, groupId, cursor?)` — paginated 20/page, cursor by `created_at`
+- [x] 3.1.5 — (was 3.1.2) Implement `recalculate_balances` in TypeScript — **UPDATE:** now takes `(groupId, tabId)` and recalculates per-tab:
+  1. Fetch all expenses for the tab (use `converted_amount` if set, else `amount` when currency matches group default; skip unconverted foreign-currency expenses with a console warning)
+  2. Fetch all `settlement_payments` for the tab
+  3. Compute net balance per user (owed - owing - settlements)
+  4. Greedy simplification: match largest creditor with largest debtor
+  5. Delete existing balances for the tab, insert fresh rows via service-role client
+
+### 3.2 — Queries & Server Actions
+
+- [x] 3.2.1 — `packages/db/src/queries/expenses.ts` — **UPDATE:** all expense/balance queries now filter by `tab_id`:
+  - `getExpenses(supabase, tabId, cursor?)` — paginated 20/page, cursor by `created_at`
   - `getExpenseById(supabase, expenseId)` — with participants + profile data + payer profile
-  - `getBalances(supabase, groupId)` — all simplified balances with `from_profile` + `to_profile`
-  - `getUserNetBalance(supabase, groupId, userId)` — net in group currency (positive = owed, negative = owes)
-  - `getSettlementPayments(supabase, groupId)` — all settlements with profile data, desc
+  - `getBalances(supabase, tabId)` — simplified balances for one tab with `from_profile` + `to_profile`
+  - `getGlobalBalances(supabase, groupId)` — **NEW:** aggregated balances across all open tabs in a group, with tab attribution
+  - `getUserNetBalance(supabase, groupId, userId)` — net across all tabs in group currency
+  - `getSettlementPayments(supabase, tabId)` — settlements for one tab with profile data
   - All exported from `packages/db/src/index.ts`
-- [x] 3.2.2 — `apps/app/src/lib/recalculate-balances.ts` — TypeScript greedy debt simplification:
-  - Fetches expenses + settlements via admin client
-  - Handles multi-currency: uses `converted_amount` when set, falls back to `amount` when currencies match, skips unconverted foreign-currency expenses with a console warn
-  - Greedy simplification produces minimal set of transfers
-  - Deletes + re-inserts `balances` rows atomically via service-role client
-- [x] 3.2.3 — `apps/app/src/app/actions/expenses.ts` (Server Actions):
+
+- [ ] 3.2.2 — **NEW:** `packages/db/src/queries/tabs.ts`:
+  - `getTabs(supabase, groupId)` — all tabs for a group, ordered by status (open first) then created_at desc
+  - `getTabById(supabase, tabId)` — single tab with expense count + total amount
+  - `getTabWithExpenses(supabase, tabId, cursor?)` — tab + paginated expenses
+  - Exported from `packages/db/src/index.ts`
+
+- [ ] 3.2.3 — **NEW:** `apps/app/src/app/actions/tabs.ts` (Server Actions):
+  - `createTab(groupId, data)` — creates tab, returns full payload
+  - `updateTab(tabId, data)` — creator/admin only, updates name/emoji/status
+  - `closeTab(tabId)` — sets status to `closed` (all balances should be settled first — warn if not)
+  - `reopenTab(tabId)` — sets status back to `open`
+  - `deleteTab(tabId)` — admin only, only if tab has zero expenses; hard delete
+
+- [x] 3.2.4 — `apps/app/src/app/actions/expenses.ts` (Server Actions) — **UPDATE:** `addExpense` now requires `tabId`:
   - `uploadReceiptPhoto(formData)` — uploads to `receipts` bucket (5 MB, private), returns storage path
-  - `addExpense(groupId, data)` — inserts expense + participants, calls `recalculateBalances`
+  - `addExpense(tabId, data)` — inserts expense + participants, calls `recalculateBalances(groupId, tabId)`
   - `updateExpense(expenseId, data)` — creator/admin only, updates fields + participants, recalculates
   - `deleteExpense(expenseId)` — creator/admin only, recalculates
   - `applyExchangeRate(expenseId, rate)` — sets `exchange_rate`, `converted_amount`, `rate_fetched_at`; recalculates
-  - `settleUp(groupId, data)` — creates `settlement_payments` record (audit trail), recalculates
-- [x] 3.2.4 — Added `custom_category` (nullable Lucide icon name) to `expenses` via `0007_expense_custom_category.sql`. Only populated when `category = 'other'`. Standard categories use fixed icon mappings in the UI; "other" opens the `IconPicker` and stores the chosen icon name string.
+  - `settleUp(tabId, data)` — creates `settlement_payments` record (audit trail), recalculates tab balances
+  - `settleUpGlobal(groupId, fromUserId, toUserId, amount)` — **NEW:** settle across tabs; creates settlement_payment with `tab_id = null`, recalculates all affected tab balances
+
+- [x] 3.2.5 — (was 3.2.4) Added `custom_category` (nullable Lucide icon name) to `expenses` via `0007_expense_custom_category.sql`.
 
 ### 3.3 — Client State & Real-time
 
-- [x] 3.3.1 — `packages/stores/src/expenses.ts`: `useExpenseStore` with `expenses`, `balances`, `setExpenses`, `setBalances`, `upsertExpense`, `removeExpense`, `clear`. Exported `BalanceWithProfiles` type (`Balance & { from_profile, to_profile }`). Exported from `packages/stores/src/index.ts`.
-- [x] 3.3.2 — `apps/app/src/components/expenses/ExpensesProvider.tsx`: subscribes to `postgres_changes` on `expenses` table (INSERT/UPDATE → `upsertExpense`, DELETE → `removeExpense`). Hydrates store from server-fetched `initialExpenses` + `initialBalances` props. Clears store on unmount.
+- [x] 3.3.1 — `packages/stores/src/expenses.ts` — **UPDATE:** store now includes `tabs`:
+  - `useExpenseStore` with `tabs`, `expenses`, `balances`, `setTabs`, `upsertTab`, `removeTab`, `setExpenses`, `setBalances`, `upsertExpense`, `removeExpense`, `clear`
+  - Exported `BalanceWithProfiles` type (`Balance & { from_profile, to_profile }`)
+
+- [x] 3.3.2 — `apps/app/src/components/expenses/ExpensesProvider.tsx` — **UPDATE:** subscribes to `tabs`, `expenses`, and `balances` tables:
+  - Tab changes: INSERT/UPDATE → `upsertTab`, DELETE → `removeTab`
+  - Expense changes: INSERT/UPDATE → `upsertExpense`, DELETE → `removeExpense`
+  - Balance changes: refetches full balance list with profile joins
+
 - [x] 3.3.3 — Same provider also subscribes to `balances` table. On any change, refetches full balance list with profile joins via `getBalances` (realtime payloads lack joins).
 
-### 3.4 — Expenses UI
+### 3.4 — Tabs & Expenses UI
 
-- [x] 3.4.1 — `apps/app/src/app/(shell)/[groupId]/expenses/page.tsx`:
-  - Two tabs: **Activity** and **Balances**
-  - "Add Expense" button
-- [x] 3.4.2 — `apps/app/src/components/expenses/ExpenseList.tsx`:
+**Routes:**
+- `/{groupId}/expenses` — tab list + global balance overview
+- `/{groupId}/expenses/{tabId}` — expenses within a tab + tab balances + receipt
+
+#### Tab List (expenses landing page)
+
+- [ ] 3.4.1 — `apps/app/src/app/(shell)/[groupId]/expenses/page.tsx`:
+  - Grid/list of tab cards (open tabs first, then closed)
+  - Global balance summary card: "You owe X across N tabs" / "You're owed Y across N tabs" with per-person breakdown
+  - "Settle up with {name}" button on global view — triggers `settleUpGlobal`
+  - "New Tab" button → `CreateTabModal`
+  - Empty state: "No tabs yet — open one to start tracking expenses!"
+
+- [ ] 3.4.2 — `apps/app/src/components/expenses/TabCard.tsx`:
+  - Tab emoji + name, status badge (open/closed), expense count, total amount
+  - Tap → navigates to `/{groupId}/expenses/{tabId}`
+
+- [ ] 3.4.3 — `apps/app/src/components/expenses/CreateTabModal.tsx`:
+  - Name input, emoji/icon picker (same `IconPicker` as groups)
+  - Creates tab → navigates to new tab page
+
+#### Tab Detail (expenses within a tab)
+
+- [ ] 3.4.4 — `apps/app/src/app/(shell)/[groupId]/expenses/[tabId]/page.tsx`:
+  - Tab header: emoji, name, status badge, "Close Tab" / "Reopen" action
+  - Two sub-tabs: **Activity** and **Balances**
+  - "Add Expense" button (only if tab is open)
+
+- [x] 3.4.5 — `apps/app/src/components/expenses/ExpenseList.tsx` (existing, reused):
   - Paginated expense list (20 per page), cursor-based "Load more" button
   - Empty state: "No expenses yet — split your first one!"
-- [x] 3.4.3 — `apps/app/src/components/expenses/ExpenseCard.tsx`:
+
+- [x] 3.4.6 — `apps/app/src/components/expenses/ExpenseCard.tsx` (existing, reused):
   - Category emoji or custom Lucide icon (for "other"), description, amount in group currency
   - "Paid by {name}" / "You paid"; amount color-coded green (you paid)
-- [x] 3.4.4 — `apps/app/src/components/expenses/AddExpenseModal.tsx`:
-  - **Step 1:** Large number input for amount + currency selector (ARS/USD/EUR/BRL/GBP), description, notes textarea, receipt photo attach
-  - **Step 2:** Category grid + `IconPicker` shown when category is "other" for custom icon (`custom_category` field)
+
+- [x] 3.4.7 — `apps/app/src/components/expenses/AddExpenseModal.tsx` (existing, updated):
+  - **Step 1:** Large number input for amount + currency selector, description, notes textarea, receipt photo attach
+  - **Step 2:** Category grid + `IconPicker` shown when category is "other" for custom icon
   - **Step 3:** "Paid by" selector + split type toggle (Equal / Percentage / Exact) with per-member rows and live validation
-  - Submit → receipt upload (if any) → `addExpense` action; animated step transitions via AnimatePresence
-- [ ] 3.4.5 — `apps/app/src/app/(shell)/[groupId]/expenses/[expenseId]/page.tsx`:
+  - Submit → receipt upload (if any) → `addExpense(tabId, ...)` action; animated step transitions
+  - Now receives `tabId` prop instead of `groupId` for expense creation
+
+- [ ] 3.4.8 — `apps/app/src/app/(shell)/[groupId]/expenses/[tabId]/[expenseId]/page.tsx`:
   - Full breakdown (all participants + shares)
   - Edit button (creator/admin) → pre-filled edit modal
   - Delete with confirm dialog
-  - "Mark as Settled" button
-- [x] 3.4.6 — `apps/app/src/components/expenses/BalanceMatrix.tsx`:
+
+- [x] 3.4.9 — `apps/app/src/components/expenses/BalanceMatrix.tsx` (existing, reused per-tab):
   - Simplified debt list: "{Name} owes {Name} ${Amount}" with "Settle Up" button for current-user rows
   - Settle Up → `ConfirmDialog` → `settleUp` server action; "Everyone is settled up" empty state
-- [x] 3.4.7 — `apps/app/src/components/expenses/BalanceCard.tsx`:
+
+- [x] 3.4.10 — `apps/app/src/components/expenses/BalanceCard.tsx` (existing, reused per-tab):
   - Net balance for current user (green/red/neutral); "Everyone is settled up" empty state
+
+#### Tab Receipt
+
+- [ ] 3.4.11 — `apps/app/src/components/expenses/TabReceipt.tsx`:
+  - Opens `Sheet` component in `receipt` variant
+  - Receipt content: tab name as "store name", date range, all expenses listed (description + amount + paid by), divider, per-person totals, balance summary (who owes who), grand total
+  - "Download as image" button — uses `html-to-image` to capture the receipt DOM and trigger a PNG download
+  - Accessible from tab detail page header (e.g. receipt icon button)
 
 ### 3.5 — Verify & Test
 
-- [ ] 3.5.1 — Equal split: all participants get correct equal shares.
-- [ ] 3.5.2 — Percentage split: validation rejects non-100% total.
-- [ ] 3.5.3 — Exact split: validation rejects non-matching total.
-- [ ] 3.5.4 — Balances recalculate automatically after each expense.
-- [ ] 3.5.5 — Balance matrix shows simplified debts (not gross).
-- [ ] 3.5.6 — Settle all between two users → debts clear.
-- [ ] 3.5.7 — Realtime: user A adds expense → user B (other tab) sees it without refresh.
-- [ ] 3.5.8 — Edit expense → amounts and participants update correctly.
-- [ ] 3.5.9 — Delete expense → balances recalculate.
-- [ ] 3.5.10 — Non-member cannot read expenses (RLS).
+- [ ] 3.5.1 — Tab CRUD: create, rename, close, reopen, delete (only empty tabs).
+- [ ] 3.5.2 — Expenses always belong to a tab; cannot create expense without a tab.
+- [ ] 3.5.3 — Equal split: all participants get correct equal shares.
+- [ ] 3.5.4 — Percentage split: validation rejects non-100% total.
+- [ ] 3.5.5 — Exact split: validation rejects non-matching total.
+- [ ] 3.5.6 — Per-tab balances recalculate automatically after each expense.
+- [ ] 3.5.7 — Global balances aggregate correctly across open tabs.
+- [ ] 3.5.8 — Balance matrix shows simplified debts (not gross).
+- [ ] 3.5.9 — Per-tab settle-up: settle between two users within a tab → tab debts clear.
+- [ ] 3.5.10 — Global settle-up: settle between two users across tabs → all relevant tab debts clear.
+- [ ] 3.5.11 — Realtime: user A adds expense → user B (other browser tab) sees it without refresh.
+- [ ] 3.5.12 — Edit expense → amounts and participants update correctly.
+- [ ] 3.5.13 — Delete expense → balances recalculate.
+- [ ] 3.5.14 — Close tab → cannot add new expenses; can still view and generate receipt.
+- [ ] 3.5.15 — Tab receipt renders correctly and downloads as PNG.
+- [ ] 3.5.16 — Non-member cannot read tabs or expenses (RLS).
 
 ---
 
 **Phase 3 Testing Checklist (must all pass before APPROVED):**
 
+- [ ] Tab CRUD works (create, edit, close, reopen, delete empty)
+- [ ] Expenses always live inside a tab
 - [ ] Three split types compute correctly
-- [ ] Balance recalculate trigger works
+- [ ] Per-tab balance recalculation works
+- [ ] Global balance aggregation across tabs works
 - [ ] Balance simplification produces minimal set of transactions
-- [ ] Real-time updates visible across tabs
-- [ ] Settle-up clears debts
-- [ ] Edit and delete work
-- [ ] RLS: non-members cannot read group expenses
+- [ ] Per-tab and global settle-up both work
+- [ ] Real-time updates visible across browser tabs
+- [ ] Edit and delete expenses work
+- [ ] Tab receipt renders and downloads as image
+- [ ] RLS: non-members cannot read group tabs or expenses
 
 **Phase 3 Status: ⬜ — Awaiting approval**
 
