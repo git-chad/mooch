@@ -632,13 +632,13 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
   - `getSettlementPayments(supabase, tabId)` — settlements for one tab with profile data
   - All exported from `packages/db/src/index.ts`
 
-- [ ] 3.2.2 — **NEW:** `packages/db/src/queries/tabs.ts`:
+- [x] 3.2.2 — **NEW:** `packages/db/src/queries/tabs.ts`:
   - `getTabs(supabase, groupId)` — all tabs for a group, ordered by status (open first) then created_at desc
   - `getTabById(supabase, tabId)` — single tab with expense count + total amount
   - `getTabWithExpenses(supabase, tabId, cursor?)` — tab + paginated expenses
   - Exported from `packages/db/src/index.ts`
 
-- [ ] 3.2.3 — **NEW:** `apps/app/src/app/actions/tabs.ts` (Server Actions):
+- [x] 3.2.3 — **NEW:** `apps/app/src/app/actions/tabs.ts` (Server Actions):
   - `createTab(groupId, data)` — creates tab, returns full payload
   - `updateTab(tabId, data)` — creator/admin only, updates name/emoji/status
   - `closeTab(tabId)` — sets status to `closed` (all balances should be settled first — warn if not)
@@ -658,16 +658,15 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### 3.3 — Client State & Real-time
 
-- [x] 3.3.1 — `packages/stores/src/expenses.ts` — **UPDATE:** store now includes `tabs`:
-  - `useExpenseStore` with `tabs`, `expenses`, `balances`, `setTabs`, `upsertTab`, `removeTab`, `setExpenses`, `setBalances`, `upsertExpense`, `removeExpense`, `clear`
+- [x] 3.3.1 — `packages/stores/src/expenses.ts` — **UPDATED** with tabs + global balances:
+  - `useExpenseStore` with `tabs`, `expenses`, `balances`, `globalBalances` + all setters/upsert/remove/clear
   - Exported `BalanceWithProfiles` type (`Balance & { from_profile, to_profile }`)
 
-- [x] 3.3.2 — `apps/app/src/components/expenses/ExpensesProvider.tsx` — **UPDATE:** subscribes to `tabs`, `expenses`, and `balances` tables:
-  - Tab changes: INSERT/UPDATE → `upsertTab`, DELETE → `removeTab`
-  - Expense changes: INSERT/UPDATE → `upsertExpense`, DELETE → `removeExpense`
-  - Balance changes: refetches full balance list with profile joins
+- [x] 3.3.2 — `apps/app/src/components/expenses/ExpensesProvider.tsx` — **REWRITTEN** as two providers:
+  - `ExpensesGroupProvider` (group-level): manages tabs list + global balances, subscribes to `tabs` + `balances` realtime
+  - `ExpensesTabProvider` (tab-level): manages expenses + per-tab balances, subscribes to `expenses` + `balances` filtered by `tab_id`
 
-- [x] 3.3.3 — Same provider also subscribes to `balances` table. On any change, refetches full balance list with profile joins via `getBalances` (realtime payloads lack joins).
+- [x] 3.3.3 — Both providers subscribe to `balances` table changes and refetch full balance list with profile joins (realtime payloads lack joins).
 
 ### 3.4 — Tabs & Expenses UI
 

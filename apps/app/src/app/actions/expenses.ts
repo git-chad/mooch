@@ -1,7 +1,10 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase-admin";
-import { recalculateBalances } from "@/lib/recalculate-balances";
+import {
+  recalculateBalances,
+  recalculateAllBalances,
+} from "@/lib/recalculate-balances";
 import { createClient } from "@mooch/db/server";
 import type { Expense, ExpenseCategory, SplitType } from "@mooch/types";
 import { revalidatePath } from "next/cache";
@@ -100,6 +103,7 @@ type AddExpenseInput = {
 
 export async function addExpense(
   groupId: string,
+  tabId: string,
   data: AddExpenseInput,
 ): Promise<{ expense: Expense } | { error: string }> {
   const supabase = await createClient();
@@ -113,10 +117,23 @@ export async function addExpense(
   if (data.participants.length === 0)
     return { error: "At least one participant is required" };
 
+  // Verify the tab exists, belongs to this group, and is open
+  const { data: tab } = await admin
+    .from("tabs")
+    .select("id, group_id, status")
+    .eq("id", tabId)
+    .single();
+
+  if (!tab || tab.group_id !== groupId)
+    return { error: "Tab not found" };
+  if (tab.status === "closed")
+    return { error: "Cannot add expenses to a closed tab" };
+
   const { data: expense, error: expenseError } = await admin
     .from("expenses")
     .insert({
       group_id: groupId,
+      tab_id: tabId,
       description: data.description,
       notes: data.notes ?? null,
       amount: data.amount,
@@ -152,7 +169,7 @@ export async function addExpense(
     return { error: participantsError.message };
   }
 
-  await recalculateBalances(groupId);
+  await recalculateBalances(groupId, tabId);
   revalidatePath(`/${groupId}/expenses`);
 
   return { expense: expense as Expense };
@@ -183,7 +200,7 @@ export async function updateExpense(
   // Verify caller is the creator or a group admin.
   const { data: expense } = await admin
     .from("expenses")
-    .select("group_id, created_by")
+    .select("group_id, tab_id, created_by")
     .eq("id", expenseId)
     .single();
 
@@ -227,7 +244,9 @@ export async function updateExpense(
     if (error) return { error: error.message };
   }
 
-  await recalculateBalances(expense.group_id);
+  if (expense.tab_id) {
+    await recalculateBalances(expense.group_id, expense.tab_id);
+  }
   revalidatePath(`/${expense.group_id}/expenses`);
 }
 
@@ -248,7 +267,7 @@ export async function deleteExpense(
 
   const { data: expense } = await admin
     .from("expenses")
-    .select("group_id, created_by")
+    .select("group_id, tab_id, created_by")
     .eq("id", expenseId)
     .single();
 
@@ -271,7 +290,9 @@ export async function deleteExpense(
 
   if (error) return { error: error.message };
 
-  await recalculateBalances(expense.group_id);
+  if (expense.tab_id) {
+    await recalculateBalances(expense.group_id, expense.tab_id);
+  }
   revalidatePath(`/${expense.group_id}/expenses`);
 }
 
@@ -294,7 +315,7 @@ export async function applyExchangeRate(
 
   const { data: expense } = await admin
     .from("expenses")
-    .select("group_id, amount, created_by")
+    .select("group_id, tab_id, amount, created_by")
     .eq("id", expenseId)
     .single();
 
@@ -325,7 +346,9 @@ export async function applyExchangeRate(
 
   if (error) return { error: error.message };
 
-  await recalculateBalances(expense.group_id);
+  if (expense.tab_id) {
+    await recalculateBalances(expense.group_id, expense.tab_id);
+  }
   revalidatePath(`/${expense.group_id}/expenses`);
 }
 
@@ -347,6 +370,7 @@ type SettleUpInput = {
 
 export async function settleUp(
   groupId: string,
+  tabId: string,
   data: SettleUpInput,
 ): Promise<{ error: string } | undefined> {
   const supabase = await createClient();
@@ -362,6 +386,7 @@ export async function settleUp(
 
   const { error } = await admin.from("settlement_payments").insert({
     group_id: groupId,
+    tab_id: tabId,
     from_user: data.from_user,
     to_user: data.to_user,
     amount: data.amount,
@@ -375,6 +400,46 @@ export async function settleUp(
 
   if (error) return { error: error.message };
 
-  await recalculateBalances(groupId);
+  await recalculateBalances(groupId, tabId);
+  revalidatePath(`/${groupId}/expenses`);
+}
+
+// ─────────────────────────────────────────────
+// Global settle up (across tabs)
+// Creates a settlement with tab_id = null and recalculates all open tabs.
+// ─────────────────────────────────────────────
+
+export async function settleUpGlobal(
+  groupId: string,
+  data: SettleUpInput,
+): Promise<{ error: string } | undefined> {
+  const supabase = await createClient();
+  const admin = createAdminClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  if (data.from_user === data.to_user)
+    return { error: "Cannot settle with yourself" };
+
+  const { error } = await admin.from("settlement_payments").insert({
+    group_id: groupId,
+    tab_id: null,
+    from_user: data.from_user,
+    to_user: data.to_user,
+    amount: data.amount,
+    currency: data.currency,
+    exchange_rate: data.exchange_rate ?? null,
+    converted_amount: data.converted_amount ?? null,
+    rate_fetched_at: data.rate_fetched_at ?? null,
+    notes: data.notes ?? null,
+    created_by: user.id,
+  });
+
+  if (error) return { error: error.message };
+
+  await recalculateAllBalances(groupId);
   revalidatePath(`/${groupId}/expenses`);
 }

@@ -7,15 +7,17 @@ import type {
   SettlementPayment,
 } from "@mooch/types";
 
+// ── Per-tab queries ─────────────────────────────────────────────────────────
+
 export async function getExpenses(
   supabase: SupabaseClient,
-  groupId: string,
-  cursor?: string, // created_at of the last fetched item (cursor pagination)
+  tabId: string,
+  cursor?: string,
 ): Promise<Expense[]> {
   let query = supabase
     .from("expenses")
     .select("*")
-    .eq("group_id", groupId)
+    .eq("tab_id", tabId)
     .order("created_at", { ascending: false })
     .limit(20);
 
@@ -55,6 +57,45 @@ export async function getExpenseById(
 
 export async function getBalances(
   supabase: SupabaseClient,
+  tabId: string,
+): Promise<(Balance & { from_profile: Profile; to_profile: Profile })[]> {
+  const { data, error } = await supabase
+    .from("balances")
+    .select(
+      "*, from_profile:profiles!from_user(*), to_profile:profiles!to_user(*)",
+    )
+    .eq("tab_id", tabId);
+
+  if (error) return [];
+  return data as (Balance & {
+    from_profile: Profile;
+    to_profile: Profile;
+  })[];
+}
+
+export async function getSettlementPayments(
+  supabase: SupabaseClient,
+  tabId: string,
+): Promise<(SettlementPayment & { from_profile: Profile; to_profile: Profile })[]> {
+  const { data, error } = await supabase
+    .from("settlement_payments")
+    .select(
+      "*, from_profile:profiles!from_user(*), to_profile:profiles!to_user(*)",
+    )
+    .eq("tab_id", tabId)
+    .order("created_at", { ascending: false });
+
+  if (error) return [];
+  return data as (SettlementPayment & {
+    from_profile: Profile;
+    to_profile: Profile;
+  })[];
+}
+
+// ── Global (cross-tab) queries ──────────────────────────────────────────────
+
+export async function getGlobalBalances(
+  supabase: SupabaseClient,
   groupId: string,
 ): Promise<(Balance & { from_profile: Profile; to_profile: Profile })[]> {
   const { data, error } = await supabase
@@ -71,7 +112,6 @@ export async function getBalances(
   })[];
 }
 
-// Returns a positive number if the user is owed money, negative if they owe.
 export async function getUserNetBalance(
   supabase: SupabaseClient,
   groupId: string,
@@ -90,23 +130,4 @@ export async function getUserNetBalance(
     if (row.from_user === userId) return net - Number(row.amount);
     return net;
   }, 0);
-}
-
-export async function getSettlementPayments(
-  supabase: SupabaseClient,
-  groupId: string,
-): Promise<(SettlementPayment & { from_profile: Profile; to_profile: Profile })[]> {
-  const { data, error } = await supabase
-    .from("settlement_payments")
-    .select(
-      "*, from_profile:profiles!from_user(*), to_profile:profiles!to_user(*)",
-    )
-    .eq("group_id", groupId)
-    .order("created_at", { ascending: false });
-
-  if (error) return [];
-  return data as (SettlementPayment & {
-    from_profile: Profile;
-    to_profile: Profile;
-  })[];
 }

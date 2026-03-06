@@ -1,57 +1,56 @@
 "use client";
 
-import { createBrowserClient, getBalances } from "@mooch/db";
+import { createBrowserClient, getBalances, getGlobalBalances } from "@mooch/db";
 import { type BalanceWithProfiles, useExpenseStore } from "@mooch/stores";
-import type { Expense } from "@mooch/types";
+import type { Expense, Tab } from "@mooch/types";
 import { useEffect } from "react";
 
-type Props = {
+// ── Group-level provider ────────────────────────────────────────────────────
+// Manages tabs list + global balances. Used on the expenses landing page.
+
+type GroupProviderProps = {
   groupId: string;
-  initialExpenses: Expense[];
-  initialBalances: BalanceWithProfiles[];
+  initialTabs: Tab[];
+  initialGlobalBalances: BalanceWithProfiles[];
   children: React.ReactNode;
 };
 
-export function ExpensesProvider({
+export function ExpensesGroupProvider({
   groupId,
-  initialExpenses,
-  initialBalances,
+  initialTabs,
+  initialGlobalBalances,
   children,
-}: Props) {
-  const setExpenses = useExpenseStore((s) => s.setExpenses);
-  const setBalances = useExpenseStore((s) => s.setBalances);
-  const upsertExpense = useExpenseStore((s) => s.upsertExpense);
-  const removeExpense = useExpenseStore((s) => s.removeExpense);
+}: GroupProviderProps) {
+  const setTabs = useExpenseStore((s) => s.setTabs);
+  const upsertTab = useExpenseStore((s) => s.upsertTab);
+  const removeTab = useExpenseStore((s) => s.removeTab);
+  const setGlobalBalances = useExpenseStore((s) => s.setGlobalBalances);
   const clear = useExpenseStore((s) => s.clear);
 
-  // Hydrate from server-fetched data whenever the group changes.
   useEffect(() => {
-    setExpenses(initialExpenses);
-    setBalances(initialBalances);
+    setTabs(initialTabs);
+    setGlobalBalances(initialGlobalBalances);
     return () => clear();
-  }, [initialExpenses, initialBalances, setExpenses, setBalances, clear]);
+  }, [initialTabs, initialGlobalBalances, setTabs, setGlobalBalances, clear]);
 
-  // Realtime subscriptions for expenses and balances.
   useEffect(() => {
     const supabase = createBrowserClient();
 
     const channel = supabase
-      .channel(`expenses-${groupId}`)
+      .channel(`tabs-${groupId}`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
-          table: "expenses",
+          table: "tabs",
           filter: `group_id=eq.${groupId}`,
         },
         (payload) => {
           if (payload.eventType === "DELETE") {
-            removeExpense((payload.old as { id: string }).id);
+            removeTab((payload.old as { id: string }).id);
           } else {
-            // INSERT or UPDATE — upsert into store.
-            // Note: payload.new contains only the raw expense row (no joins).
-            upsertExpense(payload.new as Expense);
+            upsertTab(payload.new as Tab);
           }
         },
       )
@@ -64,9 +63,81 @@ export function ExpensesProvider({
           filter: `group_id=eq.${groupId}`,
         },
         async () => {
-          // Balance rows don't carry profile joins in realtime payloads,
-          // so we refetch the full balance list with profiles.
-          const fresh = await getBalances(supabase, groupId);
+          const fresh = await getGlobalBalances(supabase, groupId);
+          setGlobalBalances(fresh as BalanceWithProfiles[]);
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [groupId, upsertTab, removeTab, setGlobalBalances]);
+
+  return <>{children}</>;
+}
+
+// ── Tab-level provider ──────────────────────────────────────────────────────
+// Manages expenses + per-tab balances. Used on the tab detail page.
+
+type TabProviderProps = {
+  tabId: string;
+  initialExpenses: Expense[];
+  initialBalances: BalanceWithProfiles[];
+  children: React.ReactNode;
+};
+
+export function ExpensesTabProvider({
+  tabId,
+  initialExpenses,
+  initialBalances,
+  children,
+}: TabProviderProps) {
+  const setExpenses = useExpenseStore((s) => s.setExpenses);
+  const setBalances = useExpenseStore((s) => s.setBalances);
+  const upsertExpense = useExpenseStore((s) => s.upsertExpense);
+  const removeExpense = useExpenseStore((s) => s.removeExpense);
+
+  useEffect(() => {
+    setExpenses(initialExpenses);
+    setBalances(initialBalances);
+    return () => {
+      setExpenses([]);
+      setBalances([]);
+    };
+  }, [initialExpenses, initialBalances, setExpenses, setBalances]);
+
+  useEffect(() => {
+    const supabase = createBrowserClient();
+
+    const channel = supabase
+      .channel(`tab-expenses-${tabId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "expenses",
+          filter: `tab_id=eq.${tabId}`,
+        },
+        (payload) => {
+          if (payload.eventType === "DELETE") {
+            removeExpense((payload.old as { id: string }).id);
+          } else {
+            upsertExpense(payload.new as Expense);
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "balances",
+          filter: `tab_id=eq.${tabId}`,
+        },
+        async () => {
+          const fresh = await getBalances(supabase, tabId);
           setBalances(fresh as BalanceWithProfiles[]);
         },
       )
@@ -75,7 +146,7 @@ export function ExpensesProvider({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [groupId, setBalances, upsertExpense, removeExpense]);
+  }, [tabId, setBalances, upsertExpense, removeExpense]);
 
   return <>{children}</>;
 }
