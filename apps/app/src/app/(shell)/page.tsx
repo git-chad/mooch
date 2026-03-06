@@ -16,34 +16,36 @@ export default function DashboardPage() {
 
   if (groups.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-full py-24 px-6 text-center">
-        <p className="text-4xl mb-4">🏕️</p>
-        <Text variant="title" className="mb-2">
-          No squads yet
-        </Text>
-        <Text variant="body" color="subtle" className="mb-8">
-          Create a squad or join one with an invite code.
-        </Text>
-        <div className="flex flex-wrap gap-3 justify-center">
-          <Button
-            type="button"
-            variant="primary"
-            onClick={() => setCreateOpen(true)}
-          >
-            Create a squad
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => setJoinOpen(true)}
-          >
-            Join a squad
-          </Button>
-        </div>
+      <Container as="section" className="py-4 sm:py-6">
+        <div className="col-span-6 sm:col-span-12 flex flex-col items-center justify-center py-20 text-center">
+          <p className="text-4xl mb-4">🏕️</p>
+          <Text variant="title" className="mb-2">
+            No squads yet
+          </Text>
+          <Text variant="body" color="subtle" className="mb-8">
+            Create a squad or join one with an invite code.
+          </Text>
+          <div className="flex flex-wrap gap-3 justify-center">
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => setCreateOpen(true)}
+            >
+              Create a squad
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => setJoinOpen(true)}
+            >
+              Join a squad
+            </Button>
+          </div>
 
-        <CreateGroupModal open={createOpen} onOpenChange={setCreateOpen} />
-        <JoinGroupModal open={joinOpen} onOpenChange={setJoinOpen} />
-      </div>
+          <CreateGroupModal open={createOpen} onOpenChange={setCreateOpen} />
+          <JoinGroupModal open={joinOpen} onOpenChange={setJoinOpen} />
+        </div>
+      </Container>
     );
   }
 

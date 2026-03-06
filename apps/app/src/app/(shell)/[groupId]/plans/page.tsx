@@ -1,9 +1,13 @@
+import { Container, Text } from "@mooch/ui";
+
 export default function PlansPage() {
   return (
-    <div className="flex flex-col items-center justify-center h-full py-24 text-center">
-      <p className="text-4xl mb-3">📋</p>
-      <h1 className="text-lg font-semibold text-[#1F2A23] font-sans">Plans</h1>
-      <p className="text-sm text-[#8C7463] mt-1 font-sans">Coming soon</p>
-    </div>
+    <Container as="section" className="py-4 sm:py-6">
+      <div className="col-span-6 sm:col-span-12 flex flex-col items-center justify-center py-20 text-center">
+        <p className="text-4xl mb-3">📋</p>
+        <Text variant="heading" className="mb-1">Plans</Text>
+        <Text variant="body" color="subtle">Coming soon</Text>
+      </div>
+    </Container>
   );
 }

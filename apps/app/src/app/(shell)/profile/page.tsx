@@ -1,5 +1,6 @@
 import { getProfile } from "@mooch/db";
 import { createClient } from "@mooch/db/server";
+import { Container, Text } from "@mooch/ui";
 import { redirect } from "next/navigation";
 import ProfileForm from "./ProfileForm";
 
@@ -16,9 +17,11 @@ export default async function ProfilePage() {
   if (!profile) redirect("/login");
 
   return (
-    <div>
-      <h1>Profile</h1>
-      <ProfileForm profile={profile} email={user.email ?? ""} />
-    </div>
+    <Container as="section" className="py-4 sm:py-6">
+      <div className="col-span-6 sm:col-span-12 mx-auto w-full max-w-5xl space-y-6">
+        <Text as="h1" variant="title">Profile</Text>
+        <ProfileForm profile={profile} email={user.email ?? ""} />
+      </div>
+    </Container>
   );
 }

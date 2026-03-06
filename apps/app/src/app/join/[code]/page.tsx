@@ -80,19 +80,18 @@ export default async function JoinByCodePage({
           <Text as="h1" variant="title">{groupPreview.name}</Text>
         </div>
 
-        <p className="mt-2 text-xs text-[#7A6E65] font-mono tracking-widest uppercase">
+        <Text variant="caption" color="muted" className="mt-2 font-mono tracking-widest uppercase">
           Code: {normalizedCode}
-        </p>
+        </Text>
 
         {error && <Text variant="caption" color="danger" className="mt-4">{error}</Text>}
 
         <div className="mt-6">
           {!user ? (
-            <Link
-              href={`/login?next=${encodeURIComponent(nextPath)}`}
-              className="inline-flex w-full items-center justify-center rounded-full border border-[#5A9629] px-4 py-2.5 text-sm font-medium text-[#F4FBFF] bg-[var(--action-gradient)] shadow-[var(--shadow-btn-primary)]"
-            >
-              Join this squad
+            <Link href={`/login?next=${encodeURIComponent(nextPath)}`}>
+              <Button variant="primary" className="w-full">
+                Join this squad
+              </Button>
             </Link>
           ) : (
             <form action={handleJoin}>
@@ -116,11 +115,10 @@ function InvalidCodeState() {
           This invite link is invalid or expired.
         </Text>
         <div className="mt-5">
-          <Link
-            href="/groups"
-            className="inline-flex items-center justify-center rounded-full border border-[#D8C8BC] bg-[#FFFFFF] px-4 py-2.5 text-sm font-medium text-[#4D6480]"
-          >
-            Go to groups
+          <Link href="/groups">
+            <Button variant="secondary">
+              Go to groups
+            </Button>
           </Link>
         </div>
       </div>
