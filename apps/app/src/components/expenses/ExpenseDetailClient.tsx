@@ -47,6 +47,7 @@ type Props = {
   groupId: string;
   tabId: string;
   tabName: string;
+  tabCurrency: string;
   expense: ExpenseDetail;
   group: GroupWithMembers;
   currentUserId: string;
@@ -63,6 +64,7 @@ export function ExpenseDetailClient({
   groupId,
   tabId,
   tabName,
+  tabCurrency,
   expense,
   group,
   currentUserId,
@@ -348,6 +350,7 @@ export function ExpenseDetailClient({
           members={group.members}
           currentUserId={currentUserId}
           groupCurrency={group.currency}
+          tabCurrency={tabCurrency}
           locale={group.locale}
           mode="edit"
           expenseId={expense.id}

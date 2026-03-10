@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache";
 type CreateTabInput = {
   name: string;
   emoji?: string;
+  currency?: string;
 };
 
 export async function createTab(
@@ -32,12 +33,24 @@ export async function createTab(
 
   if (!member) return { error: "Not a member of this group" };
 
+  // Default tab currency to the group's currency
+  let tabCurrency = data.currency;
+  if (!tabCurrency) {
+    const { data: group } = await admin
+      .from("groups")
+      .select("currency")
+      .eq("id", groupId)
+      .single();
+    tabCurrency = (group?.currency as string) ?? "USD";
+  }
+
   const { data: tab, error } = await admin
     .from("tabs")
     .insert({
       group_id: groupId,
       name: data.name.trim(),
       emoji: data.emoji ?? "lucide:Receipt",
+      currency: tabCurrency,
       created_by: user.id,
     })
     .select("*")
@@ -53,6 +66,7 @@ export async function createTab(
 type UpdateTabInput = {
   name?: string;
   emoji?: string;
+  currency?: string;
 };
 
 export async function updateTab(
@@ -89,6 +103,7 @@ export async function updateTab(
   const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (data.name !== undefined) updates.name = data.name.trim();
   if (data.emoji !== undefined) updates.emoji = data.emoji;
+  if (data.currency !== undefined) updates.currency = data.currency;
 
   const { data: updated, error } = await admin
     .from("tabs")

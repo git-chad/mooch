@@ -116,8 +116,11 @@ export async function addExpense(
   } = await supabase.auth.getUser();
   if (!user) return { error: "Not authenticated" };
 
+  if (data.amount <= 0) return { error: "Amount must be greater than zero" };
   if (data.participants.length === 0)
     return { error: "At least one participant is required" };
+  if (data.participants.some((p) => p.share_amount < 0))
+    return { error: "Split amounts cannot be negative" };
 
   // Verify the tab exists, belongs to this group, and is open
   const { data: tab } = await admin
@@ -221,6 +224,11 @@ export async function updateExpense(
 
   if (expense.created_by !== user.id && member?.role !== "admin")
     return { error: "Only the creator or an admin can edit this expense" };
+
+  if (data.amount !== undefined && data.amount <= 0)
+    return { error: "Amount must be greater than zero" };
+  if (data.participants?.some((p) => p.share_amount < 0))
+    return { error: "Split amounts cannot be negative" };
 
   const { participants, ...fields } = data;
 

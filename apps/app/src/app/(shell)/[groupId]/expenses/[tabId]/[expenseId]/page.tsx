@@ -50,6 +50,7 @@ export default async function ExpenseDetailPage({ params }: Props) {
       groupId={groupId}
       tabId={tabId}
       tabName={tab.name}
+      tabCurrency={tab.currency}
       expense={expense}
       group={group}
       currentUserId={user.id}

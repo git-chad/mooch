@@ -1,13 +1,17 @@
 "use client";
 
 import type { TabWithStats } from "@mooch/db";
+import { useExpenseStore } from "@mooch/stores";
 import type { Group, GroupMember, Profile } from "@mooch/types";
-import { Badge, Button, Container, Text } from "@mooch/ui";
+import { Badge, Button, ConfirmDialog, Container, Text } from "@mooch/ui";
+import { Tooltip } from "@base-ui-components/react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { GroupIcon } from "@/components/groups/group-icon";
 import { TransitionSlot } from "@/components/TransitionSlot";
+import { closeTab, deleteTab, reopenTab } from "@/app/actions/tabs";
 import {
   getLayoutTransition,
   getSurfaceTransition,
@@ -16,6 +20,7 @@ import {
 import { AddExpenseModal } from "./AddExpenseModal";
 import { BalanceCard } from "./BalanceCard";
 import { BalanceMatrix } from "./BalanceMatrix";
+import { CreateTabModal } from "./CreateTabModal";
 import { ExpenseList } from "./ExpenseList";
 import { TabReceipt } from "./TabReceipt";
 
@@ -39,12 +44,61 @@ export function TabDetailClient({
   group,
   currentUserId,
 }: Props) {
+  const router = useRouter();
   const [view, setView] = useState<ViewTab>("activity");
   const [addOpen, setAddOpen] = useState(false);
   const [receiptOpen, setReceiptOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const reducedMotion = useReducedMotion() ?? false;
 
+  const upsertTab = useExpenseStore((s) => s.upsertTab);
+  const removeTab = useExpenseStore((s) => s.removeTab);
+
   const isClosed = tab.status === "closed";
+  const hasExpenses = (tab.expense_count ?? 0) > 0;
+
+  // Check if current user is tab creator or admin
+  const currentMember = group.members.find(
+    (m) => m.user_id === currentUserId,
+  );
+  const canManage =
+    tab.created_by === currentUserId || currentMember?.role === "admin";
+  const isAdmin = currentMember?.role === "admin";
+
+  async function handleToggleStatus() {
+    setStatusLoading(true);
+    setActionError(null);
+
+    const result = isClosed ? await reopenTab(tabId) : await closeTab(tabId);
+
+    setStatusLoading(false);
+
+    if (result && "error" in result) {
+      setActionError(result.error);
+      return;
+    }
+
+    if (result && "tab" in result) {
+      upsertTab(result.tab);
+    }
+  }
+
+  async function handleDelete() {
+    setActionError(null);
+
+    const result = await deleteTab(tabId);
+
+    if (result?.error) {
+      setActionError(result.error);
+      return;
+    }
+
+    removeTab(tabId);
+    router.push(`/${groupId}/expenses`);
+  }
 
   return (
     <Container as="section" className="py-4 sm:py-6">
@@ -81,6 +135,16 @@ export function TabDetailClient({
           </div>
 
           <div className="flex items-center gap-2">
+            {canManage && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setEditOpen(true)}
+              >
+                Edit
+              </Button>
+            )}
             <Button
               type="button"
               variant="secondary"
@@ -101,6 +165,65 @@ export function TabDetailClient({
             )}
           </div>
         </header>
+
+        {/* Tab management actions */}
+        {canManage && (
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              loading={statusLoading}
+              onClick={handleToggleStatus}
+            >
+              {isClosed ? "Reopen tab" : "Close tab"}
+            </Button>
+            {isAdmin && (
+              <div className="flex items-center gap-1.5">
+                <Button
+                  type="button"
+                  variant="danger"
+                  size="sm"
+                  disabled={hasExpenses}
+                  onClick={() => setDeleteConfirmOpen(true)}
+                >
+                  Delete tab
+                </Button>
+                {hasExpenses && (
+                  <Tooltip.Root>
+                    <Tooltip.Trigger
+                      render={
+                        <span
+                          className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] cursor-default"
+                          style={{
+                            background: "#F7F2ED",
+                            border: "1px solid #DCCBC0",
+                            color: "#8c7463",
+                          }}
+                        >
+                          ?
+                        </span>
+                      }
+                    />
+                    <Tooltip.Portal>
+                      <Tooltip.Positioner sideOffset={6}>
+                        <Tooltip.Popup className="avatar-tooltip">
+                          Remove all expenses first to delete this tab.
+                        </Tooltip.Popup>
+                      </Tooltip.Positioner>
+                    </Tooltip.Portal>
+                  </Tooltip.Root>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {actionError && (
+          <Text variant="caption" color="danger" className="block">
+            {actionError}
+          </Text>
+        )}
 
         {/* Tab switcher */}
         <div
@@ -204,6 +327,7 @@ export function TabDetailClient({
           members={group.members}
           currentUserId={currentUserId}
           groupCurrency={group.currency}
+          tabCurrency={tab.currency}
           locale={group.locale}
         />
         <TabReceipt
@@ -213,6 +337,24 @@ export function TabDetailClient({
           members={group.members}
           groupCurrency={group.currency}
           locale={group.locale}
+        />
+        <CreateTabModal
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          groupId={groupId}
+          groupCurrency={group.currency}
+          mode="edit"
+          tab={tab}
+        />
+        <ConfirmDialog
+          open={deleteConfirmOpen}
+          onOpenChange={setDeleteConfirmOpen}
+          title="Delete tab"
+          description="This will permanently delete this tab. Only empty tabs (with no expenses) can be deleted."
+          confirmLabel="Delete"
+          variant="destructive"
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteConfirmOpen(false)}
         />
       </TransitionSlot>
     </Container>

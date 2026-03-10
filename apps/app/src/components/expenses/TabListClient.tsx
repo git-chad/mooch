@@ -64,7 +64,7 @@ export function TabListClient({ groupId, group, currentUserId }: Props) {
                 key={tab.id}
                 tab={tab}
                 groupId={groupId}
-                currency={group.currency}
+                currency={tab.currency || group.currency}
                 locale={group.locale}
               />
             ))}
@@ -82,7 +82,7 @@ export function TabListClient({ groupId, group, currentUserId }: Props) {
                 key={tab.id}
                 tab={tab}
                 groupId={groupId}
-                currency={group.currency}
+                currency={tab.currency || group.currency}
                 locale={group.locale}
               />
             ))}
@@ -114,6 +114,7 @@ export function TabListClient({ groupId, group, currentUserId }: Props) {
           open={createOpen}
           onOpenChange={setCreateOpen}
           groupId={groupId}
+          groupCurrency={group.currency}
         />
       </TransitionSlot>
     </Container>
