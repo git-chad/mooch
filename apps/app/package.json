@@ -10,15 +10,19 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@base-ui-components/react": "^1.0.0-rc.0",
     "@mooch/db": "*",
     "@mooch/stores": "*",
     "@mooch/types": "*",
     "@mooch/ui": "*",
     "dither-plugin": "^1.1.1",
     "html-to-image": "^1.11.13",
+    "jsqr": "^1.4.0",
     "lucide-react": "^0.577.0",
+    "motion": "^12.35.0",
     "qrcode": "^1.5.4",
-    "torph": "^0.0.9"
+    "torph": "^0.0.9",
+    "web-haptics": "^0.0.6"
   },
   "devDependencies": {
     "@types/qrcode": "^1.5.6"

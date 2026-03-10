@@ -117,6 +117,13 @@ When a problem is encountered and fixed, log it here immediately:
 
 ---
 
+### Phantom dependencies break Vercel deploy
+- **Problem:** Multiple packages (`web-haptics`, `torph`, `@base-ui-components/react`, `motion`, `jsqr`, `lucide-react`) were imported in `packages/ui` and `apps/app` but never declared in their respective `package.json` files. Worked locally due to Bun workspace hoisting, but Vercel's stricter resolution couldn't find them — build failed with `Module not found: Can't resolve 'web-haptics/react'`.
+- **Fix:** Added all missing dependencies explicitly to `packages/ui/package.json` and `apps/app/package.json`, ran `bun install` to update lockfile.
+- **Avoid:** Every external import must be declared in the consuming package's `package.json` — never rely on root hoisting. Before deploying, check that all imports resolve without hoisting by reviewing each workspace's declared dependencies.
+
+---
+
 ### Ignoring project memory when implementing features
 - **Problem:** Memory had documented design decisions for receipt photo upload, currency selector, and custom category `IconPicker` in `AddExpenseModal`. These were built in a prior session's planning. None of them were included in the initial implementation of Phase 3.4.
 - **Fix:** Added all three after user pointed them out.
