@@ -228,3 +228,6 @@ Zustand stores that need to be built alongside components.
 - 🔊 **Audio** (`audioEngine`) on key success events only — never on passive actions. Always gated by `useAudioStore.muted`.
 - Spring-based transforms for drag, hover lift, modal entrances. Duration-based tweens only for simple opacity transitions.
 - Empty states, skeletons, and error states are **designed moments** with their own motion — not afterthoughts.
+
+
+# mooch.me - to mooch or be mooched
