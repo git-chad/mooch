@@ -4,7 +4,7 @@
     "stripe": {
       "source": "mindrally/skills",
       "sourceType": "github",
-      "computedHash": "75ce7d92ea6bcb6050e8cd6b93e681c01ac7c1fe3c176ceb72636b6011541735"
+      "computedHash": "b1addaf478afe19c986fabce56ef017b1c532477375a9e48f78864d9ffca0fd0"
     }
   }
 }
