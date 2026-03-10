@@ -892,11 +892,381 @@ These checklist items stay unchecked until browser/manual verification is comple
 
 ---
 
+# Phase 3B: Monetization — Subscriptions, Billing & Token System
+
+**Goal:** Introduce paid plans (Free / Pro / Club), Stripe-backed subscriptions, Corruption Token microtransactions, and in-app feature gating. The public pricing page lives at `apps/web/app/pricing/page.tsx`; the billing management UI and all enforcement logic live in `apps/app`.
+
+**Status:** ⬜ — _Blocked until Phase 3 is APPROVED. Must follow Phase 3A motion standards._
+
+---
+
+### 3B.1 — Database Migrations: Monetization Schema
+
+- [ ] 3B.1.1 — Create `supabase/migrations/000X_monetization.sql`:
+
+  ```sql
+  -- Plan definitions
+  create table public.plans (
+    id text primary key, -- 'free' | 'pro' | 'club'
+    name text not null,
+    monthly_price_cents int not null,
+    annual_price_cents int not null,
+    max_groups int,                   -- null = unlimited
+    max_members_per_group int not null,
+    expense_history_months int,       -- null = unlimited
+    tokens_monthly_grant int not null  -- tokens credited to the user at the start of each month
+  );
+
+  -- User subscriptions
+  create table public.subscriptions (
+    id uuid primary key default gen_random_uuid(),
+    user_id uuid references public.profiles(id) on delete cascade not null unique,
+    plan_id text references public.plans(id) not null default 'free',
+    billing_cycle text check (billing_cycle in ('monthly', 'annual')),
+    status text not null default 'active', -- 'active' | 'canceled' | 'past_due'
+    current_period_start timestamptz,
+    current_period_end timestamptz,
+    stripe_subscription_id text,
+    stripe_customer_id text,
+    created_at timestamptz not null default now(),
+    updated_at timestamptz not null default now()
+  );
+
+  -- Corruption token balances
+  create table public.token_balances (
+    user_id uuid references public.profiles(id) on delete cascade primary key,
+    balance int not null default 0,  -- monthly grant + purchases - spent; no upper cap
+    reset_at timestamptz not null default date_trunc('month', now()) + interval '1 month',
+    updated_at timestamptz not null default now()
+  );
+
+  -- Token transactions (purchases + usage + monthly grants)
+  create table public.token_transactions (
+    id uuid primary key default gen_random_uuid(),
+    user_id uuid references public.profiles(id) on delete cascade not null,
+    type text not null check (type in ('purchase', 'monthly_grant', 'usage')),
+    amount int not null, -- positive = credit, negative = debit
+    action text,         -- 'double_down' | 'the_leak' | 'the_coup' | 'ghost_vote' | 'the_veto' | 'hail_mary'
+    stripe_payment_intent_id text,
+    created_at timestamptz not null default now()
+  );
+
+  alter table public.subscriptions enable row level security;
+  alter table public.token_balances enable row level security;
+  alter table public.token_transactions enable row level security;
+
+  create policy "Users manage their own subscription"
+    on public.subscriptions for all using (auth.uid() = user_id);
+
+  create policy "Users view their own token balance"
+    on public.token_balances for select using (auth.uid() = user_id);
+
+  create policy "Users view their own token transactions"
+    on public.token_transactions for select using (auth.uid() = user_id);
+  ```
+
+- [ ] 3B.1.2 — Seed `public.plans` with Free / Pro / Club rows in the same migration:
+
+  | id    | monthly_price_cents | annual_price_cents | max_groups | max_members | history_months | tokens_monthly_grant |
+  |-------|--------------------|--------------------|------------|-------------|----------------|----------------------|
+  | free  | 0                  | 0                  | 1          | 8           | 3              | 2                    |
+  | pro   | 499                | 4990               | null       | 20          | null           | 10                   |
+  | club  | 1499               | 14990              | null       | 50          | null           | 30                   |
+
+  > Users receive their monthly grant automatically. They can also purchase additional tokens at any time with no cap. Balance carries over — unspent tokens are never removed.
+
+- [ ] 3B.1.3 — On `auth.users` sign-up trigger: insert a `subscriptions` row (plan = `free`) and a `token_balances` row (balance = 2, reflecting the first monthly grant) for every new user.
+
+---
+
+### 3B.2 — Stripe Integration
+
+#### 3B.2.1 — Package & Environment Setup
+
+- [ ] Add `stripe` and `@stripe/stripe-js` + `@stripe/react-stripe-js` to `apps/app`.
+- [ ] Add to `.env.local` and document all three in `.env.example`:
+  ```
+  STRIPE_SECRET_KEY=sk_test_...
+  STRIPE_WEBHOOK_SECRET=whsec_...
+  NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+  ```
+- [ ] Create Stripe singleton `apps/app/lib/stripe.ts` — import this everywhere; never instantiate Stripe inline:
+  ```typescript
+  import Stripe from 'stripe';
+
+  export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    apiVersion: '2023-10-16',
+    typescript: true,
+  });
+  ```
+- [ ] Create client-side singleton `apps/app/lib/stripe-client.ts`:
+  ```typescript
+  import { loadStripe } from '@stripe/stripe-js';
+
+  export const stripePromise = loadStripe(
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+  );
+  ```
+
+#### 3B.2.2 — Customer Management
+
+- [ ] Create `apps/app/lib/stripe-customers.ts` with a `createOrRetrieveCustomer` helper. Called on first checkout — never create duplicate customers:
+  ```typescript
+  import { stripe } from './stripe';
+  import type Stripe from 'stripe';
+
+  export async function createOrRetrieveCustomer(
+    email: string,
+    userId: string
+  ): Promise<Stripe.Customer> {
+    const existing = await stripe.customers.list({ email, limit: 1 });
+    if (existing.data.length > 0) return existing.data[0];
+
+    return stripe.customers.create({
+      email,
+      metadata: { userId }, // used to look up the user in webhooks
+    });
+  }
+  ```
+
+#### 3B.2.3 — Server Actions: `apps/app/app/actions/billing.ts`
+
+All actions are `'use server'`. All Stripe calls use idempotency keys for safety. Errors are caught by type using `Stripe.errors`.
+
+- [ ] `createCheckoutSession(planId: 'pro' | 'club', billingCycle: 'monthly' | 'annual')`:
+  - Calls `createOrRetrieveCustomer`, saves `stripe_customer_id` to `subscriptions` if new.
+  - Creates a Stripe Checkout Session (`mode: 'subscription'`) with:
+    - The correct `price` ID for the plan + billing cycle (looked up from `STRIPE_PRICE_IDS` constant).
+    - `subscription_data.trial_period_days: 7` for Pro only.
+    - `success_url` → `/billing?session_id={CHECKOUT_SESSION_ID}`, `cancel_url` → `/billing`.
+    - `allow_promotion_codes: true`.
+  - Returns the session URL; caller redirects with `redirect()`.
+
+- [ ] `createTokenPurchaseSession(pack: 'starter' | 'popular' | 'power')`:
+  - Token pack prices (`STARTER_PRICE_ID` 1×$0.99, `POPULAR_PRICE_ID` 3×$1.99, `POWER_PRICE_ID` 9×$4.99) stored as constants alongside the function.
+  - Creates a Stripe Checkout Session (`mode: 'payment'`) with `payment_intent_data.metadata: { userId, pack }` so the webhook can credit the right token amount.
+  - Uses an idempotency key: `token-purchase-${userId}-${pack}-${Date.now()}`.
+  - Returns the session URL.
+
+- [ ] `createPortalSession()`:
+  - Fetches `stripe_customer_id` from `subscriptions` for the current user.
+  - Creates a Stripe Customer Portal session with `return_url: /billing`.
+  - Returns the portal URL; caller redirects with `redirect()`.
+
+#### 3B.2.4 — Webhook Handler: `apps/app/app/api/webhooks/stripe/route.ts`
+
+Must be a Next.js Route Handler (not a Server Action) — Stripe requires access to the raw request body for signature verification.
+
+- [ ] Implement the route handler:
+  ```typescript
+  import { headers } from 'next/headers';
+  import { stripe } from '@/lib/stripe';
+  import type Stripe from 'stripe';
+
+  export async function POST(request: Request) {
+    const body = await request.text(); // raw body required for sig verification
+    const signature = headers().get('stripe-signature')!;
+
+    let event: Stripe.Event;
+    try {
+      event = stripe.webhooks.constructEvent(
+        body,
+        signature,
+        process.env.STRIPE_WEBHOOK_SECRET!
+      );
+    } catch {
+      return new Response('Webhook signature verification failed', { status: 400 });
+    }
+
+    switch (event.type) {
+      case 'checkout.session.completed':
+        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+        break;
+      case 'customer.subscription.updated':
+        await handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
+        break;
+      case 'customer.subscription.deleted':
+        await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
+        break;
+      case 'payment_intent.succeeded':
+        await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
+        break;
+      case 'invoice.payment_failed':
+        await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+        break;
+    }
+
+    return new Response('ok', { status: 200 });
+  }
+  ```
+
+- [ ] `handleCheckoutCompleted(session)` — for `mode: 'subscription'`:
+  - Retrieve `userId` from `session.metadata` or via `stripe.customers.retrieve(session.customer)`.
+  - Update `subscriptions` row: set `stripe_subscription_id`, `stripe_customer_id`, `plan_id`, `billing_cycle`, `status = 'active'`, `current_period_start/end`.
+
+- [ ] `handleSubscriptionUpdated(subscription)` — sync plan, billing cycle, status, and period dates to `subscriptions`.
+
+- [ ] `handleSubscriptionDeleted(subscription)` — set `plan_id = 'free'`, `status = 'canceled'`, clear Stripe IDs. Data is never deleted.
+
+- [ ] `handlePaymentIntentSucceeded(paymentIntent)` — only fires for token pack purchases (`paymentIntent.metadata.pack` is set):
+  - Look up token amount from pack name (`starter=1`, `popular=3`, `power=9`).
+  - Increment `token_balances.balance` for the user.
+  - Insert `token_transactions` row (type `'purchase'`, amount = tokens credited, `stripe_payment_intent_id` stored).
+
+- [ ] `handleInvoicePaymentFailed(invoice)` — set `subscriptions.status = 'past_due'` for the affected user.
+
+#### 3B.2.5 — Monthly Token Grant: `supabase/functions/reset-monthly-tokens/index.ts`
+
+- [ ] Scheduled Supabase Edge Function (cron: `0 0 1 * *` — first of each month):
+  - Fetches all users joined with their active plan's `tokens_monthly_grant`.
+  - For each user: increments `token_balances.balance` by `tokens_monthly_grant`, updates `reset_at`, inserts a `token_transactions` row (type `'monthly_grant'`).
+  - Balance is additive — unspent tokens from prior months carry over indefinitely.
+
+#### 3B.2.6 — Error Handling Pattern
+
+All Stripe calls in Server Actions must use typed error catching:
+
+```typescript
+import Stripe from 'stripe';
+
+try {
+  // stripe call
+} catch (error) {
+  if (error instanceof Stripe.errors.StripeCardError) {
+    throw new Error('card_declined');
+  } else if (error instanceof Stripe.errors.StripeInvalidRequestError) {
+    throw new Error('invalid_request');
+  } else {
+    throw new Error('stripe_error');
+  }
+}
+```
+
+---
+
+### 3B.3 — Feature Gating Utilities
+
+- [ ] 3B.3.1 — `packages/db/src/subscriptions.ts`:
+  - `getUserPlan(userId)` — fetches `subscriptions` joined with `plans`. Wrap with React `cache()` for deduplication per request.
+  - `getUserTokenBalance(userId)` — fetches `token_balances.balance`.
+
+- [ ] 3B.3.2 — `packages/types/src/plans.ts`:
+  ```typescript
+  export type PlanId = 'free' | 'pro' | 'club';
+
+  export interface PlanLimits {
+    maxGroups: number | null;       // null = unlimited
+    maxMembersPerGroup: number;
+    expenseHistoryMonths: number | null;
+    tokensMonthlyGrant: number;
+  }
+
+  export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
+    free:  { maxGroups: 1,    maxMembersPerGroup: 8,  expenseHistoryMonths: 3,    tokensMonthlyGrant: 2  },
+    pro:   { maxGroups: null, maxMembersPerGroup: 20, expenseHistoryMonths: null, tokensMonthlyGrant: 10 },
+    club:  { maxGroups: null, maxMembersPerGroup: 50, expenseHistoryMonths: null, tokensMonthlyGrant: 30 },
+  };
+  ```
+
+- [ ] 3B.3.3 — `canPerformAction(userId, action)` in `packages/db/src/subscriptions.ts`:
+  - Supported `action` values: `'create_group'`, `'add_member'`, `'view_expense_history'`.
+  - Fetches the user's plan and current counts, returns `{ allowed: boolean, reason?: string }`.
+  - Used server-side in all relevant Server Actions before mutating data.
+
+- [ ] 3B.3.4 — `usePlan()` Zustand store in `packages/stores/src/plan.ts`:
+  - Subscribes to Supabase Realtime on `subscriptions` and `token_balances` rows for the current user.
+  - Exposes `{ plan: PlanId, limits: PlanLimits, tokenBalance: number }`.
+  - Refreshes automatically when the Stripe webhook updates either table — no page reload needed.
+
+- [ ] 3B.3.5 — Locked-feature UI pattern (shared component `packages/ui/src/LockedFeature.tsx`):
+  - Renders a 🔒 icon with muted text and a tooltip: _"Upgrade to Pro"_ linking to `mooch.me/pricing`.
+  - **Never** use a red ❌. The locked state should feel like an invitation, not a rejection.
+
+---
+
+### 3B.4 — Corruption Token Action Enforcement
+
+- [ ] 3B.4.1 — `packages/db/src/tokens.ts` — shared `spendTokens(userId, action, cost)` server utility:
+  1. Fetches `token_balances.balance` — throws `INSUFFICIENT_TOKENS` if `balance < cost`.
+  2. Atomically decrements `balance` by `cost` (use a Postgres function or `update ... where balance >= cost` to avoid race conditions).
+  3. Inserts `token_transactions` row: `{ type: 'usage', amount: -cost, action }`.
+  4. Returns `{ ok: true, remainingBalance: number }`.
+
+- [ ] 3B.4.2 — Action slugs and costs (enforce in the `spendTokens` call site):
+
+  | Slug          | Display Name   | Cost |
+  |---------------|----------------|------|
+  | `double_down` | Double Down 🎰  | 1    |
+  | `the_leak`    | The Leak 🕵️    | 1    |
+  | `the_coup`    | The Coup 👑     | 1    |
+  | `ghost_vote`  | Ghost Vote 👻   | 1    |
+  | `the_veto`    | The Veto ☠️    | 2    |
+  | `hail_mary`   | Hail Mary 🙏   | 3    |
+
+- [ ] 3B.4.3 — After a successful `spendTokens`, emit a Squad Feed event with `{ actorId, action, groupId }`. All corruption actions are public by design — users see who did what in the feed.
+
+---
+
+### 3B.5 — In-App Billing Page
+
+- [ ] 3B.5.1 — `apps/app/app/(app)/billing/page.tsx` (Server Component — fetches plan server-side):
+  - Current plan badge, billing cycle, and period end date (`current_period_end`).
+  - If `status = 'past_due'`: show a payment failed banner with a "Update payment method" CTA → `createPortalSession`.
+  - Upgrade / downgrade CTA buttons that call `createCheckoutSession` as a Server Action.
+  - Token balance widget showing current balance + monthly grant for their plan.
+  - Token pack cards (Starter / Popular / Power) — Popular highlighted with ⭐ Best value badge. Each calls `createTokenPurchaseSession`.
+  - "Manage subscription" button → `createPortalSession` (cancel, update card, download invoices).
+
+- [ ] 3B.5.2 — `apps/app/app/billing/success/page.tsx`: post-checkout landing page. Reads `?session_id=` from URL, shows a confirmation message. Webhook handles the actual DB update asynchronously — the UI should not rely on session data for plan state.
+
+- [ ] 3B.5.3 — Add billing link to the app sidebar navigation and user settings menu.
+
+---
+
+### 3B.6 — Pricing Page (`apps/web`)
+
+- [ ] 3B.6.1 — `apps/web/app/pricing/page.tsx`: three-column layout (Free → Pro → Club). Pro card elevated (`scale-105`, dark bg `#1A1A2E`, lime border `#A3E635`). Monthly/Annual billing toggle with animated price update (`AnimatePresence`).
+- [ ] 3B.6.2 — Locked features shown with 🔒 muted text (not ❌). Pro CTA: `Start free 7-day trial →` → `createCheckoutSession`. Club CTA: `Talk to us →` opens a contact/waitlist form.
+- [ ] 3B.6.3 — Corruption Tokens section below plans: token pack cards (Starter / Popular / Power) + "What tokens do" action table.
+- [ ] 3B.6.4 — Mooch Wrapped dark strip (`#1A1A2E`): headline, feature bullets, Free ($0.99 one-time) vs Pro/Club (included) callout, shareable card mockup placeholder.
+- [ ] 3B.6.5 — FAQ accordion (`AnimatePresence`): Can I cancel? · Data on downgrade? · Free tokens on Free plan? · Pro vs Club? · Free trial?
+- [ ] 3B.6.6 — CSS design tokens in `apps/web/app/globals.css`: `--bg-dark`, `--bg-light`, `--accent`, `--text-primary`, `--text-muted`, `--text-dark`, `--border-subtle` (values as specified in the pricing spec).
+- [ ] 3B.6.7 — Mobile: stack vertically, Pro card first. Smooth-scroll anchor `#pricing` from hero CTA.
+
+---
+
+### Phase 3B Testing Checklist
+
+- [ ] 3B-T1 — New user sign-up auto-creates `subscriptions` (plan = `free`) and `token_balances` (balance = 2) rows via DB trigger.
+- [ ] 3B-T2 — `createCheckoutSession('pro', 'monthly')` redirects to Stripe Checkout (test mode). Completing checkout fires webhook → `subscriptions.plan_id` = `pro`, `status` = `active`.
+- [ ] 3B-T3 — Webhook signature verification rejects requests with invalid `stripe-signature`; returns 400.
+- [ ] 3B-T4 — `usePlan()` reflects plan upgrade in real-time via Supabase Realtime — no page reload needed.
+- [ ] 3B-T5 — Free user hitting `canPerformAction('create_group')` after owning 1 group returns `{ allowed: false, reason: 'LIMIT_EXCEEDED' }`.
+- [ ] 3B-T6 — Token purchase (Popular pack, test mode): Stripe payment succeeds → webhook → `token_balances.balance` += 3, `token_transactions` row inserted (type `purchase`).
+- [ ] 3B-T7 — `spendTokens` with insufficient balance throws `INSUFFICIENT_TOKENS` and does not mutate the DB.
+- [ ] 3B-T8 — `spendTokens` with sufficient balance atomically decrements balance and inserts usage transaction.
+- [ ] 3B-T9 — Monthly grant cron increments each user's balance by their plan grant; `monthly_grant` transaction row created; prior balance preserved.
+- [ ] 3B-T10 — Cancellation via Stripe Portal → `customer.subscription.deleted` webhook → `plan_id` = `free`, data intact.
+- [ ] 3B-T11 — `invoice.payment_failed` webhook sets `subscriptions.status = 'past_due'`; billing page shows the payment failed banner.
+- [ ] 3B-T12 — Duplicate customer guard: calling `createOrRetrieveCustomer` twice with the same email returns the same Stripe customer ID.
+- [ ] 3B-T13 — Locked-feature UI shows 🔒 badge with upgrade tooltip; no ❌ icons anywhere.
+- [ ] 3B-T14 — Pricing page: correct layout on desktop (Pro elevated) and mobile (stacked, Pro first). Annual toggle updates prices with smooth animation.
+- [ ] 3B-T15 — FAQ accordion animates open/close without layout shift. All Phase 3A motion standards met.
+- [ ] 3B-T16 — `bun run build` passes with zero TypeScript errors.
+
+---
+
+**Phase 3B Status: ⬜ — Awaiting approval**
+
+---
+
+---
+
 # Phase 4: Voting & Polls
 
 **Goal:** Create polls with single or multi-choice voting, anonymous option, live animated results, and auto-close.
 
-**Status:** ⬜ — _Blocked until Phase 3 is APPROVED. Phase 3A motion standards are already approved and must be included in Phase 4 implementation._
+**Status:** ⬜ — _Blocked until Phase 3 and Phase 3B are APPROVED. Phase 3A motion standards are already approved and must be included in Phase 4 implementation. Corruption Token action enforcement (3B.4) is a prerequisite for poll token actions._
 
 ---
 
@@ -1819,6 +2189,7 @@ _(Do not start until Phase 10 is APPROVED and shipped)_
 | Phase 2: Groups System       | 🟢     | Tobias      | 2026-03-05 | All tests passed, RLS verified |
 | Phase 3: Expense Tracker     | ⬜     | —           | —    | —     |
 | Phase 3A: Motion & Transitions | 🟢   | Tobias      | 2026-03-06 | Expense surfaces pilot approved; motion/layout transitions now required across remaining user-facing surfaces |
+| Phase 3B: Monetization       | ⬜     | —           | —    | —     |
 | Phase 4: Voting & Polls      | ⬜     | —           | —    | —     |
 | Phase 5: Plans Board         | ⬜     | —           | —    | —     |
 | Phase 6: Squad Feed          | ⬜     | —           | —    | —     |
