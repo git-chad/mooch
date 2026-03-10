@@ -651,14 +651,23 @@ function Step1({
       </div>
 
       <div>
-        <Text variant="overline" color="subtle" className="mb-1.5 block">
-          What was it for?
-        </Text>
+        <div className="flex items-center justify-between mb-1.5">
+          <Text variant="overline" color="subtle">
+            What was it for?
+          </Text>
+          <Text
+            variant="caption"
+            color={description.length > 45 ? "danger" : "subtle"}
+          >
+            {description.length}/50
+          </Text>
+        </div>
         <input
           id="expense-description"
           type="text"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
+          maxLength={50}
           placeholder="e.g. Dinner at La Parrilla"
           className="w-full text-[15px] text-ink bg-transparent outline-none border border-edge rounded-xl px-3 py-2.5 placeholder:text-ink-placeholder focus:border-accent-strong transition-colors"
           style={{ background: "#FDFCFB" }}
@@ -666,13 +675,22 @@ function Step1({
       </div>
 
       <div>
-        <Text variant="overline" color="subtle" className="mb-1.5 block">
-          Notes (optional)
-        </Text>
+        <div className="flex items-center justify-between mb-1.5">
+          <Text variant="overline" color="subtle">
+            Notes (optional)
+          </Text>
+          <Text
+            variant="caption"
+            color={notes.length > 230 ? "danger" : "subtle"}
+          >
+            {notes.length}/250
+          </Text>
+        </div>
         <textarea
           id="expense-notes"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
+          maxLength={250}
           placeholder="Any extra details..."
           rows={2}
           className="w-full text-[14px] text-ink bg-transparent outline-none border border-edge rounded-xl px-3 py-2.5 placeholder:text-ink-placeholder focus:border-accent-strong transition-colors resize-none"

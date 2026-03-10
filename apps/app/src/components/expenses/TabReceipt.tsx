@@ -139,7 +139,7 @@ export function TabReceipt({
         <div className="max-h-[min(56vh,32rem)] overflow-y-auto pr-1 overscroll-contain">
           <motion.div
             ref={receiptRef}
-            className="space-y-4 pb-1"
+            className="space-y-4 p-5"
             initial={reducedMotion ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={getSurfaceTransition(
@@ -319,6 +319,10 @@ export function TabReceipt({
                 </p>
               )}
             </ReceiptSection>
+
+            <p className="text-center text-[9px] uppercase tracking-[0.2em] text-[#B5A99A] pt-2">
+              mooch.me
+            </p>
           </motion.div>
         </div>
 

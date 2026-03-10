@@ -2,6 +2,7 @@
 
 import type { Expense, GroupMember, Profile } from "@mooch/types";
 import { Avatar, LucideIconByName, Text } from "@mooch/ui";
+import { ImageIcon } from "lucide-react";
 import { motion, type Transition, useReducedMotion } from "motion/react";
 import { TransitionLink } from "@/components/TransitionLink";
 import { CATEGORY_CONFIG, formatCurrency, relativeTime } from "@/lib/expenses";
@@ -91,7 +92,7 @@ export function ExpenseCard({
           <Text variant="label" color="default" className="truncate block">
             {expense.description}
           </Text>
-          <Text variant="caption" color="subtle" className="block">
+          <Text variant="caption" color="subtle" className="flex items-center gap-1">
             {isCurrentUserPayer
               ? "You"
               : payer?.display_name ?? "someone"}
@@ -99,6 +100,9 @@ export function ExpenseCard({
             <span className="text-ink-dim">
               {relativeTime(expense.created_at)}
             </span>
+            {expense.photo_url && (
+              <ImageIcon className="w-3 h-3 text-ink-dim ml-0.5" />
+            )}
           </Text>
         </motion.div>
 

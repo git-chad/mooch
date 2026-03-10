@@ -117,6 +117,10 @@ export async function addExpense(
   if (!user) return { error: "Not authenticated" };
 
   if (data.amount <= 0) return { error: "Amount must be greater than zero" };
+  if (data.description && data.description.length > 50)
+    return { error: "Title must be 50 characters or less" };
+  if (data.notes && data.notes.length > 250)
+    return { error: "Notes must be 250 characters or less" };
   if (data.participants.length === 0)
     return { error: "At least one participant is required" };
   if (data.participants.some((p) => p.share_amount < 0))
@@ -227,6 +231,10 @@ export async function updateExpense(
 
   if (data.amount !== undefined && data.amount <= 0)
     return { error: "Amount must be greater than zero" };
+  if (data.description !== undefined && data.description.length > 50)
+    return { error: "Title must be 50 characters or less" };
+  if (data.notes && data.notes.length > 250)
+    return { error: "Notes must be 250 characters or less" };
   if (data.participants?.some((p) => p.share_amount < 0))
     return { error: "Split amounts cannot be negative" };
 
