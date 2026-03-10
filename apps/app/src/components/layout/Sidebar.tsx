@@ -6,6 +6,7 @@ import {
   BarChart2,
   Calendar,
   Camera,
+  CreditCard,
   Home,
   LayoutGrid,
   Receipt,
@@ -193,6 +194,18 @@ export function Sidebar({ className, profile }: SidebarProps) {
 
         {/* Footer */}
         <div className="shrink-0 border-t border-[#EDE3DA] px-3 py-3">
+          <Link
+            href="/billing"
+            className={cn(
+              "flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm font-medium font-sans transition-colors",
+              pathname === "/billing"
+                ? "bg-[#F1F9E8] text-[#2D5A0E]"
+                : "text-[#4A3728] hover:bg-[#F8F4EF]",
+            )}
+          >
+            <CreditCard size={16} className="shrink-0" />
+            Billing
+          </Link>
           <Link
             href="/profile"
             className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-sm font-medium font-sans text-[#4A3728] hover:bg-[#F8F4EF] transition-colors"

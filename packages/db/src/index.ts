@@ -11,3 +11,11 @@ export {
 } from "./queries/expenses";
 export { getTabs, getTabById } from "./queries/tabs";
 export type { TabWithStats } from "./queries/tabs";
+export {
+  getUserPlan,
+  getUserTokenBalance,
+  canPerformAction,
+} from "./queries/subscriptions";
+export type { UserPlan, ActionCheck } from "./queries/subscriptions";
+export { spendTokens, ACTION_COSTS } from "./queries/tokens";
+export type { CorruptionAction, SpendResult } from "./queries/tokens";
