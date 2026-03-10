@@ -113,7 +113,7 @@ export function ExpenseDetailClient({
   return (
     <Container as="section" className="py-4 sm:py-6">
       <TransitionSlot
-        className="col-span-6 sm:col-span-12 mx-auto w-full max-w-5xl space-y-5"
+        className="col-span-6 sm:col-span-12 mx-auto w-full max-w-2xl space-y-5"
         variant="context"
       >
         <TransitionLink

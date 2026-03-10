@@ -3,11 +3,12 @@
 import type { TabWithStats } from "@mooch/db";
 import { useExpenseStore } from "@mooch/stores";
 import type { Group, GroupMember, Profile } from "@mooch/types";
-import { Badge, Button, ConfirmDialog, Container, Text } from "@mooch/ui";
-import { Tooltip } from "@base-ui-components/react";
+import { Badge, Button, Container, Text } from "@mooch/ui";
+import { ChevronLeft, Receipt, Settings } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { TextMorph } from "torph/react";
 import { useState } from "react";
 import { GroupIcon } from "@/components/groups/group-icon";
 import { TransitionSlot } from "@/components/TransitionSlot";
@@ -49,7 +50,6 @@ export function TabDetailClient({
   const [addOpen, setAddOpen] = useState(false);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const reducedMotion = useReducedMotion() ?? false;
@@ -103,7 +103,7 @@ export function TabDetailClient({
   return (
     <Container as="section" className="py-4 sm:py-6">
       <TransitionSlot
-        className="col-span-6 sm:col-span-12 mx-auto w-full max-w-5xl space-y-5"
+        className="col-span-6 sm:col-span-12 mx-auto w-full max-w-2xl space-y-5"
         variant="context"
       >
         {/* Back link + header */}
@@ -112,7 +112,7 @@ export function TabDetailClient({
           className="inline-flex items-center gap-1.5 text-[13px] font-medium transition-colors"
           style={{ color: "#8c7463" }}
         >
-          <span aria-hidden="true">&larr;</span>
+          <ChevronLeft className="w-4 h-4" />
           All tabs
         </Link>
 
@@ -127,7 +127,7 @@ export function TabDetailClient({
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <Text variant="title" className="truncate">
-                  {tab.name}
+                  <TextMorph>{tab.name}</TextMorph>
                 </Text>
                 {isClosed && <Badge variant="closed" label="Closed" />}
               </div>
@@ -141,8 +141,9 @@ export function TabDetailClient({
                 variant="ghost"
                 size="sm"
                 onClick={() => setEditOpen(true)}
+                aria-label="Tab settings"
               >
-                Edit
+                <Settings className="w-4 h-4" />
               </Button>
             )}
             <Button
@@ -150,8 +151,9 @@ export function TabDetailClient({
               variant="secondary"
               size="sm"
               onClick={() => setReceiptOpen(true)}
+              aria-label="View receipt"
             >
-              View receipt
+              <Receipt className="w-4 h-4" />
             </Button>
             {!isClosed && (
               <Button
@@ -165,59 +167,6 @@ export function TabDetailClient({
             )}
           </div>
         </header>
-
-        {/* Tab management actions */}
-        {canManage && (
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              loading={statusLoading}
-              onClick={handleToggleStatus}
-            >
-              {isClosed ? "Reopen tab" : "Close tab"}
-            </Button>
-            {isAdmin && (
-              <div className="flex items-center gap-1.5">
-                <Button
-                  type="button"
-                  variant="danger"
-                  size="sm"
-                  disabled={hasExpenses}
-                  onClick={() => setDeleteConfirmOpen(true)}
-                >
-                  Delete tab
-                </Button>
-                {hasExpenses && (
-                  <Tooltip.Root>
-                    <Tooltip.Trigger
-                      render={
-                        <span
-                          className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] cursor-default"
-                          style={{
-                            background: "#F7F2ED",
-                            border: "1px solid #DCCBC0",
-                            color: "#8c7463",
-                          }}
-                        >
-                          ?
-                        </span>
-                      }
-                    />
-                    <Tooltip.Portal>
-                      <Tooltip.Positioner sideOffset={6}>
-                        <Tooltip.Popup className="avatar-tooltip">
-                          Remove all expenses first to delete this tab.
-                        </Tooltip.Popup>
-                      </Tooltip.Positioner>
-                    </Tooltip.Portal>
-                  </Tooltip.Root>
-                )}
-              </div>
-            )}
-          </div>
-        )}
 
         {actionError && (
           <Text variant="caption" color="danger" className="block">
@@ -345,16 +294,11 @@ export function TabDetailClient({
           groupCurrency={group.currency}
           mode="edit"
           tab={tab}
-        />
-        <ConfirmDialog
-          open={deleteConfirmOpen}
-          onOpenChange={setDeleteConfirmOpen}
-          title="Delete tab"
-          description="This will permanently delete this tab. Only empty tabs (with no expenses) can be deleted."
-          confirmLabel="Delete"
-          variant="destructive"
-          onConfirm={handleDelete}
-          onCancel={() => setDeleteConfirmOpen(false)}
+          isAdmin={isAdmin}
+          hasExpenses={hasExpenses}
+          statusLoading={statusLoading}
+          onToggleStatus={handleToggleStatus}
+          onDelete={handleDelete}
         />
       </TransitionSlot>
     </Container>

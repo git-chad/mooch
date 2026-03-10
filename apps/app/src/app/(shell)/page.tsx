@@ -51,7 +51,7 @@ export default function DashboardPage() {
 
   return (
     <Container className="py-4 sm:py-6">
-      <div className="col-span-6 sm:col-span-12 mx-auto w-full max-w-5xl space-y-6">
+      <div className="col-span-6 sm:col-span-12 mx-auto w-full max-w-2xl space-y-6">
         <header className="space-y-1">
           <Text variant="title">Your squads</Text>
           <Text variant="body" color="subtle">
