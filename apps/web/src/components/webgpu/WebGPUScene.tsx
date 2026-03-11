@@ -42,8 +42,8 @@ export default function WebGPUScene({
         return renderer;
       }}
     >
-      {children}
-      <ColorSpaceCorrection />
+      {rendererReady ? children : null}
+      {rendererReady ? <ColorSpaceCorrection /> : null}
       {orthographic ? (
         <OrthographicCamera makeDefault position={[0, 0, 1]} />
       ) : null}

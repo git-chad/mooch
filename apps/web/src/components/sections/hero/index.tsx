@@ -94,6 +94,14 @@ export const Hero = () => {
             </Button>
           </div>
         </div>
+
+        <div
+          className="hero-reveal mt-3 w-full max-w-[514px]"
+          style={{
+            animationPlayState: introPlayState,
+            animationDelay: "560ms",
+          }}
+        />
       </div>
     </Container>
   );

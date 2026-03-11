@@ -27,7 +27,9 @@ export default function WebGPUSketch({
     };
   }, [material]);
 
-  const { width, height } = useThree((state) => state.viewport);
+  const viewport = useThree((state) => state.viewport);
+  const width = viewport?.width ?? 1;
+  const height = viewport?.height ?? 1;
 
   return (
     <mesh material={material} scale={[width, height, 1]} {...meshProps}>

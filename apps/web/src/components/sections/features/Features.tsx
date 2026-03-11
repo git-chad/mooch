@@ -63,7 +63,7 @@ export const Features = () => {
         <TitleReveal
           as="h2"
           variant="web-section"
-          className="text-center"
+          className="text-center text-pretty"
           wrapperClassName="w-full max-w-[904px]"
           trigger="inView"
           delay={0.12}

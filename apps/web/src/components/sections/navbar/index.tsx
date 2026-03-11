@@ -71,10 +71,10 @@ export const Navbar = () => {
             <Link href="#hero" className="min-w-0">
               <Text
                 as="p"
-                variant="web-ui-strong"
-                className="truncate text-[#45607D] [text-shadow:0_1px_0_rgba(255,255,255,0.7)]"
+                variant="web-lead"
+                className="truncate text-black geist-pixel"
               >
-                mooch.me
+                mooch
               </Text>
             </Link>
 
