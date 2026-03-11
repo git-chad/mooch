@@ -1,8 +1,9 @@
 "use client";
 
+import dynamic from "next/dynamic";
+import { CTA } from "@/components/sections/cta";
 import { Features } from "@/components/sections/features/Features";
 import { Hero } from "@/components/sections/hero";
-import dynamic from "next/dynamic";
 
 const HalftoneHero = dynamic(() => import("@/components/HalftoneHero"), {
   ssr: false,
@@ -17,6 +18,9 @@ export default function Home() {
       </section>
       <section id="features" className="bg-[#FCFCFB] min-h-screen">
         <Features />
+      </section>
+      <section id="cta" className="bg-[#FCFCFB]">
+        <CTA />
       </section>
     </main>
   );
