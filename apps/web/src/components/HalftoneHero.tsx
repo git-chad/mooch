@@ -1,14 +1,13 @@
 "use client";
 
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three/webgpu";
 import { createHalftoneColorNode } from "@/lib/shaders/halftoneColorNode";
 import WebGPUScene from "./webgpu/WebGPUScene";
 import WebGPUSketch from "./webgpu/WebGPUSketch";
 
 const BG_TEXTURE_URL = "/textures/bg-texture.webp";
-const SHADER_START_DELAY_MS = 400;
 const INTRO_CONTRAST_FROM = 3.0;
 const INTRO_CONTRAST_TO = 1.55;
 useLoader.preload(THREE.TextureLoader, BG_TEXTURE_URL);
@@ -21,6 +20,7 @@ function HalftoneSketch() {
   const trailHeadRef = useRef(0);
   const trailCooldownRef = useRef(0);
   const lastTrailPointRef = useRef(new THREE.Vector2(Number.NaN, Number.NaN));
+  const readyEventSentRef = useRef(false);
 
   const { colorNode, uniforms } = useMemo(() => {
     texture.colorSpace = THREE.SRGBColorSpace;
@@ -84,6 +84,16 @@ function HalftoneSketch() {
   }, [gl]);
 
   useFrame(({ pointer }, delta) => {
+    if (!readyEventSentRef.current) {
+      readyEventSentRef.current = true;
+      (
+        window as Window & {
+          __halftoneReady?: boolean;
+        }
+      ).__halftoneReady = true;
+      window.dispatchEvent(new Event("halftone:ready"));
+    }
+
     (uniforms.pointer.value as THREE.Vector2).set(pointer.x, pointer.y);
     const introRaw = uniforms.introProgress.value;
     const introNow = typeof introRaw === "number" ? introRaw : 0;
@@ -162,23 +172,11 @@ function HalftoneSketch() {
 }
 
 export default function HalftoneHero() {
-  const [shaderEnabled, setShaderEnabled] = useState(false);
-
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      setShaderEnabled(true);
-    }, SHADER_START_DELAY_MS);
-
-    return () => window.clearTimeout(timeoutId);
-  }, []);
-
   return (
     <div className="z-10 absolute inset-0 w-full h-full bg-[#FCFCFB]">
-      {shaderEnabled ? (
-        <WebGPUScene frameloop="always" orthographic>
-          <HalftoneSketch />
-        </WebGPUScene>
-      ) : null}
+      <WebGPUScene frameloop="always" orthographic>
+        <HalftoneSketch />
+      </WebGPUScene>
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-b from-transparent to-[#FCFCFB]" />
     </div>
   );

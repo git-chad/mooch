@@ -1,4 +1,5 @@
 import { Container, Text } from "@mooch/ui";
+import { TitleReveal } from "../common/TitleReveal";
 import { FeaturesFeature, type FeaturesFeatureData } from "./Feature";
 
 const featuredTools: FeaturesFeatureData[] = [
@@ -59,13 +60,16 @@ export const Features = () => {
   return (
     <Container variant="site" className="pt-32 pb-24">
       <div className="z-20 col-span-6 col-start-1 sm:col-start-2 flex flex-col items-center">
-        <Text
+        <TitleReveal
           as="h2"
           variant="web-section"
-          className="text-center max-w-[904px]"
+          className="text-center"
+          wrapperClassName="w-full max-w-[904px]"
+          trigger="inView"
+          delay={0.12}
         >
           All the tools you need in one place.
-        </Text>
+        </TitleReveal>
         <Text
           as="h3"
           variant="web-lead"
@@ -83,9 +87,15 @@ export const Features = () => {
         </div>
 
         <div className="mt-16 flex w-full flex-col items-center gap-6">
-          <Text as="h3" variant="web-section" className="text-center">
+          <TitleReveal
+            as="h3"
+            variant="web-section"
+            className="text-center"
+            trigger="inView"
+            delay={0.12}
+          >
             There's more.
-          </Text>
+          </TitleReveal>
           <div className="h-px w-full bg-[#C7D4E1]" />
         </div>
 

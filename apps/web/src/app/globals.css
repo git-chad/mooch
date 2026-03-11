@@ -169,3 +169,77 @@ body {
 .btn-ghost:active:not(:disabled) {
   color: var(--ghost-fg-active);
 }
+
+/* ── Hero intro orchestration ───────────────────────────────────────────── */
+@keyframes hero-enter {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) scale(0.985);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes hero-enter-btn {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.hero-reveal {
+  opacity: 0;
+  will-change: transform, opacity, filter;
+  animation-name: hero-enter;
+  animation-duration: 560ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: forwards;
+}
+
+.hero-reveal-badge {
+  animation-delay: 60ms;
+  animation-duration: 430ms;
+}
+
+.hero-reveal-description {
+  animation-delay: 270ms;
+}
+
+.hero-reveal-buttons {
+  animation-delay: 360ms;
+}
+
+.hero-reveal-btn {
+  opacity: 0;
+  will-change: transform, opacity;
+  animation-name: hero-enter-btn;
+  animation-duration: 420ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: forwards;
+}
+
+.hero-reveal-btn-a {
+  animation-delay: 440ms;
+}
+
+.hero-reveal-btn-b {
+  animation-delay: 510ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-reveal,
+  .hero-reveal-btn {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
