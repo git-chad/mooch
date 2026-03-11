@@ -79,6 +79,36 @@ function HalftoneSketch() {
     },
   });
 
+  useControls("Animation", {
+    noiseSpeed: {
+      value: 0.65,
+      min: 0,
+      max: 2,
+      step: 0.05,
+      onChange: (v: number) => {
+        uniforms.noiseSpeed.value = v;
+      },
+    },
+    noiseScale: {
+      value: 5.7,
+      min: 0.1,
+      max: 10,
+      step: 0.1,
+      onChange: (v: number) => {
+        uniforms.noiseScale.value = v;
+      },
+    },
+    noiseAmount: {
+      value: 0.29,
+      min: 0,
+      max: 1,
+      step: 0.01,
+      onChange: (v: number) => {
+        uniforms.noiseAmount.value = v;
+      },
+    },
+  });
+
   useControls("Color", {
     bgColor: {
       value: "#FCFCFB",

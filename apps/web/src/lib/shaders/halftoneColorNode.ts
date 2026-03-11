@@ -10,10 +10,12 @@ import {
   smoothstep,
   mix,
   max,
+  time,
   texture as tslTexture,
   Fn,
 } from "three/tsl";
 import * as THREE from "three/webgpu";
+import { simplexNoise3d } from "./simplexNoise3d";
 
 /**
  * Halftone colorNode. Rotation happens in pixel space so circles stay
@@ -29,6 +31,11 @@ export function createHalftoneColorNode(inputTexture: THREE.Texture) {
   const invertLuma = uniform(1.0);
   const angle = uniform((45.0 * Math.PI) / 180.0);
   const bgColor = uniform(new THREE.Vector3(bgCol.r, bgCol.g, bgCol.b));
+
+  // Animation
+  const noiseSpeed = uniform(0.3);
+  const noiseScale = uniform(1.5);
+  const noiseAmount = uniform(0.15);
 
   // @ts-expect-error — TSL Fn destructured args aren't typed
   const colorNode = Fn(() => {
@@ -91,7 +98,17 @@ export function createHalftoneColorNode(inputTexture: THREE.Texture) {
           invertLuma,
         );
 
-        const radius = pixelSize.mul(dotRadius).mul(effectiveLuma);
+        // Simplex noise at cell center for organic breathing
+        const noiseInput = vec3(
+          cellUV.x.mul(noiseScale),
+          cellUV.y.mul(noiseScale),
+          time.mul(noiseSpeed),
+        );
+        // @ts-expect-error — TSL Fn call signature not inferred
+        const noise = simplexNoise3d(noiseInput); // returns -1..1
+        const radiusMod = float(1.0).add(noise.mul(noiseAmount));
+
+        const radius = pixelSize.mul(dotRadius).mul(effectiveLuma).mul(radiusMod);
 
         // Distance in rotated pixel space (square pixels → true circles)
         const dist = length(rotatedPx.sub(cellCenter));
@@ -123,6 +140,9 @@ export function createHalftoneColorNode(inputTexture: THREE.Texture) {
       invertLuma,
       angle,
       bgColor,
+      noiseSpeed,
+      noiseScale,
+      noiseAmount,
     },
   };
 }
