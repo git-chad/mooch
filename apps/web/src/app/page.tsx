@@ -1,13 +1,7 @@
-"use client";
-
-import dynamic from "next/dynamic";
+import HalftoneHero from "@/components/HalftoneHero";
 import { CTA } from "@/components/sections/cta";
 import { Features } from "@/components/sections/features/Features";
 import { Hero } from "@/components/sections/hero";
-
-const HalftoneHero = dynamic(() => import("@/components/HalftoneHero"), {
-  ssr: false,
-});
 
 export default function Home() {
   return (

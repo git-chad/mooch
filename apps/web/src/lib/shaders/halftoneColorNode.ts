@@ -44,6 +44,7 @@ export function createHalftoneColorNode(inputTexture: THREE.Texture) {
   const pointerBoost = uniform(0.52);
   const trailRadius = uniform(0.56);
   const trailBoost = uniform(0.7);
+  const introProgress = uniform(0.0);
   const trailPoints = Array.from({ length: HALFTONE_TRAIL_POINT_COUNT }, () =>
     uniform(new THREE.Vector2(9, 9)),
   );
@@ -71,6 +72,8 @@ export function createHalftoneColorNode(inputTexture: THREE.Texture) {
     const baseCellIndex = floor(rotatedPx.div(pixelSize));
     const aspect = resolution.x.div(max(resolution.y, float(1.0)));
 
+    const introEaseA = smoothstep(float(0.0), float(1.0), introProgress);
+    const intro = smoothstep(float(0.0), float(1.0), introEaseA);
     const maxCircle = float(0.0).toVar();
     const finalR = float(0.0).toVar();
     const finalG = float(0.0).toVar();
@@ -149,9 +152,9 @@ export function createHalftoneColorNode(inputTexture: THREE.Texture) {
           .mul(dotRadius)
           .mul(effectiveLuma)
           .mul(radiusMod);
-        const interactiveRadius = radius.mul(
-          float(1.0).add(interactionInfluence.mul(trailBoost)),
-        );
+        const interactiveRadius = radius
+          .mul(float(1.0).add(interactionInfluence.mul(trailBoost)))
+          .mul(intro);
 
         // Distance in rotated pixel space (square pixels → true circles)
         const dist = length(rotatedPx.sub(cellCenter));
@@ -173,8 +176,32 @@ export function createHalftoneColorNode(inputTexture: THREE.Texture) {
     }
 
     const bg = vec3(float(bgColor.x), float(bgColor.y), float(bgColor.z));
-    const finalColor = mix(bg, vec3(finalR, finalG, finalB), maxCircle);
-    return vec4(finalColor, float(1.0));
+    const halftoneColor = mix(bg, vec3(finalR, finalG, finalB), maxCircle);
+
+    // Saturation ramp: start nearly grayscale, end at full color.
+    const colorLuma = halftoneColor.x
+      .mul(0.2126)
+      .add(halftoneColor.y.mul(0.7152))
+      .add(halftoneColor.z.mul(0.0722));
+    const grayscaleColor = vec3(colorLuma);
+    const saturationMix = smoothstep(float(0.12), float(0.88), intro);
+    const saturatedColor = mix(grayscaleColor, halftoneColor, saturationMix);
+
+    // Subtle noise on intro mix for a soft organic reveal.
+    const introNoiseInput = vec3(
+      _uv.x.mul(2.0),
+      _uv.y.mul(2.0),
+      time.mul(0.35),
+    );
+    // @ts-expect-error — TSL Fn call signature not inferred
+    const introNoise = simplexNoise3d(introNoiseInput)
+      .mul(0.04)
+      .mul(float(1.0).sub(intro));
+    const introMix = intro.add(introNoise).clamp(0.0, 1.0);
+
+    // Alpha + color ramp into final state.
+    const composedColor = mix(bg, saturatedColor, introMix);
+    return vec4(composedColor, introMix);
   })();
 
   return {
@@ -196,6 +223,7 @@ export function createHalftoneColorNode(inputTexture: THREE.Texture) {
       pointerBoost,
       trailRadius,
       trailBoost,
+      introProgress,
       trailPoints,
       trailLives,
     },

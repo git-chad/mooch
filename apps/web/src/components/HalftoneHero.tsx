@@ -1,22 +1,19 @@
 "use client";
 
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
-import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three/webgpu";
-import { usePointerUniform } from "@/hooks/usePointerUniform";
 import { createHalftoneColorNode } from "@/lib/shaders/halftoneColorNode";
+import WebGPUScene from "./webgpu/WebGPUScene";
 import WebGPUSketch from "./webgpu/WebGPUSketch";
 
-const WebGPUScene = dynamic(() => import("./webgpu/WebGPUScene"), {
-  ssr: false,
-});
+const BG_TEXTURE_URL = "/textures/bg-texture.webp";
+useLoader.preload(THREE.TextureLoader, BG_TEXTURE_URL);
 
 function HalftoneSketch() {
-  const texture = useLoader(THREE.TextureLoader, "/textures/bg-texture.webp");
+  const texture = useLoader(THREE.TextureLoader, BG_TEXTURE_URL);
   const gl = useThree((s) => s.gl);
   const size = useThree((s) => s.size);
-  const pointerUniform = usePointerUniform();
   const hoveredRef = useRef(false);
   const trailHeadRef = useRef(0);
   const trailCooldownRef = useRef(0);
@@ -24,6 +21,10 @@ function HalftoneSketch() {
 
   const { colorNode, uniforms } = useMemo(() => {
     texture.colorSpace = THREE.SRGBColorSpace;
+    texture.generateMipmaps = false;
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.needsUpdate = true;
     return createHalftoneColorNode(texture);
   }, [texture]);
 
@@ -49,6 +50,7 @@ function HalftoneSketch() {
     uniforms.pointerBoost.value = 0.52;
     uniforms.trailRadius.value = 0.56;
     uniforms.trailBoost.value = 0.7;
+    uniforms.introProgress.value = 0.0;
 
     const col = new THREE.Color("#FCFCFB");
     (uniforms.bgColor.value as THREE.Vector3).set(col.r, col.g, col.b);
@@ -78,9 +80,12 @@ function HalftoneSketch() {
     };
   }, [gl]);
 
-  useFrame((_, delta) => {
-    const pointer = pointerUniform.value as THREE.Vector2;
-    (uniforms.pointer.value as THREE.Vector2).copy(pointer);
+  useFrame(({ pointer }, delta) => {
+    (uniforms.pointer.value as THREE.Vector2).set(pointer.x, pointer.y);
+    const introRaw = uniforms.introProgress.value;
+    const introNow = typeof introRaw === "number" ? introRaw : 0;
+    const nextIntro = THREE.MathUtils.damp(introNow, 1.0, 1.55, delta);
+    uniforms.introProgress.value = nextIntro > 0.999 ? 1.0 : nextIntro;
 
     const currentHover = uniforms.hoverMix.value as number;
     const targetHover = hoveredRef.current ? 1 : 0;
@@ -106,13 +111,18 @@ function HalftoneSketch() {
     const lastPoint = lastTrailPointRef.current;
     const movedEnough =
       Number.isNaN(lastPoint.x) ||
-      lastPoint.distanceToSquared(pointer) > 0.0025;
+      (pointer.x - lastPoint.x) * (pointer.x - lastPoint.x) +
+        (pointer.y - lastPoint.y) * (pointer.y - lastPoint.y) >
+        0.0025;
     if (!movedEnough) {
       return;
     }
 
     const idx = trailHeadRef.current % uniforms.trailPoints.length;
-    (uniforms.trailPoints[idx].value as THREE.Vector2).copy(pointer);
+    (uniforms.trailPoints[idx].value as THREE.Vector2).set(
+      pointer.x,
+      pointer.y,
+    );
     uniforms.trailLives[idx].value = 1.0;
     trailHeadRef.current =
       (trailHeadRef.current + 1) % uniforms.trailPoints.length;
@@ -136,7 +146,7 @@ function HalftoneSketch() {
 
 export default function HalftoneHero() {
   return (
-    <div className="z-10 absolute inset-0 w-full h-full">
+    <div className="z-10 absolute inset-0 w-full h-full bg-[#EFF5FE]">
       <WebGPUScene frameloop="always" orthographic>
         <HalftoneSketch />
       </WebGPUScene>
