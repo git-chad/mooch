@@ -2,7 +2,7 @@
 
 import { useExpenseStore } from "@mooch/stores";
 import type { Tab } from "@mooch/types";
-import { Button, ConfirmDialog, IconPicker, Input, Modal, Text } from "@mooch/ui";
+import { Button, IconPicker, Input, Modal, Text } from "@mooch/ui";
 import { useEffect, useState } from "react";
 import { TextMorph } from "torph/react";
 import { createTab, updateTab } from "@/app/actions/tabs";
@@ -20,11 +20,8 @@ type Props = {
   groupCurrency?: string;
   mode?: "create" | "edit";
   tab?: Tab;
-  isAdmin?: boolean;
-  hasExpenses?: boolean;
   statusLoading?: boolean;
   onToggleStatus?: () => void;
-  onDelete?: () => void;
 };
 
 export function CreateTabModal({
@@ -34,11 +31,8 @@ export function CreateTabModal({
   groupCurrency = "ARS",
   mode = "create",
   tab,
-  isAdmin,
-  hasExpenses,
   statusLoading,
   onToggleStatus,
-  onDelete,
 }: Props) {
   const upsertTab = useExpenseStore((s) => s.upsertTab);
   const isEdit = mode === "edit";
@@ -48,8 +42,6 @@ export function CreateTabModal({
   const [currency, setCurrency] = useState(groupCurrency);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-
   function resetState() {
     if (isEdit && tab) {
       setName(tab.name);
@@ -116,7 +108,6 @@ export function CreateTabModal({
   }
 
   return (
-    <>
     <Modal
       open={open}
       onOpenChange={(next) => {
@@ -228,27 +219,6 @@ export function CreateTabModal({
               </Button>
             </div>
 
-            {isAdmin && (
-              <div className="flex items-center justify-between">
-                <div>
-                  <Text variant="body">Delete tab</Text>
-                  <Text variant="caption" color={hasExpenses ? "subtle" : "danger"}>
-                    {hasExpenses
-                      ? "Remove all expenses first"
-                      : "This action is permanent"}
-                  </Text>
-                </div>
-                <Button
-                  type="button"
-                  variant="danger"
-                  size="sm"
-                  disabled={hasExpenses}
-                  onClick={() => setDeleteConfirmOpen(true)}
-                >
-                  Delete
-                </Button>
-              </div>
-            )}
           </div>
         )}
 
@@ -281,19 +251,5 @@ export function CreateTabModal({
         </div>
       </form>
     </Modal>
-    <ConfirmDialog
-      open={deleteConfirmOpen}
-      onOpenChange={setDeleteConfirmOpen}
-      title="Delete tab"
-      description="This will permanently delete this tab. Only empty tabs (with no expenses) can be deleted."
-      confirmLabel="Delete"
-      variant="destructive"
-      onConfirm={() => {
-        onDelete?.();
-        setDeleteConfirmOpen(false);
-      }}
-      onCancel={() => setDeleteConfirmOpen(false)}
-    />
-    </>
   );
 }

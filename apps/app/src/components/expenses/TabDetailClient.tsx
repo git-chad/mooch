@@ -7,12 +7,11 @@ import { Badge, Button, Container, Text } from "@mooch/ui";
 import { ChevronLeft, Receipt, Settings } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { TextMorph } from "torph/react";
 import { useState } from "react";
 import { GroupIcon } from "@/components/groups/group-icon";
 import { TransitionSlot } from "@/components/TransitionSlot";
-import { closeTab, deleteTab, reopenTab } from "@/app/actions/tabs";
+import { closeTab, reopenTab } from "@/app/actions/tabs";
 import {
   getLayoutTransition,
   getSurfaceTransition,
@@ -45,7 +44,6 @@ export function TabDetailClient({
   group,
   currentUserId,
 }: Props) {
-  const router = useRouter();
   const [view, setView] = useState<ViewTab>("activity");
   const [addOpen, setAddOpen] = useState(false);
   const [receiptOpen, setReceiptOpen] = useState(false);
@@ -55,18 +53,14 @@ export function TabDetailClient({
   const reducedMotion = useReducedMotion() ?? false;
 
   const upsertTab = useExpenseStore((s) => s.upsertTab);
-  const removeTab = useExpenseStore((s) => s.removeTab);
 
   const isClosed = tab.status === "closed";
-  const hasExpenses = (tab.expense_count ?? 0) > 0;
-
   // Check if current user is tab creator or admin
   const currentMember = group.members.find(
     (m) => m.user_id === currentUserId,
   );
   const canManage =
     tab.created_by === currentUserId || currentMember?.role === "admin";
-  const isAdmin = currentMember?.role === "admin";
 
   async function handleToggleStatus() {
     setStatusLoading(true);
@@ -84,20 +78,6 @@ export function TabDetailClient({
     if (result && "tab" in result) {
       upsertTab(result.tab);
     }
-  }
-
-  async function handleDelete() {
-    setActionError(null);
-
-    const result = await deleteTab(tabId);
-
-    if (result?.error) {
-      setActionError(result.error);
-      return;
-    }
-
-    removeTab(tabId);
-    router.push(`/${groupId}/expenses`);
   }
 
   return (
@@ -294,11 +274,8 @@ export function TabDetailClient({
           groupCurrency={group.currency}
           mode="edit"
           tab={tab}
-          isAdmin={isAdmin}
-          hasExpenses={hasExpenses}
           statusLoading={statusLoading}
           onToggleStatus={handleToggleStatus}
-          onDelete={handleDelete}
         />
       </TransitionSlot>
     </Container>
