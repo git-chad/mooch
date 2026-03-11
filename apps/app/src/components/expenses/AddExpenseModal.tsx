@@ -30,6 +30,7 @@ type Props = {
   members: Member[];
   currentUserId: string;
   groupCurrency: string;
+  tabCurrency: string;
   locale: string;
   mode?: "create" | "edit";
   expenseId?: string;
@@ -61,7 +62,6 @@ export type ExpenseEditorInitialData = Pick<
 
 type FormState = {
   amount: string;
-  currency: string;
   description: string;
   notes: string;
   category: ExpenseCategory;
@@ -70,8 +70,6 @@ type FormState = {
   splitType: SplitType;
   participants: Participant[];
 };
-
-const SUPPORTED_CURRENCIES = ["ARS", "USD", "EUR", "BRL", "GBP"];
 
 const CATEGORIES = Object.entries(CATEGORY_CONFIG) as [
   ExpenseCategory,
@@ -122,20 +120,17 @@ function buildParticipantsFromExisting(
 function buildInitialFormState({
   members,
   currentUserId,
-  groupCurrency,
   mode,
   initialExpense,
 }: {
   members: Member[];
   currentUserId: string;
-  groupCurrency: string;
   mode: "create" | "edit";
   initialExpense?: ExpenseEditorInitialData;
 }): FormState {
   if (mode === "edit" && initialExpense) {
     return {
       amount: String(initialExpense.amount),
-      currency: initialExpense.currency,
       description: initialExpense.description,
       notes: initialExpense.notes ?? "",
       category: initialExpense.category,
@@ -153,7 +148,6 @@ function buildInitialFormState({
 
   return {
     amount: "",
-    currency: groupCurrency,
     description: "",
     notes: "",
     category: "bar",
@@ -172,6 +166,7 @@ export function AddExpenseModal({
   members,
   currentUserId,
   groupCurrency,
+  tabCurrency,
   locale,
   mode = "create",
   expenseId,
@@ -184,7 +179,6 @@ export function AddExpenseModal({
   const initialFormState = buildInitialFormState({
     members,
     currentUserId,
-    groupCurrency,
     mode,
     initialExpense,
   });
@@ -194,7 +188,7 @@ export function AddExpenseModal({
 
   // Step 1
   const [amount, setAmount] = useState(initialFormState.amount);
-  const [currency, setCurrency] = useState(initialFormState.currency);
+  const currency = tabCurrency;
   const [description, setDescription] = useState(initialFormState.description);
   const [notes, setNotes] = useState(initialFormState.notes);
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
@@ -225,7 +219,6 @@ export function AddExpenseModal({
     const next = buildInitialFormState({
       members,
       currentUserId,
-      groupCurrency,
       mode,
       initialExpense,
     });
@@ -233,7 +226,6 @@ export function AddExpenseModal({
     setStep(1);
     setDirection(1);
     setAmount(next.amount);
-    setCurrency(next.currency);
     setDescription(next.description);
     setNotes(next.notes);
     setReceiptFile(null);
@@ -307,11 +299,15 @@ export function AddExpenseModal({
         return "Select at least one person.";
     }
     if (splitType === "percentage") {
+      if (participants.some((p) => p.percentage < 0))
+        return "Percentages cannot be negative.";
       const sum = participants.reduce((s, p) => s + (p.percentage || 0), 0);
       if (Math.abs(sum - 100) > 0.1)
         return `Percentages sum to ${sum.toFixed(1)}% — must be 100%.`;
     }
     if (splitType === "exact") {
+      if (participants.some((p) => p.exact < 0))
+        return "Split amounts cannot be negative.";
       const sum = participants.reduce((s, p) => s + (p.exact || 0), 0);
       if (Math.abs(sum - total) > 0.01)
         return `Amounts sum to ${formatCurrency(sum, currency, locale)} — must equal ${formatCurrency(total, currency, locale)}.`;
@@ -503,7 +499,6 @@ export function AddExpenseModal({
                   amount={amount}
                   setAmount={setAmount}
                   currency={currency}
-                  setCurrency={setCurrency}
                   description={description}
                   setDescription={setDescription}
                   notes={notes}
@@ -512,7 +507,6 @@ export function AddExpenseModal({
                   setReceiptFile={setReceiptFile}
                   receiptInputRef={receiptInputRef}
                   existingReceipt={Boolean(initialExpense?.photo_url)}
-                  groupCurrency={groupCurrency}
                   isEditMode={isEditMode}
                 />
               )}
@@ -603,7 +597,6 @@ function Step1({
   amount,
   setAmount,
   currency,
-  setCurrency,
   description,
   setDescription,
   notes,
@@ -612,13 +605,11 @@ function Step1({
   setReceiptFile,
   receiptInputRef,
   existingReceipt,
-  groupCurrency,
   isEditMode,
 }: {
   amount: string;
   setAmount: (v: string) => void;
   currency: string;
-  setCurrency: (v: string) => void;
   description: string;
   setDescription: (v: string) => void;
   notes: string;
@@ -627,7 +618,6 @@ function Step1({
   setReceiptFile: (f: File | null) => void;
   receiptInputRef: React.RefObject<HTMLInputElement | null>;
   existingReceipt: boolean;
-  groupCurrency: string;
   isEditMode: boolean;
 }) {
   return (
@@ -650,49 +640,34 @@ function Step1({
             className="flex text-[36px] w-full flex-1 font-normal text-ink bg-transparent outline-none border-b-2 border-edge pb-2 placeholder:text-ink-placeholder focus:border-accent-strong transition-colors"
             style={{ fontFamily: "var(--font-display)" }}
           />
-          {/* Currency selector — inline pills */}
-          <div className="flex flex-1 gap-1 pb-2 flex-col max-w-fit">
-            {SUPPORTED_CURRENCIES.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setCurrency(c)}
-                className="text-[11px] font-medium px-2 py-1 rounded-full transition-all"
-                style={
-                  currency === c
-                    ? {
-                        background: "var(--action-gradient)",
-                        border: "1px solid var(--color-accent-strong)",
-                        color: "var(--color-btn-primary-fg)",
-                      }
-                    : {
-                        background: "#F7F2ED",
-                        border: "1px solid #DCCBC0",
-                        color: "#8c7463",
-                      }
-                }
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-        </div>
-        {currency !== groupCurrency && (
-          <Text variant="caption" color="subtle" className="mt-1 block">
-            Exchange rate can be applied after saving.
+          <Text
+            variant="label"
+            color="subtle"
+            className="pb-3 shrink-0"
+          >
+            {currency}
           </Text>
-        )}
+        </div>
       </div>
 
       <div>
-        <Text variant="overline" color="subtle" className="mb-1.5 block">
-          What was it for?
-        </Text>
+        <div className="flex items-center justify-between mb-1.5">
+          <Text variant="overline" color="subtle">
+            What was it for?
+          </Text>
+          <Text
+            variant="caption"
+            color={description.length > 45 ? "danger" : "subtle"}
+          >
+            {description.length}/50
+          </Text>
+        </div>
         <input
           id="expense-description"
           type="text"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
+          maxLength={50}
           placeholder="e.g. Dinner at La Parrilla"
           className="w-full text-[15px] text-ink bg-transparent outline-none border border-edge rounded-xl px-3 py-2.5 placeholder:text-ink-placeholder focus:border-accent-strong transition-colors"
           style={{ background: "#FDFCFB" }}
@@ -700,13 +675,22 @@ function Step1({
       </div>
 
       <div>
-        <Text variant="overline" color="subtle" className="mb-1.5 block">
-          Notes (optional)
-        </Text>
+        <div className="flex items-center justify-between mb-1.5">
+          <Text variant="overline" color="subtle">
+            Notes (optional)
+          </Text>
+          <Text
+            variant="caption"
+            color={notes.length > 230 ? "danger" : "subtle"}
+          >
+            {notes.length}/250
+          </Text>
+        </div>
         <textarea
           id="expense-notes"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
+          maxLength={250}
           placeholder="Any extra details..."
           rows={2}
           className="w-full text-[14px] text-ink bg-transparent outline-none border border-edge rounded-xl px-3 py-2.5 placeholder:text-ink-placeholder focus:border-accent-strong transition-colors resize-none"
@@ -1057,7 +1041,10 @@ function Step3({
                     value={p.percentage || ""}
                     onChange={(e) =>
                       updateParticipant(m.user_id, {
-                        percentage: Number.parseFloat(e.target.value) || 0,
+                        percentage: Math.max(
+                          0,
+                          Number.parseFloat(e.target.value) || 0,
+                        ),
                       })
                     }
                     className="w-16 text-[13px] text-ink text-right border border-edge rounded-lg px-2 py-1 outline-none focus:border-accent-strong"
@@ -1077,7 +1064,10 @@ function Step3({
                   value={p.exact || ""}
                   onChange={(e) =>
                     updateParticipant(m.user_id, {
-                      exact: Number.parseFloat(e.target.value) || 0,
+                      exact: Math.max(
+                        0,
+                        Number.parseFloat(e.target.value) || 0,
+                      ),
                     })
                   }
                   className="w-24 text-[13px] text-ink text-right border border-edge rounded-lg px-2 py-1 outline-none focus:border-accent-strong"

@@ -47,7 +47,7 @@ export function GroupDetailClient({
   return (
     <Container as="section" className="py-4 sm:py-6">
       <TransitionSlot
-        className="col-span-6 sm:col-span-12 mx-auto w-full max-w-5xl space-y-6"
+        className="col-span-6 sm:col-span-12 mx-auto w-full max-w-2xl space-y-6"
         variant="context"
       >
         {group.cover_photo_url && (

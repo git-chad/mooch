@@ -45,15 +45,26 @@ export default async function ExpenseDetailPage({ params }: Props) {
   const canManage =
     expense.created_by === user.id || currentMember.role === "admin";
 
+  // Generate a signed URL for the receipt photo if one exists
+  let receiptSignedUrl: string | null = null;
+  if (expense.photo_url) {
+    const { data: signedData } = await admin.storage
+      .from("receipts")
+      .createSignedUrl(expense.photo_url, 60 * 60); // 1 hour
+    receiptSignedUrl = signedData?.signedUrl ?? null;
+  }
+
   return (
     <ExpenseDetailClient
       groupId={groupId}
       tabId={tabId}
       tabName={tab.name}
+      tabCurrency={tab.currency}
       expense={expense}
       group={group}
       currentUserId={user.id}
       canManage={canManage}
+      receiptUrl={receiptSignedUrl}
     />
   );
 }

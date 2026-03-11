@@ -45,6 +45,7 @@ export type Tab = {
   group_id: string;
   name: string;
   emoji: string;
+  currency: string;
   status: TabStatus;
   created_by: string;
   created_at: string;

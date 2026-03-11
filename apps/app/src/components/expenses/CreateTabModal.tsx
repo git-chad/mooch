@@ -1,32 +1,65 @@
 "use client";
 
 import { useExpenseStore } from "@mooch/stores";
+import type { Tab } from "@mooch/types";
 import { Button, IconPicker, Input, Modal, Text } from "@mooch/ui";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TextMorph } from "torph/react";
-import { createTab } from "@/app/actions/tabs";
-import { encodeGroupIcon } from "@/components/groups/group-icon";
+import { createTab, updateTab } from "@/app/actions/tabs";
+import {
+  decodeGroupIcon,
+  encodeGroupIcon,
+} from "@/components/groups/group-icon";
+
+const SUPPORTED_CURRENCIES = ["ARS", "USD", "EUR", "BRL", "GBP"];
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   groupId: string;
+  groupCurrency?: string;
+  mode?: "create" | "edit";
+  tab?: Tab;
+  statusLoading?: boolean;
+  onToggleStatus?: () => void;
 };
 
-export function CreateTabModal({ open, onOpenChange, groupId }: Props) {
+export function CreateTabModal({
+  open,
+  onOpenChange,
+  groupId,
+  groupCurrency = "ARS",
+  mode = "create",
+  tab,
+  statusLoading,
+  onToggleStatus,
+}: Props) {
   const upsertTab = useExpenseStore((s) => s.upsertTab);
+  const isEdit = mode === "edit";
 
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("Receipt");
+  const [currency, setCurrency] = useState(groupCurrency);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   function resetState() {
-    setName("");
-    setIcon("Receipt");
+    if (isEdit && tab) {
+      setName(tab.name);
+      setIcon(decodeGroupIcon(tab.emoji).value);
+      setCurrency(tab.currency);
+    } else {
+      setName("");
+      setIcon("Receipt");
+      setCurrency(groupCurrency);
+    }
     setLoading(false);
     setError(null);
   }
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset when modal opens or tab changes
+  useEffect(() => {
+    if (open) resetState();
+  }, [open, tab, mode]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -38,21 +71,40 @@ export function CreateTabModal({ open, onOpenChange, groupId }: Props) {
     setLoading(true);
     setError(null);
 
-    const result = await createTab(groupId, {
-      name: name.trim(),
-      emoji: encodeGroupIcon(icon),
-    });
+    if (isEdit && tab) {
+      const result = await updateTab(tab.id, {
+        name: name.trim(),
+        emoji: encodeGroupIcon(icon),
+        currency,
+      });
 
-    setLoading(false);
+      setLoading(false);
 
-    if ("error" in result) {
-      setError(result.error);
-      return;
+      if ("error" in result) {
+        setError(result.error);
+        return;
+      }
+
+      upsertTab(result.tab);
+      onOpenChange(false);
+    } else {
+      const result = await createTab(groupId, {
+        name: name.trim(),
+        emoji: encodeGroupIcon(icon),
+        currency,
+      });
+
+      setLoading(false);
+
+      if ("error" in result) {
+        setError(result.error);
+        return;
+      }
+
+      upsertTab(result.tab);
+      onOpenChange(false);
+      resetState();
     }
-
-    upsertTab(result.tab);
-    onOpenChange(false);
-    resetState();
   }
 
   return (
@@ -62,8 +114,12 @@ export function CreateTabModal({ open, onOpenChange, groupId }: Props) {
         onOpenChange(next);
         if (!next) resetState();
       }}
-      title="New tab"
-      description="Create a tab to group related expenses together."
+      title={isEdit ? "Edit tab" : "New tab"}
+      description={
+        isEdit
+          ? "Update the tab name, icon, or currency."
+          : "Create a tab to group related expenses together."
+      }
       size="sm"
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
@@ -90,6 +146,82 @@ export function CreateTabModal({ open, onOpenChange, groupId }: Props) {
           />
         </div>
 
+        {/* Currency selector */}
+        <div>
+          <Text variant="label" className="mb-1.5 block">
+            Currency
+          </Text>
+          <div className="flex gap-1">
+            {SUPPORTED_CURRENCIES.map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setCurrency(c)}
+                className="text-[11px] font-medium px-2.5 py-1.5 rounded-full transition-all"
+                style={
+                  currency === c
+                    ? {
+                        background: "var(--action-gradient)",
+                        border: "1px solid var(--color-accent-strong)",
+                        color: "var(--color-btn-primary-fg)",
+                      }
+                    : {
+                        background: "#F7F2ED",
+                        border: "1px solid #DCCBC0",
+                        color: "#8c7463",
+                      }
+                }
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+          {currency !== groupCurrency && (
+            <Text variant="caption" color="subtle" className="mt-1 block">
+              Different from squad default ({groupCurrency}). Exchange rate can
+              be applied later.
+            </Text>
+          )}
+        </div>
+
+        {/* Management actions (edit mode only) */}
+        {isEdit && tab && (
+          <div
+            className="space-y-4 border-t pt-4 mt-2"
+            style={{ borderColor: "#DCCBC0" }}
+          >
+            <Text variant="label" color="subtle">
+              Manage tab
+            </Text>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Text variant="body">
+                  {tab.status === "closed" ? "Tab is closed" : "Tab is open"}
+                </Text>
+                <Text variant="caption" color="subtle">
+                  {tab.status === "closed"
+                    ? "Reopen to allow new expenses"
+                    : "Close to prevent new expenses"}
+                </Text>
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                loading={statusLoading}
+                onClick={() => {
+                  onToggleStatus?.();
+                  onOpenChange(false);
+                }}
+              >
+                {tab.status === "closed" ? "Reopen" : "Close"}
+              </Button>
+            </div>
+
+          </div>
+        )}
+
         {error && (
           <Text variant="caption" color="danger">
             {error}
@@ -106,7 +238,15 @@ export function CreateTabModal({ open, onOpenChange, groupId }: Props) {
             Cancel
           </Button>
           <Button type="submit" variant="primary" loading={loading}>
-            <TextMorph>{loading ? "Creating..." : "Create tab"}</TextMorph>
+            <TextMorph>
+              {loading
+                ? isEdit
+                  ? "Saving..."
+                  : "Creating..."
+                : isEdit
+                  ? "Save changes"
+                  : "Create tab"}
+            </TextMorph>
           </Button>
         </div>
       </form>

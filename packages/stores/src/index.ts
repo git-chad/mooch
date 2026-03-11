@@ -1,3 +1,7 @@
 export { useGroupStore } from "./useGroupStore";
 export { useAuthStore } from "./auth";
-export { useExpenseStore, type BalanceWithProfiles } from "./expenses";
+export {
+  useExpenseStore,
+  type BalanceWithProfiles,
+  type SettlementPaymentWithProfiles,
+} from "./expenses";

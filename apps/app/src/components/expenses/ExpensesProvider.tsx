@@ -1,8 +1,17 @@
 "use client";
 
-import { createBrowserClient, getBalances, getGlobalBalances } from "@mooch/db";
-import { type BalanceWithProfiles, useExpenseStore } from "@mooch/stores";
-import type { Expense, Tab } from "@mooch/types";
+import {
+  createBrowserClient,
+  getBalances,
+  getGlobalBalances,
+  getSettlementPayments,
+} from "@mooch/db";
+import {
+  type BalanceWithProfiles,
+  type SettlementPaymentWithProfiles,
+  useExpenseStore,
+} from "@mooch/stores";
+import type { Expense, SettlementPayment, Tab } from "@mooch/types";
 import { useEffect } from "react";
 
 // ── Group-level provider ────────────────────────────────────────────────────
@@ -78,12 +87,13 @@ export function ExpensesGroupProvider({
 }
 
 // ── Tab-level provider ──────────────────────────────────────────────────────
-// Manages expenses + per-tab balances. Used on the tab detail page.
+// Manages expenses + per-tab balances + settlement payments.
 
 type TabProviderProps = {
   tabId: string;
   initialExpenses: Expense[];
   initialBalances: BalanceWithProfiles[];
+  initialSettlements: SettlementPaymentWithProfiles[];
   children: React.ReactNode;
 };
 
@@ -91,21 +101,34 @@ export function ExpensesTabProvider({
   tabId,
   initialExpenses,
   initialBalances,
+  initialSettlements,
   children,
 }: TabProviderProps) {
   const setExpenses = useExpenseStore((s) => s.setExpenses);
   const setBalances = useExpenseStore((s) => s.setBalances);
+  const setSettlementPayments = useExpenseStore(
+    (s) => s.setSettlementPayments,
+  );
   const upsertExpense = useExpenseStore((s) => s.upsertExpense);
   const removeExpense = useExpenseStore((s) => s.removeExpense);
 
   useEffect(() => {
     setExpenses(initialExpenses);
     setBalances(initialBalances);
+    setSettlementPayments(initialSettlements);
     return () => {
       setExpenses([]);
       setBalances([]);
+      setSettlementPayments([]);
     };
-  }, [initialExpenses, initialBalances, setExpenses, setBalances]);
+  }, [
+    initialExpenses,
+    initialBalances,
+    initialSettlements,
+    setExpenses,
+    setBalances,
+    setSettlementPayments,
+  ]);
 
   useEffect(() => {
     const supabase = createBrowserClient();
@@ -141,12 +164,31 @@ export function ExpensesTabProvider({
           setBalances(fresh as BalanceWithProfiles[]);
         },
       )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "settlement_payments",
+          filter: `tab_id=eq.${tabId}`,
+        },
+        async () => {
+          const fresh = await getSettlementPayments(supabase, tabId);
+          setSettlementPayments(fresh as SettlementPaymentWithProfiles[]);
+        },
+      )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tabId, setBalances, upsertExpense, removeExpense]);
+  }, [
+    tabId,
+    setBalances,
+    setSettlementPayments,
+    upsertExpense,
+    removeExpense,
+  ]);
 
   return <>{children}</>;
 }

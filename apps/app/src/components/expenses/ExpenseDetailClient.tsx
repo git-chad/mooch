@@ -10,9 +10,10 @@ import {
   LucideIconByName,
   Text,
 } from "@mooch/ui";
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { startTransition, useState } from "react";
+import { createPortal } from "react-dom";
 import { deleteExpense } from "@/app/actions/expenses";
 import { GroupIcon } from "@/components/groups/group-icon";
 import { TransitionLink } from "@/components/TransitionLink";
@@ -47,10 +48,12 @@ type Props = {
   groupId: string;
   tabId: string;
   tabName: string;
+  tabCurrency: string;
   expense: ExpenseDetail;
   group: GroupWithMembers;
   currentUserId: string;
   canManage: boolean;
+  receiptUrl?: string | null;
 };
 
 function getSplitLabel(splitType: SplitType) {
@@ -63,10 +66,12 @@ export function ExpenseDetailClient({
   groupId,
   tabId,
   tabName,
+  tabCurrency,
   expense,
   group,
   currentUserId,
   canManage,
+  receiptUrl,
 }: Props) {
   const router = useRouter();
   const reducedMotion = useReducedMotion() ?? false;
@@ -74,6 +79,7 @@ export function ExpenseDetailClient({
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const displayAmount = expense.converted_amount ?? expense.amount;
   const displayCurrency =
@@ -111,7 +117,7 @@ export function ExpenseDetailClient({
   return (
     <Container as="section" className="py-4 sm:py-6">
       <TransitionSlot
-        className="col-span-6 sm:col-span-12 mx-auto w-full max-w-5xl space-y-5"
+        className="col-span-6 sm:col-span-12 mx-auto w-full max-w-2xl space-y-5"
         variant="context"
       >
         <TransitionLink
@@ -297,7 +303,7 @@ export function ExpenseDetailClient({
                     {getSplitLabel(expense.split_type)}
                   </span>
                 </div>
-                {expense.photo_url && (
+                {receiptUrl && (
                   <div className="flex items-center justify-between gap-3">
                     <span className="text-ink-sub">Receipt</span>
                     <span className="font-medium">Attached</span>
@@ -331,6 +337,32 @@ export function ExpenseDetailClient({
                 </Text>
               </section>
             )}
+
+            {receiptUrl && (
+              <section
+                className="rounded-2xl border border-[#D8C8BC] p-5 shadow-[var(--shadow-elevated)]"
+                style={{
+                  background:
+                    "linear-gradient(in oklab 160deg, oklab(100% .0001 .0001 / 72%) 0%, oklab(95.1% 0.006 0.009 / 52%) 100%)",
+                }}
+              >
+                <Text variant="overline" color="subtle" className="mb-3 block">
+                  Receipt photo
+                </Text>
+                <button
+                  type="button"
+                  onClick={() => setLightboxOpen(true)}
+                  className="w-full rounded-xl overflow-hidden border border-[#DCCBC0] cursor-pointer hover:opacity-90 transition-opacity"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={receiptUrl}
+                    alt="Receipt"
+                    className="w-full h-auto max-h-48 object-cover"
+                  />
+                </button>
+              </section>
+            )}
           </div>
         </div>
 
@@ -348,6 +380,7 @@ export function ExpenseDetailClient({
           members={group.members}
           currentUserId={currentUserId}
           groupCurrency={group.currency}
+          tabCurrency={tabCurrency}
           locale={group.locale}
           mode="edit"
           expenseId={expense.id}
@@ -370,7 +403,58 @@ export function ExpenseDetailClient({
           onConfirm={handleDelete}
           onCancel={() => setDeleteOpen(false)}
         />
+
       </TransitionSlot>
+
+      {typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {lightboxOpen && receiptUrl && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.15 }}
+                className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-6"
+                onClick={() => setLightboxOpen(false)}
+              >
+                <motion.div
+                  initial={{ scale: 0.96, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.96, opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="relative flex flex-col items-end gap-2"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setLightboxOpen(false)}
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-medium shrink-0 transition-colors"
+                    style={{
+                      background: "#FDFCFB",
+                      border: "1px solid #EDE3DA",
+                      color: "#8c7463",
+                    }}
+                  >
+                    ✕
+                  </button>
+                  <div
+                    className="rounded-2xl overflow-hidden shadow-[var(--shadow-glass)]"
+                    style={{ border: "1px solid #EDE3DA" }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={receiptUrl}
+                      alt="Receipt"
+                      className="max-w-[min(90vw,32rem)] max-h-[75vh] object-contain"
+                    />
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body,
+        )}
     </Container>
   );
 }
