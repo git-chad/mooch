@@ -1,15 +1,19 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import type { ThreeElements } from "@react-three/fiber";
 import { useThree } from "@react-three/fiber";
-import { MeshBasicNodeMaterial } from "three/webgpu";
+import { useEffect, useMemo } from "react";
 import { sin, time, uv, vec3 } from "three/tsl";
+import { MeshBasicNodeMaterial } from "three/webgpu";
 
-type WebGPUSketchProps = {
+type WebGPUSketchProps = ThreeElements["mesh"] & {
   colorNode?: unknown;
 };
 
-export default function WebGPUSketch({ colorNode }: WebGPUSketchProps) {
+export default function WebGPUSketch({
+  colorNode,
+  ...meshProps
+}: WebGPUSketchProps) {
   const material = useMemo(() => {
     const nodeMaterial = new MeshBasicNodeMaterial({ transparent: true });
     const uvNode = uv();
@@ -26,7 +30,7 @@ export default function WebGPUSketch({ colorNode }: WebGPUSketchProps) {
   const { width, height } = useThree((state) => state.viewport);
 
   return (
-    <mesh material={material} scale={[width, height, 1]}>
+    <mesh material={material} scale={[width, height, 1]} {...meshProps}>
       <planeGeometry args={[1, 1]} />
     </mesh>
   );

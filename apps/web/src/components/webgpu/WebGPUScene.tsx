@@ -22,7 +22,6 @@ function CompileGuard({ onReady }: { onReady: () => void }) {
   const camera = useThree((s) => s.camera);
 
   useEffect(() => {
-    // @ts-expect-error — compileAsync exists on WebGPURenderer
     gl.compileAsync(scene, camera).then(onReady);
   }, [gl, scene, camera, onReady]);
 

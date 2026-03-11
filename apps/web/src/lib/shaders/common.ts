@@ -1,4 +1,4 @@
-import { Fn, mul, add, mod, sub } from "three/tsl";
+import { add, Fn, mod, mul, sub } from "three/tsl";
 
 // @ts-expect-error — TSL Fn destructured args aren't typed
 export const permute = Fn(([x]) => {

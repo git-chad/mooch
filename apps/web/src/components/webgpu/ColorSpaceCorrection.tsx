@@ -2,7 +2,7 @@
 
 import { useThree } from "@react-three/fiber";
 import { useEffect } from "react";
-import { SRGBColorSpace, NoToneMapping } from "three/webgpu";
+import { NoToneMapping, SRGBColorSpace } from "three/webgpu";
 
 export const ColorSpaceCorrection = () => {
   const { set } = useThree((state) => state);
