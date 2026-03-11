@@ -5,6 +5,7 @@ Based on the "Homepage - Final Version" design in Paper (node `2PI-0`).
 ## Sections
 
 ### Hero
+
 - [ ] Full-width hero background (blue halftone dots pattern + gradient fade to white)
 - [ ] "Coming pretty soon" pill badge (top center)
 - [ ] Main heading — "mooch or get mooched" (large display type, Geist)
@@ -12,6 +13,7 @@ Based on the "Homepage - Final Version" design in Paper (node `2PI-0`).
 - [ ] CTA button group — "Log in" (ghost) + "Sign up for free" (primary green)
 
 ### Features
+
 - [ ] Section header — "All the tools you need in one place." + subtitle
 - [ ] **Expense Tracking** featured card (large, image placeholder + green "Expense Tracking" badge + caption)
 - [ ] **Polls** featured card (large, image placeholder + green "Polls" badge + caption)
@@ -23,11 +25,13 @@ Based on the "Homepage - Final Version" design in Paper (node `2PI-0`).
   - [ ] Feed card (image + badge + description)
 
 ### CTA / Waitlist
+
 - [ ] Waitlist heading — "If you're interested, sign up to our waiting list..."
 - [ ] Email input + "Sign up to Waitlist" button
 - [ ] Black-and-white dot-art character illustrations
 
 ### Footer
+
 - [ ] "mooch.me" logo/text with green blob accent
 - [ ] Footer links — Features, FAQ, Pricing, Back to top
 
@@ -38,6 +42,7 @@ Based on the "Homepage - Final Version" design in Paper (node `2PI-0`).
 WebGPU + TSL (Three.js Shading Language) halftone background rendered on a full-screen quad.
 
 ### Colors
+
 - Background (light): `#EFF5FE`
 - Dots (blue): `#0099DD`
 
@@ -50,6 +55,7 @@ The shader runs as a standalone `MeshBasicNodeMaterial` colorNode on a full-view
 #### TSL Utilities
 
 ##### `sdSphere` — Circle SDF
+
 ```ts
 import { Fn, float, length, vec2 } from "three/tsl";
 
@@ -60,6 +66,7 @@ export const sdSphere = Fn(([_uv, r = float(0.0)]) => {
 ```
 
 ##### `screenAspectUV` — Aspect-corrected UVs
+
 ```ts
 import { uv, float, select, vec2 } from "three/tsl";
 
@@ -78,10 +85,23 @@ export const screenAspectUV = (
 ```
 
 ##### `simplexNoise3d` — 3D Simplex Noise
+
 ```ts
 import {
-  vec4, mod, Fn, mul, sub, vec3, vec2, dot,
-  floor, step, min, max, float, abs,
+  vec4,
+  mod,
+  Fn,
+  mul,
+  sub,
+  vec3,
+  vec2,
+  dot,
+  floor,
+  step,
+  min,
+  max,
+  float,
+  abs,
 } from "three/tsl";
 import { permute, taylorInvSqrt } from "./common";
 
@@ -135,7 +155,10 @@ export const simplexNoise3d = Fn(([v_immutable]) => {
   p2.mulAssign(norm.z);
   p3.mulAssign(norm.w);
   const m = vec4(
-    max(sub(0.6, vec4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3))), 0.0),
+    max(
+      sub(0.6, vec4(dot(x0, x0), dot(x1, x1), dot(x2, x2), dot(x3, x3))),
+      0.0,
+    ),
   ).toVar();
   m.assign(m.mul(m));
   return mul(
@@ -146,6 +169,7 @@ export const simplexNoise3d = Fn(([v_immutable]) => {
 ```
 
 ##### Common Math Helpers
+
 ```ts
 import { Fn, mul, add, mod, sub } from "three/tsl";
 
@@ -167,6 +191,7 @@ export const fade = Fn(([t]) => {
 ```
 
 ##### Tonemapping Functions
+
 ```ts
 import { Fn, float, vec3, pow, smoothstep, mix } from "three/tsl";
 
@@ -175,8 +200,16 @@ export const reinhardTonemap = Fn(([_color]) => {
 });
 
 export const acesTonemap = Fn(([_color]) => {
-  const a = 2.51, b = 0.03, c = 2.43, d = 0.59, e = 0.14;
-  return _color.mul(a).add(b).div(_color.mul(c).add(_color.mul(d)).add(e)).clamp(0.0, 1.0);
+  const a = 2.51,
+    b = 0.03,
+    c = 2.43,
+    d = 0.59,
+    e = 0.14;
+  return _color
+    .mul(a)
+    .add(b)
+    .div(_color.mul(c).add(_color.mul(d)).add(e))
+    .clamp(0.0, 1.0);
 });
 
 export const cinematicTonemap = Fn(([_color]) => {
@@ -190,10 +223,16 @@ export const cinematicTonemap = Fn(([_color]) => {
 #### React Components
 
 ##### `WebGPUScene` — Canvas wrapper with WebGPU renderer
+
 ```tsx
 "use client";
 
-import { AdaptiveDpr, OrthographicCamera, Preload, StatsGl } from "@react-three/drei";
+import {
+  AdaptiveDpr,
+  OrthographicCamera,
+  Preload,
+  StatsGl,
+} from "@react-three/drei";
 import { Canvas, type CanvasProps } from "@react-three/fiber";
 import { useState } from "react";
 import { WebGPURenderer } from "three/webgpu";
@@ -234,13 +273,16 @@ export default function WebGPUScene({
       {children}
       <ColorSpaceCorrection />
       {debug ? <StatsGl /> : null}
-      {orthographic ? <OrthographicCamera makeDefault position={[0, 0, 1]} /> : null}
+      {orthographic ? (
+        <OrthographicCamera makeDefault position={[0, 0, 1]} />
+      ) : null}
     </Canvas>
   );
 }
 ```
 
 ##### `ColorSpaceCorrection` — Linear color space + no tonemapping
+
 ```tsx
 "use client";
 
@@ -265,6 +307,7 @@ export const ColorSpaceCorrection = () => {
 ```
 
 ##### `WebGPUSketch` — Full-viewport quad with custom colorNode
+
 ```tsx
 "use client";
 
@@ -286,7 +329,9 @@ export default function WebGPUSketch({ colorNode }: WebGPUSketchProps) {
   }, [colorNode]);
 
   useEffect(() => {
-    return () => { material.dispose(); };
+    return () => {
+      material.dispose();
+    };
   }, [material]);
 
   const { width, height } = useThree((state) => state.viewport);
@@ -309,9 +354,25 @@ This is the original halftone as a post-processing pass from Paper. We'll adapt 
 ```ts
 import * as THREE from "three/webgpu";
 import {
-  uv, vec2, vec3, vec4, float, uniform, floor, clamp, length,
-  smoothstep, mix, select, screenSize, texture as tslTexture,
-  sin, cos, abs, max, min,
+  uv,
+  vec2,
+  vec3,
+  vec4,
+  float,
+  uniform,
+  floor,
+  clamp,
+  length,
+  smoothstep,
+  mix,
+  select,
+  screenSize,
+  texture as tslTexture,
+  sin,
+  cos,
+  abs,
+  max,
+  min,
 } from "three/tsl";
 
 export class HalftonePass extends PassNode {
@@ -320,13 +381,15 @@ export class HalftonePass extends PassNode {
   private readonly _viewportScaleU = uniform(1.0);
   private readonly _dotSizeU = uniform(8.0);
   private readonly _dotMinU = uniform(2.0);
-  private readonly _shapeU = uniform(0.0);        // 0=circle 1=square 2=diamond 3=line
-  private readonly _angleU = uniform(45 * Math.PI / 180);
-  private readonly _colorModeU = uniform(1.0);    // 0=source 1=mono 2=duotone
+  private readonly _shapeU = uniform(0.0); // 0=circle 1=square 2=diamond 3=line
+  private readonly _angleU = uniform((45 * Math.PI) / 180);
+  private readonly _colorModeU = uniform(1.0); // 0=source 1=mono 2=duotone
   private readonly _contrastU = uniform(1.0);
   private readonly _softnessU = uniform(0.1);
   private readonly _invertU = uniform(0.0);
-  private readonly _duotoneLightU = uniform(new THREE.Vector3(/* light color */));
+  private readonly _duotoneLightU = uniform(
+    new THREE.Vector3(/* light color */),
+  );
   private readonly _duotoneDarkU = uniform(new THREE.Vector3(/* dark color */));
 
   // Core algorithm in _buildEffectNode():
@@ -344,4 +407,191 @@ export class HalftonePass extends PassNode {
   //    - duotone mode: mix(darkVec, lightVec, luma)
 }
 ```
+
 </details>
+
+#### `HalftonePass` Parameters (values)
+
+{
+"id": "e7d8ee7d-be23-404a-9279-68ed858e408e",
+"name": "Halftone",
+"kind": "shader",
+"shaderType": "halftone",
+"filterMode": "filter",
+"visible": true,
+"solo": false,
+"opacity": 1,
+"blendMode": "normal",
+"params": [
+{
+"key": "dotSize",
+"label": "Dot Size",
+"type": "float",
+"value": 6,
+"min": 0,
+"max": 20,
+"step": 0.5,
+"group": "Grid",
+"description": "Luma-driven radius added on top of the minimum (bright → larger)"
+},
+{
+"key": "dotMin",
+"label": "Min Radius",
+"type": "float",
+"value": 0,
+"min": 0,
+"max": 10,
+"step": 0.5,
+"group": "Grid",
+"description": "Minimum dot radius in pixels (keeps dots visible in dark areas)"
+},
+{
+"key": "gridSpacing",
+"label": "Grid Spacing",
+"type": "float",
+"value": 6,
+"min": 4,
+"max": 80,
+"step": 1,
+"group": "Grid",
+"description": "Distance between dot centers in screen pixels"
+},
+{
+"key": "shape",
+"label": "Shape",
+"type": "enum",
+"value": "circle",
+"options": [
+{
+"label": "Circle",
+"value": "circle"
+},
+{
+"label": "Square",
+"value": "square"
+},
+{
+"label": "Diamond",
+"value": "diamond"
+},
+{
+"label": "Line",
+"value": "line"
+}
+],
+"group": "Grid"
+},
+{
+"key": "angle",
+"label": "Angle",
+"type": "float",
+"value": 45,
+"min": 0,
+"max": 360,
+"step": 1,
+"group": "Grid",
+"description": "Rotation angle of the halftone grid (degrees)"
+},
+{
+"key": "colorMode",
+"label": "Color Mode",
+"type": "enum",
+"value": "source",
+"options": [
+{
+"label": "Monochrome",
+"value": "monochrome"
+},
+{
+"label": "Source",
+"value": "source"
+},
+{
+"label": "Duotone",
+"value": "duotone"
+}
+],
+"group": "Color"
+},
+{
+"key": "duotoneLight",
+"label": "Light Color",
+"type": "color",
+"value": "#F5F5F0",
+"group": "Color",
+"description": "Light tone color (used in duotone mode)"
+},
+{
+"key": "duotoneDark",
+"label": "Dark Color",
+"type": "color",
+"value": "#1d1d1c",
+"group": "Color",
+"description": "Dark tone color (used in duotone mode)"
+},
+{
+"key": "contrast",
+"label": "Contrast",
+"type": "float",
+"value": 1.4,
+"min": 0,
+"max": 2,
+"step": 0.05,
+"group": "Tone"
+},
+{
+"key": "softness",
+"label": "Softness",
+"type": "float",
+"value": 0,
+"min": 0,
+"max": 1,
+"step": 0.01,
+"group": "Tone",
+"description": "Anti-aliasing width at dot edges"
+},
+{
+"key": "invertLuma",
+"label": "Invert Luma",
+"type": "bool",
+"value": true,
+"group": "Tone",
+"description": "Invert luminance so dark areas produce large dots"
+},
+{
+"key": "interactionInput",
+"label": "Interaction",
+"type": "enum",
+"value": "none",
+"options": [
+{
+"label": "None",
+"value": "none"
+},
+{
+"label": "Fluid trail",
+"value": "trail"
+},
+{
+"label": "Displacement",
+"value": "displacement"
+}
+],
+"group": "Interaction",
+"description": "Use Interactivity layer textures to modulate dot size"
+},
+{
+"key": "interactionAmount",
+"label": "Amount",
+"type": "float",
+"value": 0,
+"min": 0,
+"max": 2,
+"step": 0.01,
+"group": "Interaction"
+}
+],
+"locked": false,
+"expanded": true,
+"mediaVersion": 0
+}

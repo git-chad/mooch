@@ -1,7 +1,17 @@
+"use client";
+
+import dynamic from "next/dynamic";
+
+const HalftoneHero = dynamic(() => import("@/components/HalftoneHero"), {
+  ssr: false,
+});
+
 export default function Home() {
   return (
-    <main className="min-h-screen grid place-items-center">
-      <h1 className="text-4xl font-bold">mooch</h1>
+    <main className="relative min-h-screen">
+      <section className="relative h-screen overflow-hidden">
+        <HalftoneHero />
+      </section>
     </main>
   );
 }
