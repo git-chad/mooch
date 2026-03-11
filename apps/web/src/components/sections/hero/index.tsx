@@ -4,7 +4,7 @@ export const Hero = () => {
   return (
     <Container variant="site" className="pt-32">
       <div className="z-20 col-span-6 col-start-2 flex flex-col items-center gap-6">
-        <Badge className="w-fit" label="Coming pretty soon" />
+        <Badge className="w-fit" label="Coming pretty soon" color="#6F859B" />
         <Text
           as="h1"
           variant="web-hero"

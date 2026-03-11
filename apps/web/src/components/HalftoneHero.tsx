@@ -140,6 +140,7 @@ export default function HalftoneHero() {
       <WebGPUScene frameloop="always" orthographic>
         <HalftoneSketch />
       </WebGPUScene>
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-b from-transparent to-[#FCFCFB]" />
     </div>
   );
 }
