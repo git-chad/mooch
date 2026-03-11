@@ -3,7 +3,7 @@ import Image from "next/image";
 
 export type FeaturesFeatureVariant = "featured" | "compact";
 export type FeaturesFeatureMediaKind = "image" | "video";
-export type FeaturesFeatureBadgeTone = "green" | "purple";
+export type FeaturesFeatureBadgeTone = "orange" | "green" | "purple" | "blue";
 
 export type FeaturesFeatureData = {
   slug: string;
@@ -43,10 +43,12 @@ export function FeaturesFeature({
   const resolvedBadgeTone = badgeTone ?? (isFeatured ? "green" : "purple");
   const shouldShowDivider = isFeatured && (showDivider ?? true);
 
-  const badgeClasses =
-    resolvedBadgeTone === "green"
-      ? "bg-[#F1F9E8] border-[#C7DEB0] text-[#4F7330] px-[11px] py-[7px]"
-      : "bg-[#F5EFFB] border-[#D4C8E3] text-[#6E5A88] px-[9px] py-[5px]";
+  const badgeClasses = {
+    orange: "bg-[#FFF0E5] border-[#E7BEA0] text-[#8F5732] px-[12px] py-[8px]",
+    green: "bg-[#F1F9E8] border-[#C7DEB0] text-[#4F7330] px-[11px] py-[7px]",
+    purple: "bg-[#F5EFFB] border-[#D4C8E3] text-[#6E5A88] px-[9px] py-[5px]",
+    blue: "bg-[#EEF5FE] border-[#CCDDF0] text-[#5B7188] px-[9px] py-[5px]",
+  }[resolvedBadgeTone];
 
   return (
     <article className={cn("flex flex-col items-start gap-4", className)}>
@@ -95,7 +97,10 @@ export function FeaturesFeature({
           {shouldShowDivider ? (
             <span className="h-[15px] w-px shrink-0 bg-[#C7D4E1]" />
           ) : null}
-          <Text as="p" className="text-[15px] leading-[20px] text-[#6F859B]">
+          <Text
+            as="p"
+            className="shrink-0 text-[15px] leading-[20px] text-[#6F859B]"
+          >
             {description}
           </Text>
         </div>
