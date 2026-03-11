@@ -1,13 +1,16 @@
 "use client";
 
 import { useFrame, useLoader, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as THREE from "three/webgpu";
 import { createHalftoneColorNode } from "@/lib/shaders/halftoneColorNode";
 import WebGPUScene from "./webgpu/WebGPUScene";
 import WebGPUSketch from "./webgpu/WebGPUSketch";
 
 const BG_TEXTURE_URL = "/textures/bg-texture.webp";
+const SHADER_START_DELAY_MS = 400;
+const INTRO_CONTRAST_FROM = 3.0;
+const INTRO_CONTRAST_TO = 1.55;
 useLoader.preload(THREE.TextureLoader, BG_TEXTURE_URL);
 
 function HalftoneSketch() {
@@ -41,7 +44,7 @@ function HalftoneSketch() {
     uniforms.pixelSize.value = 20;
     uniforms.dotRadius.value = 1.15;
     uniforms.angle.value = (45 * Math.PI) / 180;
-    uniforms.contrast.value = 1.55;
+    uniforms.contrast.value = INTRO_CONTRAST_FROM;
     uniforms.invertLuma.value = 1.0;
     uniforms.noiseSpeed.value = 0.55;
     uniforms.noiseScale.value = 5.7;
@@ -86,6 +89,20 @@ function HalftoneSketch() {
     const introNow = typeof introRaw === "number" ? introRaw : 0;
     const nextIntro = THREE.MathUtils.damp(introNow, 1.0, 1.55, delta);
     uniforms.introProgress.value = nextIntro > 0.999 ? 1.0 : nextIntro;
+
+    const contrastRaw = uniforms.contrast.value;
+    const contrastNow =
+      typeof contrastRaw === "number" ? contrastRaw : INTRO_CONTRAST_FROM;
+    const contrastMix = THREE.MathUtils.smoothstep(nextIntro, 0.08, 0.96);
+    const contrastTarget = THREE.MathUtils.lerp(
+      INTRO_CONTRAST_FROM,
+      INTRO_CONTRAST_TO,
+      contrastMix,
+    );
+    uniforms.contrast.value =
+      nextIntro >= 0.999
+        ? INTRO_CONTRAST_TO
+        : THREE.MathUtils.damp(contrastNow, contrastTarget, 2.9, delta);
 
     const currentHover = uniforms.hoverMix.value as number;
     const targetHover = hoveredRef.current ? 1 : 0;
@@ -145,11 +162,23 @@ function HalftoneSketch() {
 }
 
 export default function HalftoneHero() {
+  const [shaderEnabled, setShaderEnabled] = useState(false);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setShaderEnabled(true);
+    }, SHADER_START_DELAY_MS);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
+
   return (
-    <div className="z-10 absolute inset-0 w-full h-full bg-[#EFF5FE]">
-      <WebGPUScene frameloop="always" orthographic>
-        <HalftoneSketch />
-      </WebGPUScene>
+    <div className="z-10 absolute inset-0 w-full h-full bg-[#FCFCFB]">
+      {shaderEnabled ? (
+        <WebGPUScene frameloop="always" orthographic>
+          <HalftoneSketch />
+        </WebGPUScene>
+      ) : null}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-b from-transparent to-[#FCFCFB]" />
     </div>
   );
