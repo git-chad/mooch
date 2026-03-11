@@ -64,6 +64,16 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+::selection {
+  background: var(--color-accent);
+  color: var(--color-btn-primary-fg);
+}
+
+::-moz-selection {
+  background: var(--color-accent);
+  color: var(--color-btn-primary-fg);
+}
+
 /* ── Button: sizes ───────────────────────────────────────────────────────── */
 .btn-sm {
   padding: 6px 12px;
