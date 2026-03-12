@@ -1,11 +1,12 @@
 "use client";
 
 import { Badge, Button, Container, Text } from "@mooch/ui";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { TitleReveal } from "../common/TitleReveal";
 
 export const Hero = () => {
   const [introCanPlay, setIntroCanPlay] = useState(false);
+  const [heroScrollProgress, setHeroScrollProgress] = useState(0);
 
   useEffect(() => {
     let started = false;
@@ -40,11 +41,36 @@ export const Hero = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const updateScrollProgress = () => {
+      const viewportHeight = window.innerHeight || 1;
+      const rawProgress = window.scrollY / (viewportHeight * 0.55);
+      setHeroScrollProgress(Math.min(Math.max(rawProgress, 0), 1));
+    };
+
+    updateScrollProgress();
+    window.addEventListener("scroll", updateScrollProgress, { passive: true });
+    window.addEventListener("resize", updateScrollProgress);
+
+    return () => {
+      window.removeEventListener("scroll", updateScrollProgress);
+      window.removeEventListener("resize", updateScrollProgress);
+    };
+  }, []);
+
   const introPlayState = introCanPlay ? "running" : "paused";
+  const heroContentStyle = {
+    animationPlayState: introPlayState,
+    "--hero-scroll-opacity": `${1 - heroScrollProgress * 0.98}`,
+    "--hero-scroll-blur": `${heroScrollProgress * 2}px`,
+  } as CSSProperties;
 
   return (
     <Container variant="site" className="pt-32">
-      <div className="z-20 col-span-6 col-start-2 flex flex-col items-center gap-6">
+      <div
+        className="hero-scroll-fade z-20 col-span-6 col-start-2 flex flex-col items-center gap-6"
+        style={heroContentStyle}
+      >
         <div
           className="hero-reveal hero-reveal-badge"
           style={{ animationPlayState: introPlayState }}

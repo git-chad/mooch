@@ -81,8 +81,8 @@ export const Features = () => {
         </Text>
 
         <div className="mt-14 flex w-full flex-col gap-6">
-          {featuredTools.map(({ slug, ...item }) => (
-            <FeaturesFeature key={slug} {...item} />
+          {featuredTools.map(({ slug, ...item }, index) => (
+            <FeaturesFeature key={slug} delay={0.08 + index * 0.08} {...item} />
           ))}
         </div>
 
@@ -100,8 +100,8 @@ export const Features = () => {
         </div>
 
         <div className="mt-10 grid w-full grid-cols-1 gap-x-2 gap-y-4 sm:grid-cols-2">
-          {moreFeatures.map(({ slug, ...item }) => (
-            <FeaturesFeature key={slug} {...item} />
+          {moreFeatures.map(({ slug, ...item }, index) => (
+            <FeaturesFeature key={slug} delay={0.06 + index * 0.06} {...item} />
           ))}
         </div>
       </div>

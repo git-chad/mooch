@@ -1,4 +1,7 @@
+"use client";
+
 import { cn, Text } from "@mooch/ui";
+import { motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
 
 export type FeaturesFeatureVariant = "featured" | "compact";
@@ -22,6 +25,7 @@ export type FeaturesFeatureData = {
 type FeaturesFeatureProps = Omit<FeaturesFeatureData, "slug"> & {
   className?: string;
   mediaClassName?: string;
+  delay?: number;
 };
 
 export function FeaturesFeature({
@@ -37,11 +41,49 @@ export function FeaturesFeature({
   mediaPoster,
   className,
   mediaClassName,
+  delay = 0,
 }: FeaturesFeatureProps) {
   const isFeatured = variant === "featured";
   const label = badge ?? title;
   const resolvedBadgeTone = badgeTone ?? (isFeatured ? "green" : "purple");
   const shouldShowDivider = isFeatured && (showDivider ?? true);
+  const reduceMotion = useReducedMotion();
+
+  const cardVariants = reduceMotion
+    ? {
+        hidden: { opacity: 0 },
+        visible: {
+          opacity: 1,
+          transition: {
+            type: "spring" as const,
+            stiffness: 260,
+            damping: 34,
+            mass: 1,
+            delay,
+          },
+        },
+      }
+    : {
+        hidden: {
+          opacity: 0,
+          y: 28,
+          scale: 0.85,
+          filter: "blur(2px)",
+        },
+        visible: {
+          opacity: 1,
+          y: 0,
+          scale: 1,
+          filter: "blur(0px)",
+          transition: {
+            type: "spring" as const,
+            stiffness: 250,
+            damping: 16,
+            mass: 0.72,
+            delay,
+          },
+        },
+      };
 
   const badgeClasses = {
     orange: "bg-[#FFF0E5] border-[#E7BEA0] text-[#8F5732] px-[12px] py-[8px]",
@@ -51,7 +93,13 @@ export function FeaturesFeature({
   }[resolvedBadgeTone];
 
   return (
-    <article className={cn("flex flex-col items-start gap-4", className)}>
+    <motion.article
+      className={cn("flex flex-col items-start gap-4", className)}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.3 }}
+      variants={cardVariants}
+    >
       <div
         className={cn(
           "relative w-full overflow-hidden rounded-[14px] bg-[#EEF3F8]",
@@ -124,6 +172,6 @@ export function FeaturesFeature({
           </Text>
         </>
       )}
-    </article>
+    </motion.article>
   );
 }

@@ -6,14 +6,14 @@ import { Hero } from "@/components/sections/hero";
 export default function Home() {
   return (
     <main className="relative min-h-screen">
-      <section id="hero" className="relative h-screen overflow-hidden">
+      <section id="hero" className="sticky top-0 z-0 h-screen overflow-hidden">
         <HalftoneHero />
         <Hero />
       </section>
-      <section id="features" className="bg-[#FCFCFB] min-h-screen">
+      <section id="features" className="relative z-10 min-h-screen bg-[#FCFCFB]">
         <Features />
       </section>
-      <section id="cta" className="bg-[#FCFCFB]">
+      <section id="cta" className="relative z-10 bg-[#FCFCFB]">
         <CTA />
       </section>
     </main>

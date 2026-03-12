@@ -33,6 +33,7 @@ export function createHalftoneColorNode(inputTexture: THREE.Texture) {
   const invertLuma = uniform(1.0);
   const angle = uniform((45.0 * Math.PI) / 180.0);
   const bgColor = uniform(new THREE.Vector3(bgCol.r, bgCol.g, bgCol.b));
+  const textureScale = uniform(1.0);
 
   // Animation
   const noiseSpeed = uniform(0.3);
@@ -91,6 +92,10 @@ export function createHalftoneColorNode(inputTexture: THREE.Texture) {
           cosA.mul(cc.y).add(sinA.mul(cc.x)),
         ).add(centerPx);
         const cellUV = origPx.div(resolution);
+        const scaledCellUV = cellUV
+          .sub(vec2(0.5, 0.5))
+          .div(textureScale)
+          .add(vec2(0.5, 0.5));
         const cellNdc = cellUV.mul(2.0).sub(1.0);
 
         const pointerDelta = vec2(
@@ -127,7 +132,9 @@ export function createHalftoneColorNode(inputTexture: THREE.Texture) {
         // Force LOD 0 — computed UVs have discontinuous derivatives at cell
         // boundaries which causes the GPU to sample wrong mip levels, producing
         // visible dotted outlines along every cell edge.
-        const sample = vec4(tslTexture(inputTexture, cellUV).level(float(0.0)));
+        const sample = vec4(
+          tslTexture(inputTexture, scaledCellUV).level(float(0.0)),
+        );
 
         // Luminance → effective radius
         const luma = sample.x
@@ -140,8 +147,8 @@ export function createHalftoneColorNode(inputTexture: THREE.Texture) {
 
         // Simplex noise at cell center for organic breathing
         const noiseInput = vec3(
-          cellUV.x.mul(noiseScale),
-          cellUV.y.mul(noiseScale),
+          scaledCellUV.x.mul(noiseScale),
+          scaledCellUV.y.mul(noiseScale),
           time.mul(noiseSpeed),
         );
         // @ts-expect-error — TSL Fn call signature not inferred
@@ -186,7 +193,6 @@ export function createHalftoneColorNode(inputTexture: THREE.Texture) {
     const grayscaleColor = vec3(colorLuma);
     const saturationMix = smoothstep(float(0.12), float(0.88), intro);
     const saturatedColor = mix(grayscaleColor, halftoneColor, saturationMix);
-
     // Subtle noise on intro mix for a soft organic reveal.
     const introNoiseInput = vec3(
       _uv.x.mul(2.0),
@@ -214,6 +220,7 @@ export function createHalftoneColorNode(inputTexture: THREE.Texture) {
       invertLuma,
       angle,
       bgColor,
+      textureScale,
       noiseSpeed,
       noiseScale,
       noiseAmount,

@@ -234,7 +234,22 @@ body {
   animation-delay: 510ms;
 }
 
+.hero-scroll-fade {
+  opacity: var(--hero-scroll-opacity, 1);
+  filter: blur(var(--hero-scroll-blur, 0px));
+  will-change: opacity, filter;
+  transition:
+    opacity 120ms linear,
+    filter 120ms linear;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .hero-scroll-fade {
+    opacity: 1;
+    filter: none;
+    transition: none;
+  }
+
   .hero-reveal,
   .hero-reveal-btn {
     animation: none;

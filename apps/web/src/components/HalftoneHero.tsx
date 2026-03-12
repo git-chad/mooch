@@ -47,6 +47,8 @@ const IMAC_INTRO_START_Y = -2.35;
 const IMAC_INTRO_START_Z = 1.3;
 const IMAC_INTRO_START_SCALE = 3.15;
 const IMAC_INTRO_DAMP = 2.2;
+const IMAC_SCROLL_PUSHBACK_Z = -0.9;
+const IMAC_SCROLL_PUSHBACK_Y = -0.26;
 const SCREEN_ASPECT = 4 / 3;
 const SCREEN_GLARE_LIGHT_POS = new THREE.Vector3(1.55, 0.55, 1.85);
 const SCREEN_GLARE_VIEW_Z = 1.95;
@@ -65,6 +67,7 @@ function IMacModel() {
   const viewport = useThree((s) => s.viewport);
   const size = useThree((s) => s.size);
   const { scene: gltfScene } = useGLTF(MODEL_URL);
+  const scrollProgressRef = useRef(0);
   const glarePointerUniform = useMemo(
     () => uniform(new THREE.Vector2(0, 0)),
     [],
@@ -251,10 +254,10 @@ function IMacModel() {
         const scanlineVideo = crtScanlineEffect({
           inputColor: videoSample,
           inputUV: () => screenUV,
-          lineFrequency: 220,
+          lineFrequency: 120,
           lineIntensity: 0.18,
           curvature: 0.04,
-          scanlineSharpness: 0.62,
+          scanlineSharpness: 0.92,
         });
 
         const vignetteVideo = vignetteEffect({
@@ -331,6 +334,23 @@ function IMacModel() {
     modelIntroProgressRef.current = 0;
   }, [model]);
 
+  useEffect(() => {
+    const updateScrollProgress = () => {
+      const viewportHeight = window.innerHeight || 1;
+      const rawProgress = window.scrollY / (viewportHeight * 0.75);
+      scrollProgressRef.current = THREE.MathUtils.clamp(rawProgress, 0, 1);
+    };
+
+    updateScrollProgress();
+    window.addEventListener("scroll", updateScrollProgress, { passive: true });
+    window.addEventListener("resize", updateScrollProgress);
+
+    return () => {
+      window.removeEventListener("scroll", updateScrollProgress);
+      window.removeEventListener("resize", updateScrollProgress);
+    };
+  }, []);
+
   // Update model transforms + pointer-driven camera parallax
   useFrame(({ gl, pointer }, delta) => {
     const glarePointer = glarePointerUniform.value as THREE.Vector2;
@@ -365,13 +385,22 @@ function IMacModel() {
       THREE.MathUtils.lerp(IMAC_INTRO_START_SCALE, IMAC_SCALE, introEase),
     );
     model.rotation.set(IMAC_ROT_X, IMAC_ROT_Y, 0);
+    const scrollEase = THREE.MathUtils.smootherstep(
+      scrollProgressRef.current,
+      0.0,
+      1.0,
+    );
     model.position.x = IMAC_POS_X;
     model.position.y = THREE.MathUtils.lerp(
       IMAC_INTRO_START_Y,
-      IMAC_POS_Y,
+      IMAC_POS_Y + IMAC_SCROLL_PUSHBACK_Y * scrollEase,
       introEase,
     );
-    model.position.z = THREE.MathUtils.lerp(IMAC_INTRO_START_Z, 0, introEase);
+    model.position.z = THREE.MathUtils.lerp(
+      IMAC_INTRO_START_Z,
+      IMAC_SCROLL_PUSHBACK_Z * scrollEase,
+      introEase,
+    );
 
     // Subtle parallax on the perspective camera
     const targetX = pointer.x * -0.15;
@@ -441,6 +470,7 @@ function HalftoneSketch() {
   const gl = useThree((s) => s.gl);
   const size = useThree((s) => s.size);
   const hoveredRef = useRef(false);
+  const scrollProgressRef = useRef(0);
   const trailHeadRef = useRef(0);
   const trailCooldownRef = useRef(0);
   const lastTrailPointRef = useRef(new THREE.Vector2(Number.NaN, Number.NaN));
@@ -489,6 +519,7 @@ function HalftoneSketch() {
     uniforms.trailRadius.value = 0.56;
     uniforms.trailBoost.value = 0.7;
     uniforms.introProgress.value = 0.0;
+    uniforms.textureScale.value = 1.0;
 
     const col = new THREE.Color("#FCFCFB");
     (uniforms.bgColor.value as THREE.Vector3).set(col.r, col.g, col.b);
@@ -517,6 +548,23 @@ function HalftoneSketch() {
       canvas.removeEventListener("pointercancel", onLeave);
     };
   }, [gl]);
+
+  useEffect(() => {
+    const updateScrollProgress = () => {
+      const viewportHeight = window.innerHeight || 1;
+      const rawProgress = window.scrollY / (viewportHeight * 0.75);
+      scrollProgressRef.current = THREE.MathUtils.clamp(rawProgress, 0, 1);
+    };
+
+    updateScrollProgress();
+    window.addEventListener("scroll", updateScrollProgress, { passive: true });
+    window.addEventListener("resize", updateScrollProgress);
+
+    return () => {
+      window.removeEventListener("scroll", updateScrollProgress);
+      window.removeEventListener("resize", updateScrollProgress);
+    };
+  }, []);
 
   useFrame(({ pointer }, delta) => {
     if (!readyEventSentRef.current) {
@@ -555,6 +603,12 @@ function HalftoneSketch() {
       currentHover,
       targetHover,
       10,
+      delta,
+    );
+    uniforms.textureScale.value = THREE.MathUtils.damp(
+      uniforms.textureScale.value as number,
+      THREE.MathUtils.lerp(1.0, 5.0, scrollProgressRef.current),
+      4.2,
       delta,
     );
 
