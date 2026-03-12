@@ -1,7 +1,12 @@
 "use client";
 
 import { useGLTF } from "@react-three/drei";
-import { createPortal, useFrame, useLoader, useThree } from "@react-three/fiber";
+import {
+  createPortal,
+  useFrame,
+  useLoader,
+  useThree,
+} from "@react-three/fiber";
 import { useControls } from "leva";
 import {
   Suspense,
@@ -22,66 +27,68 @@ const INTRO_CONTRAST_FROM = 3.0;
 const INTRO_CONTRAST_TO = 1.55;
 useLoader.preload(THREE.TextureLoader, BG_TEXTURE_URL);
 
-function HeroCameraRig() {
-  const camera = useThree((state) => state.camera);
-  const pointer = useThree((state) => state.pointer);
-
-  useFrame((_, delta) => {
-    const targetX = pointer.x * 8;
-    const targetY = pointer.y * 6;
-
-    camera.position.x = THREE.MathUtils.damp(
-      camera.position.x,
-      targetX,
-      4.2,
-      delta,
-    );
-    camera.position.y = THREE.MathUtils.damp(
-      camera.position.y,
-      targetY,
-      4.2,
-      delta,
-    );
-  });
-
-  return null;
-}
-
 function IMacModel() {
   const viewport = useThree((s) => s.viewport);
   const size = useThree((s) => s.size);
   const { scene: gltfScene } = useGLTF(MODEL_URL);
 
-  const {
-    scale,
-    posX,
-    posY,
-    rotY,
-    rotX,
-    camFov,
-    camZ,
-  } = useControls("iMac Model", {
-    scale: { value: 2.75, min: 0.5, max: 5, step: 0.05, label: "Scale" },
-    posX: { value: 0, min: -3, max: 3, step: 0.01, label: "X" },
-    posY: { value: -1.2, min: -3, max: 3, step: 0.01, label: "Y" },
-    rotY: { value: -Math.PI / 2, min: -Math.PI, max: Math.PI, step: 0.01, label: "Rot Y" },
-    rotX: { value: 0, min: -Math.PI / 2, max: Math.PI / 2, step: 0.01, label: "Rot X" },
-    camFov: { value: 35, min: 10, max: 90, step: 1, label: "FOV" },
-    camZ: { value: 4.5, min: 1, max: 15, step: 0.1, label: "Cam Z" },
-  });
+  const { scale, posX, posY, rotY, rotX, camFov, camZ } = useControls(
+    "iMac Model",
+    {
+      scale: { value: 2.75, min: 0.5, max: 5, step: 0.05, label: "Scale" },
+      posX: { value: 0, min: -3, max: 3, step: 0.01, label: "X" },
+      posY: { value: -1.2, min: -3, max: 3, step: 0.01, label: "Y" },
+      rotY: {
+        value: -Math.PI / 2,
+        min: -Math.PI,
+        max: Math.PI,
+        step: 0.01,
+        label: "Rot Y",
+      },
+      rotX: {
+        value: 0,
+        min: -Math.PI / 2,
+        max: Math.PI / 2,
+        step: 0.01,
+        label: "Rot X",
+      },
+      camFov: { value: 35, min: 10, max: 90, step: 1, label: "FOV" },
+      camZ: { value: 4.5, min: 1, max: 15, step: 0.1, label: "Cam Z" },
+    },
+  );
 
-  // Separate scene + perspective camera for the model
+  // Separate scene + 3-point lighting for the model
   const [modelScene] = useState(() => {
     const s = new THREE.Scene();
-    s.add(new THREE.AmbientLight(0xffffff, 0.74));
-    const dir = new THREE.DirectionalLight(0xffffff, 1.35);
-    dir.position.set(3.5, 5, 4);
-    s.add(dir);
+
+    // Ambient base — soft fill so nothing is pure black
+    s.add(new THREE.AmbientLight(0xffffff, 0.5));
+
+    // Key light — warm, upper right, main shadow caster
+    const key = new THREE.DirectionalLight(0xfff5e6, 1.6);
+    key.position.set(4, 5, 3);
+    s.add(key);
+
+    // Fill light — cooler, softer, from left to lift shadows
+    const fill = new THREE.DirectionalLight(0xe6f0ff, 0.6);
+    fill.position.set(-3, 2, 2);
+    s.add(fill);
+
+    // Top light — subtle overhead to catch the glossy top surfaces
+    const top = new THREE.DirectionalLight(0xffffff, 0.4);
+    top.position.set(0, 8, -1);
+    s.add(top);
+
     return s;
   });
 
   const perspCamera = useMemo(() => {
-    const cam = new THREE.PerspectiveCamera(camFov, size.width / size.height, 0.1, 100);
+    const cam = new THREE.PerspectiveCamera(
+      camFov,
+      size.width / size.height,
+      0.1,
+      100,
+    );
     cam.position.set(0, 0.15, camZ);
     cam.lookAt(0, 0, 0);
     return cam;
@@ -89,7 +96,10 @@ function IMacModel() {
 
   // Render target with alpha for compositing
   const renderTarget = useMemo(() => {
-    const dpr = typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 1.5) : 1;
+    const dpr =
+      typeof window !== "undefined"
+        ? Math.min(window.devicePixelRatio, 1.5)
+        : 1;
     const rt = new THREE.RenderTarget(
       Math.round(size.width * dpr),
       Math.round(size.height * dpr),
@@ -108,10 +118,9 @@ function IMacModel() {
       const materials = Array.isArray(mesh.material)
         ? mesh.material
         : [mesh.material];
-      mesh.material = (materials.length === 1
-        ? materials[0]
-        : materials
-      ) as THREE.Material | THREE.Material[];
+      mesh.material = (materials.length === 1 ? materials[0] : materials) as
+        | THREE.Material
+        | THREE.Material[];
     });
 
     // Center the model
@@ -132,15 +141,33 @@ function IMacModel() {
     };
   }, [model, modelScene]);
 
-  // Update model transforms from leva
-  useFrame(({ gl }) => {
+  // Update model transforms + pointer-driven camera parallax
+  useFrame(({ gl, pointer }, delta) => {
     model.scale.setScalar(scale);
     model.rotation.set(rotX, rotY, 0);
     model.position.x = posX;
     model.position.y = posY;
 
+    // Subtle parallax on the perspective camera
+    const targetX = pointer.x * -0.15;
+    const targetY = 0.15 + pointer.y * 0.1;
+    perspCamera.position.x = THREE.MathUtils.damp(
+      perspCamera.position.x,
+      targetX,
+      4.2,
+      delta,
+    );
+    perspCamera.position.y = THREE.MathUtils.damp(
+      perspCamera.position.y,
+      targetY,
+      4.2,
+      delta,
+    );
+    perspCamera.lookAt(0, 0, 0);
+
     // Render model scene to FBO with perspective camera
     const prevRT = gl.getRenderTarget();
+    // @ts-expect-error - doodoo nigga
     gl.setRenderTarget(renderTarget);
     gl.setClearColor(0x000000, 0);
     gl.clear();
@@ -161,7 +188,11 @@ function IMacModel() {
 
   // Display FBO texture on a quad in the ortho scene (in front of halftone)
   return (
-    <mesh position={[0, 0, 0.5]} geometry={flippedPlane} scale={[viewport.width, viewport.height, 1]}>
+    <mesh
+      position={[0, 0, 0.5]}
+      geometry={flippedPlane}
+      scale={[viewport.width, viewport.height, 1]}
+    >
       <meshBasicMaterial map={renderTarget.texture} transparent />
     </mesh>
   );
@@ -203,10 +234,7 @@ function HalftoneSketch() {
     const width = size?.width ?? 1;
     const height = size?.height ?? 1;
 
-    (uniforms.resolution.value as THREE.Vector2).set(
-      width * dpr,
-      height * dpr,
-    );
+    (uniforms.resolution.value as THREE.Vector2).set(width * dpr, height * dpr);
   }, [gl, size, uniforms]);
 
   useEffect(() => {
@@ -344,17 +372,14 @@ function HalftoneSketch() {
 export default function HalftoneHero() {
   return (
     <div className="z-10 absolute inset-0 w-full h-full bg-[#FCFCFB]">
-      <WebGPUScene
-        frameloop="always"
-        orthographic
-      >
-        <HeroCameraRig />
+      <WebGPUScene frameloop="always" orthographic>
         <HalftoneSketch />
         <Suspense fallback={null}>
           <IMacModel />
         </Suspense>
       </WebGPUScene>
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-b from-transparent to-[#FCFCFB]" />
+      {/* TODO: good fade with ease sin, just at the sides not center */}
+      {/* <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-b from-transparent to-[#FCFCFB]" /> */}
     </div>
   );
 }
