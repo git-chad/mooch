@@ -1,18 +1,260 @@
 @import "tailwindcss";
+@source "../../../../packages/ui/src/**/*.{ts,tsx}";
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* UI token subset needed by @mooch/ui in marketing web */
+  --action-gradient: linear-gradient(
+    in oklab 180deg,
+    oklab(87.7% -0.085 0.109) 0%,
+    oklab(73.4% -0.113 0.123) 100%
+  );
+  --accent-deep: #3e6e18;
+  --btn-secondary-shadow: #b8a898;
+  --danger-deep: #7f1d1d;
+  --ghost-fg-hover: #2d5a10;
+  --ghost-fg-active: #1f4008;
+
+  --shadow-btn-primary:
+    rgba(255, 255, 255, 0.45) 0px 1px 0px inset, var(--accent-deep) 0px 2px 0px;
+  --shadow-btn-primary-pressed: rgba(255, 255, 255, 0.3) 0px 1px 0px inset;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
+
+  /* Text tokens used by Text.tsx */
+  --color-ink: #1f2a23;
+  --color-ink-label: #4a3728;
+  --color-ink-sub: #8c7463;
+  --color-ink-dim: #7a6e65;
+  --color-ink-placeholder: #b8a898;
+  --color-ink-info: #556b82;
+  --color-ink-info-2: #6f859b;
+
+  /* Button tokens used by Button.tsx classes */
+  --color-edge: #d8c8bc;
+  --color-accent: #7fbe44;
+  --color-accent-strong: #5a9629;
+  --color-btn-primary-fg: #f4fbff;
+  --color-btn-secondary-fg: #4d6480;
+  --color-btn-ghost-fg: #4f7330;
+  --color-danger: #c0392b;
+}
+
+@font-face {
+  font-family: "Geist Pixel";
+  src: url("/fonts/GeistPixel-Circle.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+.geist-pixel {
+  font-family: "Geist Pixel", sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: var(--color-accent);
+  color: var(--color-btn-primary-fg);
+}
+
+::-moz-selection {
+  background: var(--color-accent);
+  color: var(--color-btn-primary-fg);
+}
+
+/* ── Button: sizes ───────────────────────────────────────────────────────── */
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+  line-height: 16px;
+}
+.btn-md {
+  padding: 6px 12px;
+  font-size: 12px;
+  line-height: 16px;
+}
+.btn-lg {
+  padding: 12px 20px;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+/* ── Button: primary ─────────────────────────────────────────────────────── */
+.btn-primary {
+  background: var(--action-gradient);
+  box-shadow: var(--shadow-btn-primary);
+  transition:
+    box-shadow 80ms ease,
+    transform 80ms ease,
+    filter 80ms ease;
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.btn-primary:active:not(:disabled) {
+  box-shadow: var(--shadow-btn-primary-pressed);
+  transform: translateY(2px);
+}
+
+/* ── Button: secondary ───────────────────────────────────────────────────── */
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow:
+    rgba(255, 255, 255, 0.7) 0px 1px 0px inset,
+    var(--btn-secondary-shadow) 0px 2px 0px;
+  transition:
+    background 80ms ease,
+    box-shadow 80ms ease,
+    transform 80ms ease;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.btn-secondary:active:not(:disabled) {
+  background: rgba(240, 236, 232, 0.9);
+  box-shadow: rgba(255, 255, 255, 0.5) 0px 1px 0px inset;
+  transform: translateY(2px);
+}
+
+/* ── Button: danger ──────────────────────────────────────────────────────── */
+.btn-danger {
+  background: linear-gradient(
+    in oklab 180deg,
+    oklab(56% 0.13 0.06) 0%,
+    oklab(46% 0.16 0.08) 100%
+  );
+  box-shadow:
+    rgba(255, 165, 165, 0.3) 0px 1px 0px inset,
+    var(--danger-deep) 0px 2px 0px;
+  transition:
+    box-shadow 80ms ease,
+    transform 80ms ease,
+    filter 80ms ease;
+}
+
+.btn-danger:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.btn-danger:active:not(:disabled) {
+  box-shadow: rgba(255, 165, 165, 0.2) 0px 1px 0px inset;
+  transform: translateY(2px);
+}
+
+/* ── Button: ghost ───────────────────────────────────────────────────────── */
+.btn-ghost {
+  transition: color 80ms ease;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  color: var(--ghost-fg-hover);
+}
+
+.btn-ghost:active:not(:disabled) {
+  color: var(--ghost-fg-active);
+}
+
+/* ── Hero intro orchestration ───────────────────────────────────────────── */
+@keyframes hero-enter {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0) scale(0.985);
+    filter: blur(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes hero-enter-btn {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+.hero-reveal {
+  opacity: 0;
+  will-change: transform, opacity, filter;
+  animation-name: hero-enter;
+  animation-duration: 560ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: forwards;
+}
+
+.hero-reveal-badge {
+  animation-delay: 60ms;
+  animation-duration: 430ms;
+}
+
+.hero-reveal-description {
+  animation-delay: 270ms;
+}
+
+.hero-reveal-buttons {
+  animation-delay: 360ms;
+}
+
+.hero-reveal-btn {
+  opacity: 0;
+  will-change: transform, opacity;
+  animation-name: hero-enter-btn;
+  animation-duration: 420ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: forwards;
+}
+
+.hero-reveal-btn-a {
+  animation-delay: 440ms;
+}
+
+.hero-reveal-btn-b {
+  animation-delay: 510ms;
+}
+
+.hero-scroll-fade {
+  opacity: var(--hero-scroll-opacity, 1);
+  filter: blur(var(--hero-scroll-blur, 0px));
+  will-change: opacity, filter;
+  transition:
+    opacity 120ms linear,
+    filter 120ms linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-scroll-fade {
+    opacity: 1;
+    filter: none;
+    transition: none;
+  }
+
+  .hero-reveal,
+  .hero-reveal-btn {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
 }
