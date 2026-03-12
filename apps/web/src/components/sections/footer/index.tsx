@@ -2,7 +2,7 @@ import { Text } from "@mooch/ui";
 
 const footerLinks = [
   { label: "Features", href: "#features" },
-  { label: "FAQ", href: "#" },
+  { label: "FAQ", href: "#faq" },
   { label: "Pricing", href: "#" },
   { label: "Back to top", href: "#hero" },
 ] as const;

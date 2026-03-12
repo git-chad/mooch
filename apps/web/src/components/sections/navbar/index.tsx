@@ -13,7 +13,7 @@ import { useRef, useState } from "react";
 const navLinks = [
   { label: "Features", href: "#features" },
   { label: "Pricing", href: "#cta" },
-  { label: "FAQ", href: "#footer" },
+  { label: "FAQ", href: "#faq" },
 ] as const;
 
 export const Navbar = () => {
