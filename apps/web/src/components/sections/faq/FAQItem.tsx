@@ -36,10 +36,9 @@ export function FAQItem({ item, isOpen, onToggle }: FAQItemProps) {
         "relative overflow-hidden rounded-[28px] p-2",
         isOpen
           ? "bg-white shadow-[0_22px_40px_rgba(95,123,146,0.16)]"
-          : "bg-[#FFFFFFCC] shadow-[0_12px_24px_rgba(95,123,146,0.08)]",
+          : "bg-[#FFFFFFCC] backdrop-blur-md shadow-[0_12px_24px_rgba(95,123,146,0.08)]",
       )}
     >
-      <div className="pointer-events-none absolute left-6 top-0 h-5 w-16 -translate-y-1/2 rotate-[-5deg] rounded-[6px] bg-[#FFF7D9]/85 shadow-[0_2px_10px_rgba(122,110,32,0.12)]" />
 
       <motion.button
         type="button"
