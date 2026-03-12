@@ -18,6 +18,11 @@ When a problem is encountered and fixed, log it here immediately:
 
 ## Mistakes Log
 
+### FAQ section shipped as a monolithic component
+- **Problem:** The FAQ section was implemented as one large file mixing static data, animation math, drag physics, and UI rendering in a single component. This violated basic React composition boundaries and made iteration/debugging slower than necessary.
+- **Fix:** Refactored FAQ into focused modules: `data.ts` (content/config/default state), `types.ts` (shared types), `FAQItem.tsx` (accordion card), `StickerLayer.tsx` (sticker drag/pose behavior), and a slim `index.tsx` orchestration component.
+- **Avoid:** Keep section roots as composition/orchestration only. Move data/config and behavior-heavy subtrees into dedicated modules before layering animation details.
+
 ### Silently edited plan checklist
 - **Problem:** Marked 0.4.3 done while quietly removing "Install tailwindcss, motion" from the item text — a valid decision (keep shared deps at root) but made without flagging it.
 - **Fix:** Called out when user noticed.
