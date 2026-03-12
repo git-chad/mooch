@@ -1,13 +1,7 @@
 "use client";
 
 import { useGLTF } from "@react-three/drei";
-import {
-  createPortal,
-  useFrame,
-  useLoader,
-  useThree,
-} from "@react-three/fiber";
-import { useControls } from "leva";
+import { useFrame, useLoader, useThree } from "@react-three/fiber";
 import {
   Suspense,
   useEffect,
@@ -16,45 +10,64 @@ import {
   useRef,
   useState,
 } from "react";
+import {
+  abs,
+  float,
+  length,
+  max,
+  mix,
+  smoothstep,
+  texture as tslTexture,
+  uniform,
+  uv,
+  vec2,
+  vec3,
+  vec4,
+} from "three/tsl";
 import * as THREE from "three/webgpu";
 import { createHalftoneColorNode } from "@/lib/shaders/halftoneColorNode";
+import { crtScanlineEffect } from "@/lib/shaders/utils/crtScanlineEffect";
+import { vignetteEffect } from "@/lib/shaders/utils/vignetteEffect";
 import WebGPUScene from "./webgpu/WebGPUScene";
 import WebGPUSketch from "./webgpu/WebGPUSketch";
 
 const BG_TEXTURE_URL = "/textures/bg-texture.webp";
 const MODEL_URL = "/models/imac-g3-v1.1.glb";
+const SCREEN_VIDEO_URL = "/textures/charlie-texture-c.mp4";
 const INTRO_CONTRAST_FROM = 3.0;
 const INTRO_CONTRAST_TO = 1.55;
+const IMAC_SCALE = 2.75;
+const IMAC_POS_X = 0;
+const IMAC_POS_Y = -1.2;
+const IMAC_ROT_Y = -Math.PI / 2;
+const IMAC_ROT_X = 0;
+const IMAC_CAM_FOV = 35;
+const IMAC_CAM_Z = 4.5;
+const IMAC_INTRO_START_Y = -2.35;
+const IMAC_INTRO_START_Z = 1.3;
+const IMAC_INTRO_START_SCALE = 3.15;
+const IMAC_INTRO_DAMP = 2.2;
+const SCREEN_ASPECT = 4 / 3;
+const SCREEN_GLARE_LIGHT_POS = new THREE.Vector3(1.55, 0.55, 1.85);
+const SCREEN_GLARE_VIEW_Z = 1.95;
+const SCREEN_GLARE_VIEW_RANGE_X = 1.35;
+const SCREEN_GLARE_VIEW_RANGE_Y = 0.24;
+const SCREEN_GLARE_SOFT_RADIUS = 0.66;
+const SCREEN_GLARE_TIGHT_RADIUS = 0.3;
+const SCREEN_GLARE_SOFT_STRENGTH = 0.3;
+const SCREEN_GLARE_TIGHT_STRENGTH = 0.52;
+const SCREEN_GLARE_STREAK_STRENGTH = 0.22;
+const SCREEN_GLARE_POINTER_DAMP = 4.2;
+
 useLoader.preload(THREE.TextureLoader, BG_TEXTURE_URL);
 
 function IMacModel() {
   const viewport = useThree((s) => s.viewport);
   const size = useThree((s) => s.size);
   const { scene: gltfScene } = useGLTF(MODEL_URL);
-
-  const { scale, posX, posY, rotY, rotX, camFov, camZ } = useControls(
-    "iMac Model",
-    {
-      scale: { value: 2.75, min: 0.5, max: 5, step: 0.05, label: "Scale" },
-      posX: { value: 0, min: -3, max: 3, step: 0.01, label: "X" },
-      posY: { value: -1.2, min: -3, max: 3, step: 0.01, label: "Y" },
-      rotY: {
-        value: -Math.PI / 2,
-        min: -Math.PI,
-        max: Math.PI,
-        step: 0.01,
-        label: "Rot Y",
-      },
-      rotX: {
-        value: 0,
-        min: -Math.PI / 2,
-        max: Math.PI / 2,
-        step: 0.01,
-        label: "Rot X",
-      },
-      camFov: { value: 35, min: 10, max: 90, step: 1, label: "FOV" },
-      camZ: { value: 4.5, min: 1, max: 15, step: 0.1, label: "Cam Z" },
-    },
+  const glarePointerUniform = useMemo(
+    () => uniform(new THREE.Vector2(0, 0)),
+    [],
   );
 
   // Separate scene + 3-point lighting for the model
@@ -84,15 +97,15 @@ function IMacModel() {
 
   const perspCamera = useMemo(() => {
     const cam = new THREE.PerspectiveCamera(
-      camFov,
+      IMAC_CAM_FOV,
       size.width / size.height,
       0.1,
       100,
     );
-    cam.position.set(0, 0.15, camZ);
+    cam.position.set(0, 0.15, IMAC_CAM_Z);
     cam.lookAt(0, 0, 0);
     return cam;
-  }, [camFov, camZ, size.width, size.height]);
+  }, [size.width, size.height]);
 
   // Render target with alpha for compositing
   const renderTarget = useMemo(() => {
@@ -107,21 +120,194 @@ function IMacModel() {
     return rt;
   }, [size.width, size.height]);
 
-  // Clone + setup model once
+  // Video texture — created and managed entirely in an effect to survive strict mode
+  const videoTextureRef = useRef<THREE.VideoTexture | null>(null);
+  const [videoTexture, setVideoTexture] = useState<THREE.VideoTexture | null>(
+    null,
+  );
+  const modelIntroProgressRef = useRef(0);
+
+  useEffect(() => {
+    const video = document.createElement("video");
+    video.src = SCREEN_VIDEO_URL;
+    video.crossOrigin = "anonymous";
+    video.loop = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.preload = "auto";
+
+    const tex = new THREE.VideoTexture(video);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.minFilter = THREE.LinearFilter;
+    tex.magFilter = THREE.LinearFilter;
+    videoTextureRef.current = tex;
+    setVideoTexture(tex);
+
+    const tryPlay = () => {
+      video.play().catch(() => {});
+    };
+
+    if (video.readyState >= 2) {
+      tryPlay();
+    } else {
+      video.addEventListener("canplay", tryPlay, { once: true });
+    }
+
+    return () => {
+      video.removeEventListener("canplay", tryPlay);
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+      tex.dispose();
+      videoTextureRef.current = null;
+    };
+  }, []);
+
+  // Clone + setup model once (re-runs when videoTexture becomes available)
   const model = useMemo(() => {
     const cloned = gltfScene.clone();
     cloned.updateWorldMatrix(true, true);
+    let screenMeshCount = 0;
 
     cloned.traverse((obj) => {
       if (!(obj as THREE.Mesh).isMesh) return;
       const mesh = obj as THREE.Mesh;
-      const materials = Array.isArray(mesh.material)
-        ? mesh.material
-        : [mesh.material];
-      mesh.material = (materials.length === 1 ? materials[0] : materials) as
-        | THREE.Material
-        | THREE.Material[];
+      const mat = (
+        Array.isArray(mesh.material) ? mesh.material[0] : mesh.material
+      ) as THREE.MeshStandardMaterial;
+
+      if (mat.name.toLowerCase().includes("screen") && videoTexture) {
+        screenMeshCount += 1;
+        // View-dependent reflection model for realistic screen glare.
+        const screenUV = uv();
+        const p = vec2(
+          screenUV.x.sub(0.5).mul(float(2.0 * SCREEN_ASPECT)),
+          screenUV.y.sub(0.5).mul(float(2.0)),
+        );
+        const viewPos = vec3(
+          glarePointerUniform.x.mul(float(SCREEN_GLARE_VIEW_RANGE_X)),
+          glarePointerUniform.y.mul(float(SCREEN_GLARE_VIEW_RANGE_Y)),
+          float(SCREEN_GLARE_VIEW_Z),
+        );
+        const glareCenter = vec2(
+          float(SCREEN_GLARE_LIGHT_POS.z)
+            .mul(viewPos.x)
+            .add(float(SCREEN_GLARE_VIEW_Z * SCREEN_GLARE_LIGHT_POS.x))
+            .div(float(SCREEN_GLARE_LIGHT_POS.z + SCREEN_GLARE_VIEW_Z)),
+          float(SCREEN_GLARE_LIGHT_POS.z)
+            .mul(viewPos.y)
+            .add(float(SCREEN_GLARE_VIEW_Z * SCREEN_GLARE_LIGHT_POS.y))
+            .div(float(SCREEN_GLARE_LIGHT_POS.z + SCREEN_GLARE_VIEW_Z)),
+        );
+        const offset = vec2(p.x.sub(glareCenter.x), p.y.sub(glareCenter.y));
+
+        const viewDelta = vec3(
+          viewPos.x.sub(p.x),
+          viewPos.y.sub(p.y),
+          viewPos.z,
+        );
+        const viewLen = max(length(viewDelta), float(0.0001));
+        const viewDir = viewDelta.div(viewLen);
+        const ndv = max(viewDir.z, float(0.0));
+        const fresnelCore = float(1.0).sub(ndv);
+        const fresnel = fresnelCore
+          .mul(fresnelCore)
+          .mul(float(0.9))
+          .add(float(0.1));
+        const grazingStretch = abs(viewPos.x).mul(float(0.65)).add(float(1.0));
+
+        const softBlob = smoothstep(
+          float(SCREEN_GLARE_SOFT_RADIUS),
+          float(0.0),
+          length(vec2(offset.x.mul(grazingStretch), offset.y.mul(0.82))),
+        );
+        const tightBlob = smoothstep(
+          float(SCREEN_GLARE_TIGHT_RADIUS),
+          float(0.0),
+          length(
+            vec2(offset.x.mul(grazingStretch.mul(1.35)), offset.y.mul(1.1)),
+          ),
+        );
+        const streak = smoothstep(
+          float(0.2),
+          float(0.0),
+          abs(offset.x.mul(0.78).add(offset.y.mul(1.25))),
+        ).mul(smoothstep(float(0.92), float(0.0), length(offset)));
+
+        const glare = softBlob
+          .mul(float(SCREEN_GLARE_SOFT_STRENGTH))
+          .add(tightBlob.mul(float(SCREEN_GLARE_TIGHT_STRENGTH)))
+          .add(streak.mul(float(SCREEN_GLARE_STREAK_STRENGTH)))
+          .mul(fresnel)
+          .clamp(float(0.0), float(1.0));
+        const edgeFade = smoothstep(
+          float(1.4),
+          float(0.45),
+          length(vec2(p.x.mul(0.68), p.y)),
+        );
+        const glareMix = glare.mul(edgeFade).clamp(float(0.0), float(1.0));
+        const videoSample = vec4(tslTexture(videoTexture, screenUV));
+
+        const scanlineVideo = crtScanlineEffect({
+          inputColor: videoSample,
+          inputUV: () => screenUV,
+          lineFrequency: 220,
+          lineIntensity: 0.18,
+          curvature: 0.04,
+          scanlineSharpness: 0.62,
+        });
+
+        const vignetteVideo = vignetteEffect({
+          inputColor: scanlineVideo,
+          inputUV: () => screenUV,
+          smoothing: 0.22,
+          exponent: 4.2,
+        });
+        const videoColor = vec3(
+          vignetteVideo.x,
+          vignetteVideo.y,
+          vignetteVideo.z,
+        );
+        const videoLuma = videoColor.x
+          .mul(0.2126)
+          .add(videoColor.y.mul(0.7152))
+          .add(videoColor.z.mul(0.0722));
+        const fadedVideoColor = mix(videoColor, vec3(videoLuma), float(0.05));
+
+        const screenMat = new THREE.MeshBasicNodeMaterial({
+          toneMapped: false,
+        });
+        screenMat.colorNode = mix(fadedVideoColor, vec3(1.0), glareMix);
+
+        // Adjust UVs: video is 16:9, screen is ~4:3 → center-crop horizontally
+        // 4:3 = 1.333, 16:9 = 1.778 → crop factor = 1.333 / 1.778 = 0.75
+        const screenAspect = 4 / 3;
+        const videoAspect = 16 / 9;
+        const geo = mesh.geometry;
+        const uvAttr = geo.attributes.uv;
+        if (uvAttr) {
+          const cropX = screenAspect / videoAspect; // ~0.75
+          const offsetX = (1 - cropX) / 2;
+          for (let i = 0; i < uvAttr.count; i++) {
+            const u = uvAttr.getX(i);
+            uvAttr.setX(i, u * cropX + offsetX);
+          }
+          uvAttr.needsUpdate = true;
+        }
+
+        mesh.material = screenMat;
+      }
     });
+
+    if (
+      videoTexture &&
+      screenMeshCount === 0 &&
+      typeof window !== "undefined" &&
+      process.env.NODE_ENV !== "production"
+    ) {
+      // Helps debug cases where GLTF material names don't include "screen".
+      console.warn("[HalftoneHero] No screen mesh matched for glare material.");
+    }
 
     // Center the model
     const box = new THREE.Box3().setFromObject(cloned);
@@ -129,7 +315,7 @@ function IMacModel() {
     cloned.position.sub(center);
 
     return cloned;
-  }, [gltfScene]);
+  }, [gltfScene, glarePointerUniform, videoTexture]);
 
   // Add model to the offscreen scene
   useLayoutEffect(() => {
@@ -141,16 +327,61 @@ function IMacModel() {
     };
   }, [model, modelScene]);
 
+  useEffect(() => {
+    modelIntroProgressRef.current = 0;
+  }, [model]);
+
   // Update model transforms + pointer-driven camera parallax
   useFrame(({ gl, pointer }, delta) => {
-    model.scale.setScalar(scale);
-    model.rotation.set(rotX, rotY, 0);
-    model.position.x = posX;
-    model.position.y = posY;
+    const glarePointer = glarePointerUniform.value as THREE.Vector2;
+    glarePointer.x = THREE.MathUtils.damp(
+      glarePointer.x,
+      pointer.x,
+      SCREEN_GLARE_POINTER_DAMP,
+      delta,
+    );
+    glarePointer.y = THREE.MathUtils.damp(
+      glarePointer.y,
+      pointer.y,
+      SCREEN_GLARE_POINTER_DAMP,
+      delta,
+    );
+
+    const introNow = modelIntroProgressRef.current;
+    const introNext = THREE.MathUtils.damp(
+      introNow,
+      1.0,
+      IMAC_INTRO_DAMP,
+      delta,
+    );
+    modelIntroProgressRef.current = introNext > 0.999 ? 1.0 : introNext;
+    const introEase = THREE.MathUtils.smoothstep(
+      modelIntroProgressRef.current,
+      0.0,
+      1.0,
+    );
+
+    model.scale.setScalar(
+      THREE.MathUtils.lerp(IMAC_INTRO_START_SCALE, IMAC_SCALE, introEase),
+    );
+    model.rotation.set(IMAC_ROT_X, IMAC_ROT_Y, 0);
+    model.position.x = IMAC_POS_X;
+    model.position.y = THREE.MathUtils.lerp(
+      IMAC_INTRO_START_Y,
+      IMAC_POS_Y,
+      introEase,
+    );
+    model.position.z = THREE.MathUtils.lerp(IMAC_INTRO_START_Z, 0, introEase);
 
     // Subtle parallax on the perspective camera
     const targetX = pointer.x * -0.15;
     const targetY = 0.15 + pointer.y * 0.1;
+    perspCamera.position.z = THREE.MathUtils.damp(
+      perspCamera.position.z,
+      IMAC_CAM_Z,
+      6.5,
+      delta,
+    );
     perspCamera.position.x = THREE.MathUtils.damp(
       perspCamera.position.x,
       targetX,
@@ -163,16 +394,23 @@ function IMacModel() {
       4.2,
       delta,
     );
+    if (Math.abs(perspCamera.fov - IMAC_CAM_FOV) > 0.001) {
+      perspCamera.fov = IMAC_CAM_FOV;
+      perspCamera.updateProjectionMatrix();
+    }
     perspCamera.lookAt(0, 0, 0);
 
     // Render model scene to FBO with perspective camera
-    const prevRT = gl.getRenderTarget();
-    // @ts-expect-error - doodoo nigga
-    gl.setRenderTarget(renderTarget);
+    const renderer = gl as typeof gl & {
+      getRenderTarget: () => THREE.RenderTarget | null;
+      setRenderTarget: (target: THREE.RenderTarget | null) => void;
+    };
+    const prevRT = renderer.getRenderTarget();
+    renderer.setRenderTarget(renderTarget);
     gl.setClearColor(0x000000, 0);
     gl.clear();
     gl.render(modelScene, perspCamera);
-    gl.setRenderTarget(prevRT);
+    renderer.setRenderTarget(prevRT);
   });
 
   // Flip UVs on the display quad — WebGPU render targets are Y-flipped
