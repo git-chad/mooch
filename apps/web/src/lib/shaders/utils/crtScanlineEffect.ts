@@ -9,7 +9,6 @@ type CRTScanlineEffectProps = {
   scanlineSharpness?: number;
 };
 
-// @ts-expect-error — TSL Fn object args typing isn't inferred well.
 export const crtScanlineEffect = Fn((props: CRTScanlineEffectProps) => {
   const {
     inputColor,
@@ -20,7 +19,10 @@ export const crtScanlineEffect = Fn((props: CRTScanlineEffectProps) => {
     scanlineSharpness = 0.5,
   } = props || {};
 
-  const _uv = inputUV().toVar();
+  const textureUV = inputUV as () => { toVar: () => any };
+  const sourceColor = inputColor as any;
+
+  const _uv = textureUV().toVar();
   const _lineFrequency = float(lineFrequency);
   const _lineIntensity = float(lineIntensity);
   const _curvature = float(curvature);
@@ -44,7 +46,7 @@ export const crtScanlineEffect = Fn((props: CRTScanlineEffectProps) => {
     scanlinePattern,
   ).toVar();
 
-  const originalColor = vec4(inputColor).toVar();
+  const originalColor = vec4(sourceColor).toVar();
   const rgb = vec3(originalColor.x, originalColor.y, originalColor.z)
     .mul(effect)
     .toVar();

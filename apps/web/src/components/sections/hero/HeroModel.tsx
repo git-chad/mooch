@@ -4,13 +4,10 @@ import { Environment, useGLTF } from "@react-three/drei";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useLayoutEffect, useMemo } from "react";
 import * as THREE from "three";
-import { KTX2Loader } from "three/examples/jsm/loaders/KTX2Loader.js";
 
-const MODEL_URL = "/models/imac-g3-v1.1_c.glb";
+const MODEL_URL = "/models/imac-g3-v1.1.glb";
 const DRACO_DECODER_URL =
   "https://www.gstatic.com/draco/versioned/decoders/1.5.7/";
-const KTX2_TRANSCODER_URL =
-  "https://unpkg.com/three@0.183.2/examples/jsm/libs/basis/";
 
 function CameraRig() {
   const camera = useThree((state) => state.camera);
@@ -45,20 +42,7 @@ function CameraRig() {
 }
 
 function IMacModel() {
-  const gl = useThree((state) => state.gl);
-  const ktx2Loader = useMemo(
-    () =>
-      new KTX2Loader().setTranscoderPath(KTX2_TRANSCODER_URL).detectSupport(gl),
-    [gl],
-  );
-  const { scene } = useGLTF(
-    MODEL_URL,
-    DRACO_DECODER_URL,
-    undefined,
-    (loader) => {
-      loader.setKTX2Loader(ktx2Loader);
-    },
-  );
+  const { scene } = useGLTF(MODEL_URL, DRACO_DECODER_URL);
   const model = useMemo(() => scene.clone(), [scene]);
 
   useLayoutEffect(() => {
