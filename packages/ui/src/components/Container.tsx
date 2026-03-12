@@ -1,12 +1,14 @@
-import type { HTMLAttributes } from "react";
+import React from "react";
 import { cn } from "../lib/cn";
 
 type ContainerVariant = "site" | "app";
 
-type ContainerProps = HTMLAttributes<HTMLDivElement> & {
+type ContainerProps = {
   variant?: ContainerVariant;
-  as?: React.ElementType;
-};
+  as?: keyof React.JSX.IntrinsicElements;
+  className?: string;
+  children?: React.ReactNode;
+} & React.HTMLAttributes<HTMLDivElement>;
 
 /**
  * site — slim editorial layout: max-w-[1440px], mx-auto, 12-col grid, 8px gap, 32px px
@@ -14,21 +16,23 @@ type ContainerProps = HTMLAttributes<HTMLDivElement> & {
  */
 export function Container({
   variant = "app",
-  as: Tag = "div",
+  as,
   className,
   children,
   ...props
 }: ContainerProps) {
-  return (
-    <Tag
-      className={cn(
+  const Tag = (as ?? "div") as keyof React.JSX.IntrinsicElements;
+
+  return React.createElement(
+    Tag,
+    {
+      className: cn(
         "w-full grid grid-cols-6 sm:grid-cols-12 gap-2 px-4 sm:px-8",
         variant === "site" && "max-w-[904px] mx-auto sm:grid-cols-8",
         className,
-      )}
-      {...props}
-    >
-      {children}
-    </Tag>
+      ),
+      ...props,
+    },
+    children,
   );
 }

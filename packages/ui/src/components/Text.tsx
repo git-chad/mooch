@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { cn } from "../lib/cn";
 
 export type TextVariant =
@@ -132,16 +132,16 @@ export function Text({
   const Tag = as ?? defaultElements[variant];
   const resolvedColor = color ?? defaultColors[variant];
 
-  return (
-    <Tag
-      className={cn(
+  return React.createElement(
+    Tag,
+    {
+      className: cn(
         variantClasses[variant],
         colorClasses[resolvedColor],
         className,
-      )}
-      {...props}
-    >
-      {children}
-    </Tag>
+      ),
+      ...props,
+    },
+    children,
   );
 }
