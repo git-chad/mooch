@@ -12,7 +12,13 @@ export type StickerConfig = {
   width: number;
   height: number;
   baseRotate: number;
-  positionClass: string;
+  // Position center point in px:
+  // centerX: horizontal offset from section center line
+  // centerY: vertical offset from section top
+  placement: {
+    centerX: number;
+    centerY: number;
+  };
 };
 
 export type StickerOffset = { x: number; y: number };

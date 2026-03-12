@@ -52,7 +52,7 @@ export const stickerConfigs: readonly StickerConfig[] = [
     width: 190,
     height: 200,
     baseRotate: -7,
-    positionClass: "left-[max(20px,calc(50%-670px))] top-[210px]",
+    placement: { centerX: -512, centerY: 306 },
   },
   {
     id: "sticker-group-admin",
@@ -61,7 +61,7 @@ export const stickerConfigs: readonly StickerConfig[] = [
     width: 210,
     height: 210,
     baseRotate: 6,
-    positionClass: "right-[max(16px,calc(50%-690px))] top-[340px]",
+    placement: { centerX: 564, centerY: 149},
   },
   {
     id: "sticker-no-spreadsheet",
@@ -70,7 +70,7 @@ export const stickerConfigs: readonly StickerConfig[] = [
     width: 220,
     height: 180,
     baseRotate: -5,
-    positionClass: "left-[max(36px,calc(50%-620px))] bottom-[150px]",
+    placement: { centerX: -564, centerY: 852  },
   },
   {
     id: "sticker-ask-away",
@@ -79,7 +79,7 @@ export const stickerConfigs: readonly StickerConfig[] = [
     width: 148,
     height: 148,
     baseRotate: 8,
-    positionClass: "bottom-[190px] right-[max(34px,calc(50%-610px))]",
+    placement: { centerX: 441, centerY: 1232 },
   },
   {
     id: "sticker-vote-later",
@@ -88,7 +88,7 @@ export const stickerConfigs: readonly StickerConfig[] = [
     width: 190,
     height: 190,
     baseRotate: 4,
-    positionClass: "right-[max(38px,calc(50%-620px))] bottom-[44px]",
+    placement: { centerX: 492, centerY: 743 },
   },
 ];
 
