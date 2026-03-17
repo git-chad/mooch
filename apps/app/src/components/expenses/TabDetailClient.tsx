@@ -1,13 +1,17 @@
 "use client";
 
 import type { TabWithStats } from "@mooch/db";
+import { useExpenseStore } from "@mooch/stores";
 import type { Group, GroupMember, Profile } from "@mooch/types";
 import { Badge, Button, Container, Text } from "@mooch/ui";
+import { ChevronLeft, Receipt, Settings } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
+import { TextMorph } from "torph/react";
 import { useState } from "react";
 import { GroupIcon } from "@/components/groups/group-icon";
 import { TransitionSlot } from "@/components/TransitionSlot";
+import { closeTab, reopenTab } from "@/app/actions/tabs";
 import {
   getLayoutTransition,
   getSurfaceTransition,
@@ -16,6 +20,7 @@ import {
 import { AddExpenseModal } from "./AddExpenseModal";
 import { BalanceCard } from "./BalanceCard";
 import { BalanceMatrix } from "./BalanceMatrix";
+import { CreateTabModal } from "./CreateTabModal";
 import { ExpenseList } from "./ExpenseList";
 import { TabReceipt } from "./TabReceipt";
 
@@ -42,14 +47,43 @@ export function TabDetailClient({
   const [view, setView] = useState<ViewTab>("activity");
   const [addOpen, setAddOpen] = useState(false);
   const [receiptOpen, setReceiptOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const reducedMotion = useReducedMotion() ?? false;
 
+  const upsertTab = useExpenseStore((s) => s.upsertTab);
+
   const isClosed = tab.status === "closed";
+  // Check if current user is tab creator or admin
+  const currentMember = group.members.find(
+    (m) => m.user_id === currentUserId,
+  );
+  const canManage =
+    tab.created_by === currentUserId || currentMember?.role === "admin";
+
+  async function handleToggleStatus() {
+    setStatusLoading(true);
+    setActionError(null);
+
+    const result = isClosed ? await reopenTab(tabId) : await closeTab(tabId);
+
+    setStatusLoading(false);
+
+    if (result && "error" in result) {
+      setActionError(result.error);
+      return;
+    }
+
+    if (result && "tab" in result) {
+      upsertTab(result.tab);
+    }
+  }
 
   return (
     <Container as="section" className="py-4 sm:py-6">
       <TransitionSlot
-        className="col-span-6 sm:col-span-12 mx-auto w-full max-w-5xl space-y-5"
+        className="col-span-6 sm:col-span-12 mx-auto w-full max-w-2xl space-y-5"
         variant="context"
       >
         {/* Back link + header */}
@@ -58,7 +92,7 @@ export function TabDetailClient({
           className="inline-flex items-center gap-1.5 text-[13px] font-medium transition-colors"
           style={{ color: "#8c7463" }}
         >
-          <span aria-hidden="true">&larr;</span>
+          <ChevronLeft className="w-4 h-4" />
           All tabs
         </Link>
 
@@ -73,7 +107,7 @@ export function TabDetailClient({
             <div className="min-w-0">
               <div className="flex items-center gap-2">
                 <Text variant="title" className="truncate">
-                  {tab.name}
+                  <TextMorph>{tab.name}</TextMorph>
                 </Text>
                 {isClosed && <Badge variant="closed" label="Closed" />}
               </div>
@@ -81,13 +115,25 @@ export function TabDetailClient({
           </div>
 
           <div className="flex items-center gap-2">
+            {canManage && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setEditOpen(true)}
+                aria-label="Tab settings"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+            )}
             <Button
               type="button"
               variant="secondary"
               size="sm"
               onClick={() => setReceiptOpen(true)}
+              aria-label="View receipt"
             >
-              View receipt
+              <Receipt className="w-4 h-4" />
             </Button>
             {!isClosed && (
               <Button
@@ -101,6 +147,12 @@ export function TabDetailClient({
             )}
           </div>
         </header>
+
+        {actionError && (
+          <Text variant="caption" color="danger" className="block">
+            {actionError}
+          </Text>
+        )}
 
         {/* Tab switcher */}
         <div
@@ -204,6 +256,7 @@ export function TabDetailClient({
           members={group.members}
           currentUserId={currentUserId}
           groupCurrency={group.currency}
+          tabCurrency={tab.currency}
           locale={group.locale}
         />
         <TabReceipt
@@ -213,6 +266,16 @@ export function TabDetailClient({
           members={group.members}
           groupCurrency={group.currency}
           locale={group.locale}
+        />
+        <CreateTabModal
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          groupId={groupId}
+          groupCurrency={group.currency}
+          mode="edit"
+          tab={tab}
+          statusLoading={statusLoading}
+          onToggleStatus={handleToggleStatus}
         />
       </TransitionSlot>
     </Container>

@@ -28,7 +28,7 @@ export function TabListClient({ groupId, group, currentUserId }: Props) {
   return (
     <Container as="section" className="py-4 sm:py-6">
       <TransitionSlot
-        className="col-span-6 sm:col-span-12 mx-auto w-full max-w-5xl space-y-5"
+        className="col-span-6 sm:col-span-12 mx-auto w-full max-w-2xl space-y-5"
         variant="context"
       >
         {/* Page header */}
@@ -53,39 +53,52 @@ export function TabListClient({ groupId, group, currentUserId }: Props) {
           global
         />
 
-        {/* Open tabs */}
-        {openTabs.length > 0 && (
-          <div className="space-y-2">
-            <Text variant="overline" color="subtle" className="block px-1">
-              Open tabs
-            </Text>
-            {openTabs.map((tab) => (
-              <TabCard
-                key={tab.id}
-                tab={tab}
-                groupId={groupId}
-                currency={group.currency}
-                locale={group.locale}
-              />
-            ))}
-          </div>
-        )}
+        {/* Tabs grid — open & closed side by side on sm+ */}
+        {tabs.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Open tabs */}
+            {openTabs.length > 0 && (
+              <div className="space-y-0.5">
+                <Text
+                  variant="overline"
+                  color="subtle"
+                  className="block px-3 mb-1"
+                >
+                  Open
+                </Text>
+                {openTabs.map((tab) => (
+                  <TabCard
+                    key={tab.id}
+                    tab={tab}
+                    groupId={groupId}
+                    currency={tab.currency || group.currency}
+                    locale={group.locale}
+                  />
+                ))}
+              </div>
+            )}
 
-        {/* Closed tabs */}
-        {closedTabs.length > 0 && (
-          <div className="space-y-2">
-            <Text variant="overline" color="subtle" className="block px-1">
-              Closed tabs
-            </Text>
-            {closedTabs.map((tab) => (
-              <TabCard
-                key={tab.id}
-                tab={tab}
-                groupId={groupId}
-                currency={group.currency}
-                locale={group.locale}
-              />
-            ))}
+            {/* Closed tabs */}
+            {closedTabs.length > 0 && (
+              <div className="space-y-0.5">
+                <Text
+                  variant="overline"
+                  color="subtle"
+                  className="block px-3 mb-1"
+                >
+                  Closed
+                </Text>
+                {closedTabs.map((tab) => (
+                  <TabCard
+                    key={tab.id}
+                    tab={tab}
+                    groupId={groupId}
+                    currency={tab.currency || group.currency}
+                    locale={group.locale}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -114,6 +127,7 @@ export function TabListClient({ groupId, group, currentUserId }: Props) {
           open={createOpen}
           onOpenChange={setCreateOpen}
           groupId={groupId}
+          groupCurrency={group.currency}
         />
       </TransitionSlot>
     </Container>

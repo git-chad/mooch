@@ -1,7 +1,12 @@
-import type { Balance, Expense, Profile, Tab } from "@mooch/types";
+import type { Balance, Expense, Profile, SettlementPayment, Tab } from "@mooch/types";
 import { create } from "zustand";
 
 export type BalanceWithProfiles = Balance & {
+  from_profile: Profile;
+  to_profile: Profile;
+};
+
+export type SettlementPaymentWithProfiles = SettlementPayment & {
   from_profile: Profile;
   to_profile: Profile;
 };
@@ -19,6 +24,11 @@ type ExpenseStore = {
   upsertExpense: (expense: Expense) => void;
   removeExpense: (id: string) => void;
   appendExpenses: (expenses: Expense[]) => void;
+
+  // ── Settlement payments (scoped to the active tab) ────────────────────────
+  settlementPayments: SettlementPaymentWithProfiles[];
+  setSettlementPayments: (payments: SettlementPaymentWithProfiles[]) => void;
+  upsertSettlementPayment: (payment: SettlementPaymentWithProfiles) => void;
 
   // ── Balances (scoped to the active tab) ───────────────────────────────────
   balances: BalanceWithProfiles[];
@@ -66,6 +76,18 @@ export const useExpenseStore = create<ExpenseStore>((set) => ({
       return { expenses: [...s.expenses, ...fresh] };
     }),
 
+  // ── Settlement payments ───────────────────────────────────────────────────
+  settlementPayments: [],
+  setSettlementPayments: (settlementPayments) => set({ settlementPayments }),
+  upsertSettlementPayment: (payment) =>
+    set((s) => {
+      const idx = s.settlementPayments.findIndex((p) => p.id === payment.id);
+      if (idx === -1) return { settlementPayments: [payment, ...s.settlementPayments] };
+      const next = [...s.settlementPayments];
+      next[idx] = payment;
+      return { settlementPayments: next };
+    }),
+
   // ── Balances ──────────────────────────────────────────────────────────────
   balances: [],
   setBalances: (balances) => set({ balances }),
@@ -75,5 +97,5 @@ export const useExpenseStore = create<ExpenseStore>((set) => ({
   setGlobalBalances: (globalBalances) => set({ globalBalances }),
 
   clear: () =>
-    set({ tabs: [], expenses: [], balances: [], globalBalances: [] }),
+    set({ tabs: [], expenses: [], settlementPayments: [], balances: [], globalBalances: [] }),
 }));

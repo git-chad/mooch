@@ -8,5 +8,11 @@
     "start": "next start --port 3001",
     "lint": "biome check .",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.5.0",
+    "leva": "^0.10.1",
+    "three": "^0.183.2"
   }
 }

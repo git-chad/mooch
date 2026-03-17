@@ -229,7 +229,7 @@ body {
 
 /* ── Button: sizes ───────────────────────────────────────────────────────── */
 .btn-sm { padding: 6px 12px; font-size: 12px; line-height: 16px; }
-.btn-md { padding: 10px 14px; font-size: 13px; line-height: 16px; }
+.btn-md { padding: 6px 12px; font-size: 12px; line-height: 16px; }
 .btn-lg { padding: 12px 20px; font-size: 14px; line-height: 20px; }
 
 /* ── Button: primary ─────────────────────────────────────────────────────── */

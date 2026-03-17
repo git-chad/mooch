@@ -12,6 +12,7 @@ import {
   motionDuration,
 } from "@/lib/motion";
 import { ExpenseCard } from "./ExpenseCard";
+import { SettlementCard } from "./SettlementCard";
 
 type Member = GroupMember & { profile: Profile };
 
@@ -24,6 +25,10 @@ type Props = {
   locale: string;
 };
 
+type FeedItem =
+  | { kind: "expense"; id: string; created_at: string }
+  | { kind: "settlement"; id: string; created_at: string };
+
 const revealedTabs = new Set<string>();
 
 export function ExpenseList({
@@ -35,6 +40,7 @@ export function ExpenseList({
   locale,
 }: Props) {
   const expenses = useExpenseStore((s) => s.expenses);
+  const settlementPayments = useExpenseStore((s) => s.settlementPayments);
   const appendExpenses = useExpenseStore((s) => s.appendExpenses);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(expenses.length === 20);
@@ -54,6 +60,27 @@ export function ExpenseList({
     [reducedMotion],
   );
 
+  // Interleave expenses and settlements by created_at descending
+  const feedItems: FeedItem[] = useMemo(() => {
+    const items: FeedItem[] = [
+      ...expenses.map((e) => ({
+        kind: "expense" as const,
+        id: e.id,
+        created_at: e.created_at,
+      })),
+      ...settlementPayments.map((s) => ({
+        kind: "settlement" as const,
+        id: s.id,
+        created_at: s.created_at,
+      })),
+    ];
+    items.sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    );
+    return items;
+  }, [expenses, settlementPayments]);
+
   async function handleLoadMore() {
     const last = expenses[expenses.length - 1];
     if (!last) return;
@@ -68,7 +95,7 @@ export function ExpenseList({
     }
   }
 
-  if (expenses.length === 0) {
+  if (feedItems.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <p className="text-5xl mb-4">🍕</p>
@@ -101,44 +128,88 @@ export function ExpenseList({
       }}
     >
       <AnimatePresence initial={false}>
-        {expenses.map((expense) => (
-          <motion.div
-            key={expense.id}
-            layout="position"
-            variants={{
-              hidden: reducedMotion
-                ? { opacity: 0 }
-                : { opacity: 0, y: 12, filter: "blur(6px)" },
-              show: { opacity: 1, y: 0, filter: "blur(0px)" },
-            }}
-            initial={
-              shouldAnimateIn
-                ? undefined
-                : reducedMotion
+        {feedItems.map((item) => {
+          if (item.kind === "expense") {
+            const expense = expenses.find((e) => e.id === item.id);
+            if (!expense) return null;
+            return (
+              <motion.div
+                key={`expense-${expense.id}`}
+                layout="position"
+                variants={{
+                  hidden: reducedMotion
+                    ? { opacity: 0 }
+                    : { opacity: 0, y: 12, filter: "blur(6px)" },
+                  show: { opacity: 1, y: 0, filter: "blur(0px)" },
+                }}
+                initial={
+                  shouldAnimateIn
+                    ? undefined
+                    : reducedMotion
+                      ? { opacity: 0 }
+                      : { opacity: 0, y: 8 }
+                }
+                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                exit={
+                  reducedMotion
+                    ? { opacity: 0 }
+                    : { opacity: 0, y: -10, scale: 0.985 }
+                }
+                transition={itemTransition}
+                layoutDependency={feedItems.length}
+              >
+                <ExpenseCard
+                  groupId={groupId}
+                  tabId={tabId}
+                  expense={expense}
+                  members={members}
+                  currentUserId={currentUserId}
+                  currency={currency}
+                  locale={locale}
+                  layoutTransition={layoutTransition}
+                />
+              </motion.div>
+            );
+          }
+
+          const settlement = settlementPayments.find(
+            (s) => s.id === item.id,
+          );
+          if (!settlement) return null;
+          return (
+            <motion.div
+              key={`settlement-${settlement.id}`}
+              layout="position"
+              variants={{
+                hidden: reducedMotion
                   ? { opacity: 0 }
-                  : { opacity: 0, y: 8 }
-            }
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            exit={
-              reducedMotion
-                ? { opacity: 0 }
-                : { opacity: 0, y: -10, scale: 0.985 }
-            }
-            transition={itemTransition}
-            layoutDependency={expenses.length}
-          >
-            <ExpenseCard
-              groupId={groupId}
-              tabId={tabId}
-              expense={expense}
-              members={members}
-              currentUserId={currentUserId}
-              currency={currency}
-              locale={locale}
-              layoutTransition={layoutTransition}
-            />
-          </motion.div>
-        ))}
+                  : { opacity: 0, y: 12, filter: "blur(6px)" },
+                show: { opacity: 1, y: 0, filter: "blur(0px)" },
+              }}
+              initial={
+                shouldAnimateIn
+                  ? undefined
+                  : reducedMotion
+                    ? { opacity: 0 }
+                    : { opacity: 0, y: 8 }
+              }
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={
+                reducedMotion
+                  ? { opacity: 0 }
+                  : { opacity: 0, y: -10, scale: 0.985 }
+              }
+              transition={itemTransition}
+              layoutDependency={feedItems.length}
+            >
+              <SettlementCard
+                settlement={settlement}
+                currentUserId={currentUserId}
+                locale={locale}
+              />
+            </motion.div>
+          );
+        })}
       </AnimatePresence>
 
       {hasMore && (

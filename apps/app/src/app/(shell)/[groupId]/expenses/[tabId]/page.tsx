@@ -2,10 +2,14 @@ import {
   getBalances,
   getExpenses,
   getGroupById,
+  getSettlementPayments,
   getTabById,
 } from "@mooch/db";
 import { createClient } from "@mooch/db/server";
-import type { BalanceWithProfiles } from "@mooch/stores";
+import type {
+  BalanceWithProfiles,
+  SettlementPaymentWithProfiles,
+} from "@mooch/stores";
 import { notFound, redirect } from "next/navigation";
 import { ExpensesTabProvider } from "@/components/expenses/ExpensesProvider";
 import { TabDetailClient } from "@/components/expenses/TabDetailClient";
@@ -27,12 +31,14 @@ export default async function TabDetailPage({ params }: Props) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [group, tab, initialExpenses, initialBalances] = await Promise.all([
-    getGroupById(admin, groupId),
-    getTabById(admin, tabId),
-    getExpenses(admin, tabId),
-    getBalances(admin, tabId),
-  ]);
+  const [group, tab, initialExpenses, initialBalances, initialSettlements] =
+    await Promise.all([
+      getGroupById(admin, groupId),
+      getTabById(admin, tabId),
+      getExpenses(admin, tabId),
+      getBalances(admin, tabId),
+      getSettlementPayments(admin, tabId),
+    ]);
 
   if (!group || !tab || tab.group_id !== groupId) notFound();
 
@@ -41,6 +47,7 @@ export default async function TabDetailPage({ params }: Props) {
       tabId={tabId}
       initialExpenses={initialExpenses}
       initialBalances={initialBalances as BalanceWithProfiles[]}
+      initialSettlements={initialSettlements as SettlementPaymentWithProfiles[]}
     >
       <TabDetailClient
         groupId={groupId}
