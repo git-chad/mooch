@@ -56,7 +56,7 @@ export default async function ShellLayout({
           className="hidden md:flex flex-col w-60 shrink-0"
           profile={profileData}
         />
-        <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden bg-[linear-gradient(180deg,#FCFBF8_0%,#F8F5F1_100%)] md:shadow-[inset_1px_0_0_rgba(231,219,209,0.75)]">
           <MobileTopBar className="md:hidden" profile={profileData} />
           <main className="flex-1 overflow-y-auto pb-20 md:pb-0">
             {children}

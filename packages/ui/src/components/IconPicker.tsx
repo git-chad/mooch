@@ -1,48 +1,205 @@
 "use client";
 
-import { useState, useMemo, useId } from "react";
 import { Popover } from "@base-ui-components/react";
-import {
-  // ── General ──────────────────────────────────────────────────────────────────
-  Star, Heart, Flame, Zap, Sparkles, Sparkle, Gift, Tag, Bookmark, Flag, Pin,
-  Hash, Bell, BellRing, Lock, Eye, Crown, Trophy, Award, Medal, Ribbon, Gem,
-  CircleCheck, CircleAlert, CircleX,
-  // ── Finance ──────────────────────────────────────────────────────────────────
-  Wallet, CreditCard, Receipt, Coins, TrendingUp, TrendingDown, PiggyBank,
-  DollarSign, Banknote, BarChart2, Scale, HandCoins,
-  // ── Food ─────────────────────────────────────────────────────────────────────
-  UtensilsCrossed, Pizza, Cake, CakeSlice, Apple, Banana, Carrot, Cherry,
-  Grape, Sandwich, Hamburger, Croissant, IceCream, IceCreamCone, Donut,
-  Popcorn, Soup, Salad, Beef, Shrimp, Egg, EggFried, Fish, Milk, Cookie,
-  Lollipop, Candy, Ham, Wheat,
-  // ── Drinks ───────────────────────────────────────────────────────────────────
-  Coffee, Beer, Wine, BottleWine, Martini, FlaskConical, FlaskRound,
-  GlassWater, CupSoda,
-  // ── Transport ────────────────────────────────────────────────────────────────
-  Car, CarFront, Plane, Train, Bike, Bus, Ship, Rocket, Motorbike, Truck,
-  Van, Sailboat, CableCar, Helicopter,
-  // ── Places ───────────────────────────────────────────────────────────────────
-  Home, MapPin, Building2, TreePine, Tent, Landmark, Globe, Mountain,
-  MountainSnow, Castle, TreePalm, TreeDeciduous,
-  // ── Activities ───────────────────────────────────────────────────────────────
-  Music, Gamepad2, Film, Camera, Dumbbell, Volleyball, Ticket, ShoppingCart,
-  ShoppingBag, Scissors, Wrench, Palette, Guitar, Drum, Piano, Telescope,
-  Hammer, Pickaxe, Shovel, FishingRod, BowArrow, FireExtinguisher, Anvil,
-  // ── Animals & Nature ─────────────────────────────────────────────────────────
-  Cat, Dog, Bird, Rabbit, Panda, Rat, Turtle, Snail, Worm, Bug, Squirrel,
-  PawPrint, Feather, Leaf, Flower, Rose, Sprout, Clover, Footprints, Sun,
-  // ── Fun & Silly ───────────────────────────────────────────────────────────────
-  Ghost, Skull, Bomb, PartyPopper, Balloon, Drama, VenetianMask, Wand,
-  Dice1, Dice2, Dice3, Dice4, Dice5, Dice6, Dices,
-  // ── People & Social ──────────────────────────────────────────────────────────
-  Users, User, Smile, MessageCircle, Phone, Mail, Handshake, UserCheck,
-  UserPlus, Baby, Stethoscope, GraduationCap,
-  // ── Zodiac ───────────────────────────────────────────────────────────────────
-  ZodiacAquarius, ZodiacAries, ZodiacCancer, ZodiacCapricorn, ZodiacGemini,
-  ZodiacLeo, ZodiacLibra, ZodiacOphiuchus, ZodiacPisces, ZodiacSagittarius,
-  ZodiacScorpio, ZodiacTaurus, ZodiacVirgo,
-} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import {
+  Anvil,
+  Apple,
+  Award,
+  Baby,
+  Balloon,
+  Banana,
+  Banknote,
+  BarChart2,
+  Beef,
+  Beer,
+  Bell,
+  BellRing,
+  Bike,
+  Bird,
+  Bomb,
+  Bookmark,
+  BottleWine,
+  BowArrow,
+  Bug,
+  Building2,
+  Bus,
+  CableCar,
+  Cake,
+  CakeSlice,
+  Camera,
+  Candy,
+  // ── Transport ────────────────────────────────────────────────────────────────
+  Car,
+  CarFront,
+  Carrot,
+  Castle,
+  // ── Animals & Nature ─────────────────────────────────────────────────────────
+  Cat,
+  Cherry,
+  CircleAlert,
+  CircleCheck,
+  CircleX,
+  Clover,
+  // ── Drinks ───────────────────────────────────────────────────────────────────
+  Coffee,
+  Coins,
+  Cookie,
+  CreditCard,
+  Croissant,
+  Crown,
+  CupSoda,
+  Dice1,
+  Dice2,
+  Dice3,
+  Dice4,
+  Dice5,
+  Dice6,
+  Dices,
+  Dog,
+  DollarSign,
+  Donut,
+  Drama,
+  Drum,
+  Dumbbell,
+  Egg,
+  EggFried,
+  Eye,
+  Feather,
+  Film,
+  FireExtinguisher,
+  Fish,
+  FishingRod,
+  Flag,
+  Flame,
+  FlaskConical,
+  FlaskRound,
+  Flower,
+  Footprints,
+  Gamepad2,
+  Gem,
+  // ── Fun & Silly ───────────────────────────────────────────────────────────────
+  Ghost,
+  Gift,
+  GlassWater,
+  Globe,
+  GraduationCap,
+  Grape,
+  Guitar,
+  Ham,
+  Hamburger,
+  Hammer,
+  HandCoins,
+  Handshake,
+  Hash,
+  Heart,
+  Helicopter,
+  // ── Places ───────────────────────────────────────────────────────────────────
+  Home,
+  IceCream,
+  IceCreamCone,
+  Landmark,
+  Leaf,
+  Lock,
+  Lollipop,
+  Mail,
+  MapPin,
+  Martini,
+  Medal,
+  MessageCircle,
+  Milk,
+  Motorbike,
+  Mountain,
+  MountainSnow,
+  // ── Activities ───────────────────────────────────────────────────────────────
+  Music,
+  Palette,
+  Panda,
+  PartyPopper,
+  PawPrint,
+  Phone,
+  Piano,
+  Pickaxe,
+  PiggyBank,
+  Pin,
+  Pizza,
+  Plane,
+  Popcorn,
+  Rabbit,
+  Rat,
+  Receipt,
+  Ribbon,
+  Rocket,
+  Rose,
+  Sailboat,
+  Salad,
+  Sandwich,
+  Scale,
+  Scissors,
+  Ship,
+  ShoppingBag,
+  ShoppingCart,
+  Shovel,
+  Shrimp,
+  Skull,
+  Smile,
+  Snail,
+  Soup,
+  Sparkle,
+  Sparkles,
+  Sprout,
+  Squirrel,
+  // ── General ──────────────────────────────────────────────────────────────────
+  Star,
+  Stethoscope,
+  Sun,
+  Tag,
+  Telescope,
+  Tent,
+  Ticket,
+  Train,
+  TreeDeciduous,
+  TreePalm,
+  TreePine,
+  TrendingDown,
+  TrendingUp,
+  Trophy,
+  Truck,
+  Turtle,
+  User,
+  UserCheck,
+  UserPlus,
+  // ── People & Social ──────────────────────────────────────────────────────────
+  Users,
+  // ── Food ─────────────────────────────────────────────────────────────────────
+  UtensilsCrossed,
+  Van,
+  VenetianMask,
+  Volleyball,
+  // ── Finance ──────────────────────────────────────────────────────────────────
+  Wallet,
+  Wand,
+  Wheat,
+  Wine,
+  Worm,
+  Wrench,
+  Zap,
+  // ── Zodiac ───────────────────────────────────────────────────────────────────
+  ZodiacAquarius,
+  ZodiacAries,
+  ZodiacCancer,
+  ZodiacCapricorn,
+  ZodiacGemini,
+  ZodiacLeo,
+  ZodiacLibra,
+  ZodiacOphiuchus,
+  ZodiacPisces,
+  ZodiacSagittarius,
+  ZodiacScorpio,
+  ZodiacTaurus,
+  ZodiacVirgo,
+} from "lucide-react";
+import { useId, useMemo, useState } from "react";
 import { useWebHaptics } from "web-haptics/react";
 import { cn } from "../lib/cn";
 
@@ -309,7 +466,7 @@ export type IconPickerProps = {
   color?: string;
   label?: string;
   placeholder?: string;
-  size?: "sm" | "md";
+  size?: "sm" | "md" | "lg";
   disabled?: boolean;
   className?: string;
 };
@@ -330,13 +487,16 @@ export function IconPicker({
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const haptic = useWebHaptics();
 
-  const SelectedIcon = value ? ALL_ICONS.find((e) => e.name === value)?.Icon : null;
+  const SelectedIcon = value
+    ? ALL_ICONS.find((e) => e.name === value)?.Icon
+    : null;
 
   const visibleIcons = useMemo(() => {
     const pool =
       activeCategory === "All"
         ? ALL_ICONS
-        : CATEGORIES.find((c) => c.label === activeCategory)?.icons ?? ALL_ICONS;
+        : (CATEGORIES.find((c) => c.label === activeCategory)?.icons ??
+          ALL_ICONS);
     if (!query.trim()) return pool;
     const q = query.toLowerCase();
     return pool.filter((e) => e.name.toLowerCase().includes(q));
@@ -349,8 +509,14 @@ export function IconPicker({
     setQuery("");
   }
 
-  const triggerSize = size === "sm" ? "h-9 w-9" : "h-10 w-10";
-  const iconSize = size === "sm" ? 16 : 18;
+  const triggerSize =
+    size === "sm"
+      ? "h-9 w-9"
+      : size === "lg"
+        ? "h-[42px] w-[42px]"
+        : "h-10 w-10";
+  const triggerRadius = size === "lg" ? "rounded-[14px]" : "rounded-lg";
+  const iconSize = size === "sm" ? 16 : size === "lg" ? 20 : 18;
 
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
@@ -369,7 +535,7 @@ export function IconPicker({
           disabled={disabled}
           onClick={() => !open && haptic.trigger("light")}
           className={cn(
-            "relative inline-flex items-center justify-center rounded-lg border",
+            "relative inline-flex items-center justify-center border",
             "bg-[#FDFCFB] text-[#4A3728]",
             "border-[#D8C8BC] hover:border-[#B8A898]",
             "shadow-[0_1px_2px_rgba(132,100,79,0.08)]",
@@ -378,11 +544,16 @@ export function IconPicker({
             "data-[popup-open]:border-[#7FBE44] data-[popup-open]:ring-2 data-[popup-open]:ring-[#7FBE44]/15",
             "disabled:opacity-50 disabled:cursor-not-allowed",
             triggerSize,
+            triggerRadius,
           )}
           aria-label={value ? `Change icon: ${value}` : placeholder}
         >
           {SelectedIcon ? (
-            <SelectedIcon size={iconSize} strokeWidth={1.75} style={color ? { color } : undefined} />
+            <SelectedIcon
+              size={iconSize}
+              strokeWidth={1.75}
+              style={color ? { color } : undefined}
+            />
           ) : (
             <PlaceholderIcon size={iconSize} />
           )}
@@ -391,7 +562,6 @@ export function IconPicker({
         <Popover.Portal>
           <Popover.Positioner sideOffset={8} align="start" className="z-50">
             <Popover.Popup className="icon-picker-popup bg-[#FDFCFB] border border-[#EDE3DA] rounded-2xl shadow-[var(--shadow-elevated)] outline-none w-[312px] overflow-hidden flex flex-col">
-
               {/* Search */}
               <div className="px-3 pt-3 pb-2 border-b border-[#EDE3DA]">
                 <div className="relative">
@@ -435,7 +605,9 @@ export function IconPicker({
                 {visibleIcons.length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-8 text-[#B8A898]">
                     <PlaceholderIcon size={24} />
-                    <p className="mt-2 text-xs font-sans">No icons match "{query}"</p>
+                    <p className="mt-2 text-xs font-sans">
+                      No icons match "{query}"
+                    </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-8 gap-0.5">
@@ -463,10 +635,16 @@ export function IconPicker({
               {/* Footer: current name + clear */}
               {value && (
                 <div className="border-t border-[#EDE3DA] px-3 py-2 flex items-center justify-between">
-                  <span className="text-[11px] font-mono text-[#8C7463]">{value}</span>
+                  <span className="text-[11px] font-mono text-[#8C7463]">
+                    {value}
+                  </span>
                   <button
                     type="button"
-                    onClick={() => { haptic.trigger("light"); onValueChange(""); setOpen(false); }}
+                    onClick={() => {
+                      haptic.trigger("light");
+                      onValueChange("");
+                      setOpen(false);
+                    }}
                     className="text-[11px] font-sans text-[#8C7463] hover:text-[#C0392B] transition-colors outline-none"
                   >
                     Clear
@@ -499,15 +677,37 @@ export function LucideIconByName({
   const entry = ALL_ICONS.find((e) => e.name === name);
   if (!entry) return null;
   const { Icon } = entry;
-  return <Icon size={size} strokeWidth={strokeWidth} className={className} style={style} />;
+  return (
+    <Icon
+      size={size}
+      strokeWidth={strokeWidth}
+      className={className}
+      style={style}
+    />
+  );
 }
 
 // ── Internal icons ─────────────────────────────────────────────────────────────
 
 function PlaceholderIcon({ size = 18 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 18 18" fill="none" aria-hidden="true">
-      <rect x="3" y="3" width="12" height="12" rx="3" stroke="currentColor" strokeWidth="1.5" strokeDasharray="3 2" />
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 18 18"
+      fill="none"
+      aria-hidden="true"
+    >
+      <rect
+        x="3"
+        y="3"
+        width="12"
+        height="12"
+        rx="3"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeDasharray="3 2"
+      />
       <circle cx="9" cy="9" r="1.5" fill="currentColor" opacity="0.4" />
     </svg>
   );
@@ -515,9 +715,21 @@ function PlaceholderIcon({ size = 18 }: { size?: number }) {
 
 function SearchIcon({ className }: { className?: string }) {
   return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className={className} aria-hidden="true">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 14 14"
+      fill="none"
+      className={className}
+      aria-hidden="true"
+    >
       <circle cx="6" cy="6" r="4" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M9.5 9.5L12.5 12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path
+        d="M9.5 9.5L12.5 12.5"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

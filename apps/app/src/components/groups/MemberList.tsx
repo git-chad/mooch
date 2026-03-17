@@ -17,7 +17,7 @@ export function MemberList({
   onRemove,
 }: MemberListProps) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-2.5">
       {members.map((member) => (
         <MemberRow
           key={member.user_id}
