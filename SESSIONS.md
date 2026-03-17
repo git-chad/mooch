@@ -159,6 +159,34 @@ When a problem is encountered and fixed, log it here immediately:
 
 ---
 
+### Shared Button icon + label alignment was not guaranteed
+- **Problem:** Icon buttons could render with awkward icon/label stacking in some contexts because the shared `Button` content wrapper did not enforce a horizontal flex layout.
+- **Fix:** Updated `packages/ui/src/components/Button.tsx` so the internal text/content wrapper is always `inline-flex items-center gap-2 whitespace-nowrap` with icon shrink guard.
+- **Avoid:** For all compound controls (icon + label), enforce row layout in the shared component itself, not per-page overrides.
+
+---
+
+### Group settings icon/name mismatch was a control-size problem
+- **Problem:** The icon picker control next to group name looked misaligned because its trigger dimensions did not match input field sizing; this was initially misread as a row alignment issue.
+- **Fix:** Extended `IconPicker` with `size="lg"` and normalized it to input-like control geometry (`42x42`, `rounded-[14px]`), then used that size in group settings.
+- **Avoid:** When icon pickers sit beside text inputs, match control tokens (height/radius/border treatment) before tweaking layout containers.
+
+---
+
+### Cover URL hide/show toggle added unnecessary friction
+- **Problem:** Group settings introduced hide/show behavior for cover URL, adding extra clicks and visual noise despite the "show everything" UX direction.
+- **Fix:** Removed toggle state + toggle action entirely and made the cover URL input always visible.
+- **Avoid:** In desktop settings forms, default to visible optional fields unless there is a strong information-density reason to collapse.
+
+---
+
+### Members section had dead space and weak hierarchy
+- **Problem:** Member rows looked empty and unfinished (large unused area, weak metadata hierarchy, awkward balance between identity and actions).
+- **Fix:** Restyled `MemberRow` with clearer left/right structure (avatar + name + joined date, role badge always visible, actions grouped), and refined the section header/count presentation.
+- **Avoid:** Don’t rely on generic `justify-between` rows when one side has low information density; design explicit content groups and rhythm.
+
+---
+
 ## Sessions
 
 | Date | Summary | Problems |
@@ -179,3 +207,4 @@ When a problem is encountered and fixed, log it here immediately:
 | 2026-03-17 | Phase 4 Polls UI polish — optimistic voting (local state overlay, cleared when server catches up via realtime), rounded progress bars with spring animations on PollOptionTile, animated month nav + fixedWeeks on DateTimePicker (fixed height jumps), replaced all UI-chrome emojis with Lucide icons (Dices/Eye/EyeOff/Ban/UserX/Crown), added Base UI tooltips to corruption action buttons, removed premade poll templates from CreatePollModal, stable UUID keys for AnimatePresence on option list. Fixed `getPolls()` to join voter profiles (was returning empty voters breaking optimistic derivation). Removed `revalidatePath` from `vote()` server action to stop it overwriting optimistic state. | **50/50 vote bug** — `getPolls()` returned `voters: []` for all options, so optimistic state couldn't derive previous votes and showed wrong percentages. Fix: updated query to join voter profiles like `getPollById`. **Optimistic not instant** — `revalidatePath` in `vote()` triggered re-render that overwrote optimistic local state. Fix: removed revalidatePath, let realtime reconcile. **Popover trigger mismatch** — non-native DateTimePicker trigger path caused Base UI runtime assertion in this stack. Fix: use native `<button>` render target for `Popover.Trigger`. **Missing background on DateTimePicker popup** — used nonexistent `var(--surface-primary)` instead of `--color-surface`. Fix: hardcoded `#fdfcfb`. **Calendar height jumps** — months have different week counts. Fix: `fixedWeeks` + `showOutsideDays` on DayPicker. |
 | 2026-03-17 | Poll creator UX follow-up — redesigned option rows (number badge + grip + remove), implemented true drag-and-drop reorder (removed arrow controls), added duplicate-option detection + submit guard, added deadline quick presets (`In 1 hour`, `In 3 hours`, `Next 9:00 PM`), added live poll summary line, improved DateTimePicker and toggle accessibility labels/focus states, and added orchestrated staggered reveal motion for form sections. | **Fake drag affordance** — UI implied drag but reorder was arrow-only. Fix: semantic drag/drop list (`ul/li`) and removed arrows. **Duplicate error spam** — repeated inline duplicate copy per row. Fix: single section-level error + keep red borders; additionally dim non-duplicate rows while duplicates exist. **Preset-time rounding bug** — initial quick preset rounded to the hour unexpectedly. Fix: switched presets to exact millisecond offsets (`now + 1h/3h`) for the hour-based options. |
 | 2026-03-17 | Auth UI redesign break from main plan — fully restyled `/login` and `/signup` with a warm atmospheric auth scene, elevated card layout, design-system form controls (`Input`/`Button`/`Text`), animated error/success feedback, and staggered entrance choreography using shared motion tokens. Preserved all existing auth behavior: safe `next` redirect on login, Google OAuth callback flow, signup validation and Supabase signup/email-confirm flow. | Needed a quick fix during implementation for zsh path globbing with `(auth)` directories (`no matches found`); resolved by quoting paths when running file commands. |
+| 2026-03-17 | Group settings polish + consistency pass — fixed shared Button icon/label horizontal alignment at the component level, removed cover URL hide/show functionality, normalized icon picker sizing to match neighboring inputs, and redesigned members rows/section hierarchy for tighter visual quality (identity, role, metadata, actions). | **Icon button layout drift** — shared button did not enforce horizontal icon+label layout in all contexts. **Icon/name mismatch** — icon trigger geometry was inconsistent with input controls. **Unnecessary interaction cost** — cover URL hide/show toggle added avoidable clicks. **Members block felt unfinished** — row layout created dead space and weak hierarchy before the redesign. |
