@@ -1663,7 +1663,7 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 
 # Phase 6: Squad Feed & Media
 
-**Goal:** A chronological feed of photos, voice notes, and text posts with emoji reactions.
+**Goal:** A chronological, Instagram-like squad feed for photos, voice notes, and text posts with playful UI polish and instant reactions.
 
 **Status:** ⬜ — _Blocked until Phase 5 is APPROVED_
 
@@ -1671,7 +1671,7 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 
 ### 6.1 — Database Migrations: Feed
 
-- [ ] 6.1.1 — Create `supabase/migrations/0006_feed.sql`:
+- [ ] 6.1.1 — Create `supabase/migrations/0013_feed.sql`:
 
   ```sql
   create type feed_item_type as enum ('photo', 'voice', 'text');
@@ -1680,7 +1680,7 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
     id uuid primary key default gen_random_uuid(),
     group_id uuid references public.groups(id) on delete cascade not null,
     type feed_item_type not null,
-    media_url text,
+    media_path text,
     caption text,
     duration_seconds int,
     linked_expense_id uuid references public.expenses(id) on delete set null,
@@ -1717,47 +1717,52 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 ### 6.2 — Feed Queries & Server Actions
 
 - [ ] 6.2.1 — `packages/db/src/queries/feed.ts`:
-  - `getFeedItems(supabase, groupId, cursor?)` — paginated 20/page, desc by `created_at`, with creator profile + reaction counts
+  - `getFeedItems(supabase, groupId, cursor?)` — paginated 20/page, desc by `created_at`, continuous stream (no day grouping), with creator profile + reaction counts + current user reaction
   - `getFeedItemById(supabase, itemId)` — full detail
+  - `getSignedFeedMediaUrl(supabase, mediaPath)` — signed URL for private media rendering
 - [ ] 6.2.2 — `apps/app/src/app/actions/feed.ts` (Server Actions):
   - `addFeedItem(groupId, data)`
   - `deleteFeedItem(itemId)` — creator/admin only
-  - `toggleReaction(itemId, emoji)` — upsert/delete (one emoji per user)
+  - `toggleReaction(itemId, emoji)` — upsert/delete (one reaction per user; switching replaces previous)
+  - All actions apply optimistic local state first; realtime reconciles final truth
 
 ### 6.3 — Supabase Storage: Media
 
-- [ ] 6.3.1 — Create `feed-media` bucket (authenticated uploads, 10MB photo / 5MB voice limits).
+- [ ] 6.3.1 — Create **private** `feed-media` bucket (authenticated uploads, 10MB photo / 5MB voice limits).
 - [ ] 6.3.2 — Storage RLS: group members can upload + read.
 - [ ] 6.3.3 — `packages/db/src/storage/feed.ts`:
-  - `uploadFeedPhoto(supabase, groupId, file)` — compress to 1080px max width (Canvas API) → upload → return URL
-  - `uploadFeedVoice(supabase, groupId, blob)` — upload audio blob → return URL
-  - `deleteFeedMedia(supabase, url)`
+  - `uploadFeedPhoto(supabase, groupId, file)` — compress to 1080px max width (Canvas API) → upload → return storage path
+  - `uploadFeedVoice(supabase, groupId, blob)` — upload audio blob → return storage path
+  - `deleteFeedMedia(supabase, mediaPath)`
 
 ### 6.4 — Feed UI
 
 - [ ] 6.4.1 — `apps/app/src/app/(shell)/[groupId]/feed/page.tsx`:
-  - Vertical scroll of cards, infinite scroll (intersection observer)
-  - Floating post bar: "📷 Photo", "🎙️ Voice", "✍️ Text"
-  - Empty state: "Be the first to post something!"
+  - Single-column continuous stream (Instagram-like), infinite scroll (intersection observer), **no day separators**
+  - **No stories strip in v1**
+  - Docked quick composer bar (Text / Photo / Voice) that stays accessible while scrolling
+  - Medium-playful visual direction (homepage spirit through card/composer styling and motion), with **no decorative sticker/background layer in v1**
+  - Empty state copy uses edgy homepage tone
 - [ ] 6.4.2 — `apps/app/src/components/feed/FeedItemCard.tsx`:
   - Header: avatar, name, relative timestamp
+  - Comfortable (not compact) card density and spacing
   - **Photo:** full-width image + caption. Tap → lightbox.
-  - **Voice:** waveform + play/pause + duration. Caption below.
-  - **Text:** styled text content (max 500 chars).
-  - Context badge (expense / event / poll link)
+  - **Voice:** waveform/progress + play/pause + duration. Caption below.
+  - **Text:** styled text content (max 500 chars), media-first hierarchy preserved overall
+  - Context badge (expense / poll link in v1; event deferred to Phase 7)
   - Footer: `ReactionBar`
   - Delete button (own items only, confirm)
 - [ ] 6.4.3 — `apps/app/src/components/feed/ReactionBar.tsx`:
   - Emoji chips with counts ("❤️ 3 🔥 2")
-  - Tap to toggle your reaction
+  - Tap to toggle your reaction (one reaction per user per item)
   - "+" opens preset picker: ❤️ 😂 🔥 😮 👏 💀
-  - Scale bounce animation (Motion) on tap
-  - Real-time: subscribe to `feed_reactions` changes via Realtime
+  - Scale bounce animation (Motion) on tap + optimistic count updates
+  - Real-time: subscribe to `feed_reactions` changes via Realtime for reconciliation
 - [ ] 6.4.4 — `apps/app/src/components/feed/PostPhotoSheet.tsx`:
   - File input (camera on mobile, gallery on desktop)
   - Client-side preview + compression (Canvas API)
   - Caption textarea (optional, max 200 chars)
-  - Optional link to expense/event/poll
+  - Optional link to expense/poll (event deferred to Phase 7)
   - "Post" → compress → upload → `addFeedItem`
 - [ ] 6.4.5 — `apps/app/src/components/feed/RecordVoiceSheet.tsx`:
   - Start/stop recording via `MediaRecorder` API
@@ -1765,6 +1770,7 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
   - Max 60 seconds
   - Post-record playback preview
   - Caption textarea
+  - Optional link to expense/poll (event deferred to Phase 7)
   - "Post" → upload → `addFeedItem`
 - [ ] 6.4.6 — `apps/app/src/components/feed/ImageLightbox.tsx`:
   - Full-screen overlay, close on Escape or backdrop click
@@ -1783,6 +1789,9 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 - [ ] 6.5.8 — Lightbox opens, closes on Escape, navigates between photos.
 - [ ] 6.5.9 — Delete own item → removed. Cannot delete others'.
 - [ ] 6.5.10 — Infinite scroll loads next page at bottom.
+- [ ] 6.5.11 — Feed stays a continuous stream (no stories strip, no day separators).
+- [ ] 6.5.12 — Reactions and post/delete actions feel instant (optimistic), then reconcile via realtime without flicker.
+- [ ] 6.5.13 — Private media access works only for group members via signed URLs.
 
 ---
 
@@ -1792,9 +1801,12 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 - [ ] Voice recording works via MediaRecorder API
 - [ ] Client-side image compression works
 - [ ] Reactions work in real-time
+- [ ] Post/delete/reaction flows are optimistic and reconcile cleanly via realtime
 - [ ] Infinite scroll pagination works
 - [ ] Lightbox works (open, close, navigation)
 - [ ] Delete: own items only
+- [ ] No stories strip in v1 and continuous stream layout is preserved
+- [ ] Feed media bucket remains private; media renders through signed URLs only for members
 
 **Phase 6 Status: ⬜ — Awaiting approval**
 
@@ -1812,7 +1824,7 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 
 ### 7.1 — Database Migrations: Events
 
-- [ ] 7.1.1 — Create `supabase/migrations/0007_events.sql`:
+- [ ] 7.1.1 — Create `supabase/migrations/0014_events.sql`:
 
   ```sql
   create type rsvp_status as enum ('yes', 'no', 'maybe');
