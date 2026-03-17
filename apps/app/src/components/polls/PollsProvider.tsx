@@ -76,5 +76,15 @@ export function PollsProvider({
     };
   }, [groupId, setPolls]);
 
+  useEffect(() => {
+    const supabase = createBrowserClient();
+    const id = window.setInterval(async () => {
+      const fresh = await getPolls(supabase, groupId);
+      setPolls(fresh as PollWithOptions[]);
+    }, 30_000);
+
+    return () => window.clearInterval(id);
+  }, [groupId, setPolls]);
+
   return <>{children}</>;
 }

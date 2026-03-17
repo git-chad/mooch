@@ -151,6 +151,7 @@ type CorruptionRevealTileProps = {
   className?: string;
   imageClassName?: string;
   tone?: "framed" | "fullbleed";
+  revealDelayMs?: number;
 };
 
 export function CorruptionRevealTile({
@@ -160,6 +161,7 @@ export function CorruptionRevealTile({
   className,
   imageClassName,
   tone = "framed",
+  revealDelayMs = 120,
 }: CorruptionRevealTileProps) {
   const [showDetail, setShowDetail] = useState(reducedMotion);
   const tileClass = tone === "fullbleed" ? TILE_CLASS_FULLBLEED : TILE_CLASS_FRAMED;
@@ -175,9 +177,9 @@ export function CorruptionRevealTile({
     }
 
     setShowDetail(false);
-    const timer = window.setTimeout(() => setShowDetail(true), 120);
+    const timer = window.setTimeout(() => setShowDetail(true), revealDelayMs);
     return () => window.clearTimeout(timer);
-  }, [action, reducedMotion]);
+  }, [action, reducedMotion, revealDelayMs]);
 
   return (
     <div className={`${tileClass} ${className ?? ""}`}>
