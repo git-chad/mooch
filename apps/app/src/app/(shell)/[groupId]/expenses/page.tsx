@@ -26,6 +26,13 @@ export default async function ExpensesPage({ params }: Props) {
     getGlobalBalances(admin, groupId),
   ]);
 
+  const { count: expenseCount } = await admin
+    .from("expenses")
+    .select("id", { count: "exact", head: true })
+    .eq("group_id", groupId);
+
+  const hasAnyExpenses = (expenseCount ?? 0) > 0;
+
   if (!group) notFound();
 
   return (
@@ -38,6 +45,7 @@ export default async function ExpensesPage({ params }: Props) {
         groupId={groupId}
         group={group}
         currentUserId={user.id}
+        hasAnyExpenses={hasAnyExpenses}
       />
     </ExpensesGroupProvider>
   );

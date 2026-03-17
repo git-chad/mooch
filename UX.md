@@ -254,6 +254,7 @@ Apply these to all upcoming sections: Polls, Plans, Feed, Events, Insights.
 - Results transition should communicate change magnitude without heavy animation.
 - Anonymous vs non-anonymous state must be explicit before vote confirmation.
 - Vote feedback should be immediate, then settle quickly (no long celebratory sequence).
+- **Optimistic voting:** update counts, selection, and progress bar instantly on tap — fire server action in background and revert only on error. The user must never wait for a round-trip.
 
 ### Plans (Kanban)
 - Drag/drop must maintain item identity during movement (no abrupt re-render jumps).
@@ -289,6 +290,8 @@ Apply these to all upcoming sections: Polls, Plans, Feed, Events, Insights.
 6. Use delight only at value moments, not routine taps.
 7. Prefer shared-element and layout animations over opaque cross-fades.
 8. Route and screen transitions should go through the shared transition wrapper.
+9. **Optimistic by default:** Any toggle, vote, like, or lightweight mutation must update the UI instantly. Fire the server action in the background; revert only on error. Realtime will reconcile the authoritative state. Never block the UI on a network round-trip for user actions.
+10. **Lucide over emojis:** All app-level UI chrome (buttons, badges, indicators, action bars) must use Lucide icons. Emojis are fine in user-generated content but never in UI controls.
 
 ## UX Acceptance Checklist (Before Shipping Any New Flow)
 

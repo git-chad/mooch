@@ -30,7 +30,11 @@ const sizeTextVariant = {
 } as const;
 
 const variantClasses: Record<ButtonVariant, string> = {
-  primary: cn("btn-primary", "border border-accent-strong", "text-btn-primary-fg font-medium"),
+  primary: cn(
+    "btn-primary",
+    "border border-accent-strong",
+    "text-btn-primary-fg font-medium",
+  ),
   secondary: cn("btn-secondary", "border border-edge", "text-btn-secondary-fg"),
   ghost: cn("btn-ghost", "text-btn-ghost-fg"),
   danger: cn("btn-danger", "border border-danger", "text-white font-medium"),
@@ -93,7 +97,12 @@ export function Button({
         onClick={handleClick}
         {...props}
       >
-        <Text as="span" variant={sizeTextVariant[size]} color="inherit">
+        <Text
+          as="span"
+          variant={sizeTextVariant[size]}
+          color="inherit"
+          className="inline-flex items-center gap-2 whitespace-nowrap [&>svg]:shrink-0"
+        >
           {children}
         </Text>
       </button>

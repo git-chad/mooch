@@ -40,7 +40,7 @@ export async function proxy(request: NextRequest) {
   // Authenticated + auth route → /
   if (user && isAuthRoute) {
     const nextPath = request.nextUrl.searchParams.get("next");
-    const safeNextPath = nextPath?.startsWith("/") ? nextPath : "/";
+    const safeNextPath = nextPath?.startsWith("/") ? nextPath : "/groups";
     return NextResponse.redirect(new URL(safeNextPath, request.url));
   }
 

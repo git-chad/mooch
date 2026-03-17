@@ -16,9 +16,15 @@ type Props = {
   groupId: string;
   group: GroupWithMembers;
   currentUserId: string;
+  hasAnyExpenses: boolean;
 };
 
-export function TabListClient({ groupId, group, currentUserId }: Props) {
+export function TabListClient({
+  groupId,
+  group,
+  currentUserId,
+  hasAnyExpenses,
+}: Props) {
   const tabs = useExpenseStore((s) => s.tabs);
   const [createOpen, setCreateOpen] = useState(false);
 
@@ -46,12 +52,14 @@ export function TabListClient({ groupId, group, currentUserId }: Props) {
         </header>
 
         {/* Global balance overview */}
-        <BalanceCard
-          currentUserId={currentUserId}
-          currency={group.currency}
-          locale={group.locale}
-          global
-        />
+        {hasAnyExpenses && (
+          <BalanceCard
+            currentUserId={currentUserId}
+            currency={group.currency}
+            locale={group.locale}
+            global
+          />
+        )}
 
         {/* Tabs grid — open & closed side by side on sm+ */}
         {tabs.length > 0 && (

@@ -1234,10 +1234,10 @@ try {
   | ------------- | -------------- | ---- |
   | `double_down` | Double Down 🎰 | 1    |
   | `the_leak`    | The Leak 🕵️    | 1    |
-  | `the_coup`    | The Coup 👑    | 1    |
+  | `the_coup`    | The Coup 👑    | 3    |
   | `ghost_vote`  | Ghost Vote 👻  | 1    |
   | `the_veto`    | The Veto ☠️    | 2    |
-  | `hail_mary`   | Hail Mary 🙏   | 3    |
+  | `hail_mary`   | Hail Mary 🙏   | 1    |
 
 - [ ] 3B.4.3 — After a successful `spendTokens`, emit a Squad Feed event with `{ actorId, action, groupId }`. All corruption actions are public by design — users see who did what in the feed.
 
@@ -1290,13 +1290,13 @@ try {
 
 **Goal:** Create polls with single or multi-choice voting, anonymous option, live animated results, auto-close, and Corruption Token actions that let users bend the rules — double their vote, leak anonymous results, ghost-vote invisibly, veto someone else, or block debtors from voting.
 
-**Status:** ⬜ — _Blocked until Phase 3B is APPROVED. Phase 3A motion standards must be included. Corruption Token action enforcement (3B.4) is a prerequisite for poll token actions._
+**Status:** 🔄 — _In progress._
 
 ---
 
 ### 4.1 — Database Migrations: Polls
 
-- [ ] 4.1.1 — Create `supabase/migrations/0010_polls.sql`:
+- [x] 4.1.1 — Create `supabase/migrations/0011_polls.sql`:
 
   ```sql
   create table public.polls (
@@ -1375,19 +1375,19 @@ try {
     ));
   ```
 
-- [ ] 4.1.2 — Add `Poll`, `PollOption`, `PollVote`, `PollTokenAction` types to `packages/types`.
+- [x] 4.1.2 — Add `Poll`, `PollOption`, `PollVote`, `PollTokenAction` types to `packages/types`.
 
 ---
 
 ### 4.2 — Poll Queries & Server Actions
 
-- [ ] 4.2.1 — `packages/db/src/queries/polls.ts`:
+- [x] 4.2.1 — `packages/db/src/queries/polls.ts`:
   - `getPolls(supabase, groupId)` — with option vote counts (respecting `weight`, excluding vetoed); active first, closed below
   - `getPollById(supabase, pollId)` — with options + weighted vote counts + voter profiles (if not anonymous; ghost votes excluded from voter list)
   - `getUserVotes(supabase, pollId, userId)` — which options user voted for
   - `getPollTokenActions(supabase, pollId)` — all corruption actions used on this poll (public by design)
 
-- [ ] 4.2.2 — `apps/app/src/app/actions/polls.ts` (Server Actions):
+- [x] 4.2.2 — `apps/app/src/app/actions/polls.ts` (Server Actions):
   - `createPoll(groupId, data)` — creates poll + options
   - `vote(pollId, optionIds)` — transaction: delete old votes (single-choice), insert new. Check `hail_mary` — if active on this poll, users with outstanding debt in the group cannot vote
   - `closePoll(pollId)` — creator/admin only
@@ -1399,7 +1399,7 @@ try {
 
 All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before executing. On success, insert a `poll_token_actions` row and emit a Squad Feed event. **All corruption actions are public** — every group member sees who did what in the feed.
 
-- [ ] 4.3.1 — `apps/app/src/app/actions/poll-corruption.ts` (Server Actions):
+- [x] 4.3.1 — `apps/app/src/app/actions/poll-corruption.ts` (Server Actions):
 
   | Action | Cost | Server Action | Behavior |
   |--------|------|---------------|----------|
@@ -1410,7 +1410,7 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
   | **The Veto** ☠️ | 2 | `theVeto(pollId, targetUserId)` | Cancels **all** of the target user's votes on this poll (sets `is_vetoed = true` on every vote row). Vetoed votes no longer count toward totals. The target sees "Your vote was vetoed by X" notification. If the target had a Double Down, both the vote and the double are cancelled. |
   | **Hail Mary** 🙏 | 1 | `hailMary(pollId)` | Activates "moochers can't vote" mode on this poll. Any group member who currently has an outstanding debt (owes money to anyone in the group, checked via global balances from Phase 3) is blocked from voting or has existing votes removed. Lasts for the remainder of the poll. Stored as a flag on `poll_token_actions`. |
 
-- [ ] 4.3.2 — Validation rules:
+- [x] 4.3.2 — Validation rules:
   - Each user can use each action **at most once per poll** (enforced via unique constraint on `poll_token_actions(poll_id, user_id, action)`).
   - Cannot use corruption actions on closed polls (except The Leak — can leak results of a closed anonymous poll retroactively).
   - Ghost Vote and Double Down are mutually exclusive on the same poll for the same user.
@@ -1421,20 +1421,20 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 
 ### 4.4 — Real-time Subscription
 
-- [ ] 4.4.1 — Zustand store `packages/stores/src/polls.ts` with polls + votes state for the active group.
-- [ ] 4.4.2 — `PollsProvider` subscribing to Supabase Realtime on `poll_votes` and `poll_token_actions` for the active group's polls.
-- [ ] 4.4.3 — On vote change or corruption action, update live results without page reload.
+- [x] 4.4.1 — Zustand store `packages/stores/src/polls.ts` with polls + votes state for the active group.
+- [x] 4.4.2 — `PollsProvider` subscribing to Supabase Realtime on `poll_votes` and `poll_token_actions` for the active group's polls.
+- [x] 4.4.3 — On vote change or corruption action, update live results without page reload.
 
 ---
 
 ### 4.5 — Polls UI
 
-- [ ] 4.5.1 — `apps/app/src/app/(shell)/[groupId]/polls/page.tsx`:
+- [x] 4.5.1 — `apps/app/src/app/(shell)/[groupId]/polls/page.tsx`:
   - Active polls at top, closed polls below (grayed)
   - "Create Poll" button
   - Empty state: "No polls yet — start a vote!"
 
-- [ ] 4.5.2 — `apps/app/src/components/polls/PollCard.tsx`:
+- [x] 4.5.2 — `apps/app/src/components/polls/PollCard.tsx`:
   - Question, creator + timestamp, status badge
   - Options as interactive tiles
   - Live results bar per option (animated fill, respects vote `weight`)
@@ -1444,35 +1444,36 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
   - Corruption action badges: show icons for actions used on this poll (e.g. "🎰 doubled by X", "👑 coup'd by X", "🙏 moochers blocked")
   - If poll was coup'd: "Coup'd by X" badge replaces normal closed state
 
-- [ ] 4.5.3 — `apps/app/src/components/polls/PollOptionTile.tsx`:
+- [x] 4.5.3 — `apps/app/src/components/polls/PollOptionTile.tsx`:
   - Single-choice: radio behavior. Multi-choice: checkbox behavior.
   - Disabled if closed, or if user is blocked by Hail Mary
   - Your vote indicator (with 🎰 icon if doubled)
   - Vetoed votes shown with strikethrough + ☠️ icon
   - Optimistic update on click
 
-- [ ] 4.5.4 — `apps/app/src/components/polls/LiveResultsBar.tsx`:
+- [x] 4.5.4 — LiveResultsBar integrated into `PollOptionTile.tsx`:
   - Motion `animate width` on percentage change
   - Smooth re-animation on new votes (Realtime)
   - Vote counts reflect `weight` (doubled votes count as 2)
 
-- [ ] 4.5.5 — `apps/app/src/components/polls/CreatePollModal.tsx`:
-  - Template chips: "Pizza vs BBQ 🍕🥩", "What are we drinking? 🍺", "When to meet? 📅", "Custom"
-  - Question input, options list (min 2 / max 8), add/remove/reorder options
-  - Toggles: Anonymous, Multi-choice
-  - Optional auto-close date-time picker
+- [x] 4.5.5 — `apps/app/src/components/polls/CreatePollModal.tsx`:
+  - Question input, options list (min 2 / max 8), add/remove with AnimatePresence
+  - Toggle pills with Lucide icons: Anonymous (EyeOff), Multi-choice (CheckSquare)
+  - Custom DateTimePicker for optional auto-close
+  - ~~Template chips removed~~ (premade templates were low-value)
 
-- [ ] 4.5.6 — `apps/app/src/components/polls/CorruptionActionsBar.tsx`:
+- [x] 4.5.6 — `apps/app/src/components/polls/CorruptionActionsBar.tsx`:
   - Row of corruption action buttons below the poll card
-  - Each button shows icon + cost (e.g. "🎰 1 token")
+  - Each button uses Lucide icons (Dices, Eye, EyeOff, Ban, UserX, Crown) + cost
+  - Base UI Tooltip on hover shows action name + description
   - Disabled if: insufficient tokens, already used on this poll, poll closed (except Leak)
   - Confirmation dialog before spending tokens ("Spend 2 tokens to veto Lucas's vote?")
-  - After use: button changes to "Used" state with checkmark
-  - The Leak: opens a modal showing revealed voter identities
-  - The Veto: opens a user picker to select target
+  - After use: button shows checkmark icon in "Used" state
+  - The Leak: reveals voter identities inline below the bar
+  - The Veto: opens a user picker to select target (TODO: full user picker UI)
   - Hail Mary: shows which users will be blocked before confirming
 
-- [ ] 4.5.7 — Auto-close Edge Function:
+- [x] 4.5.7 — Auto-close Edge Function:
   - Create `supabase/functions/close-expired-polls/index.ts`
   - Runs on cron (every 5 minutes)
   - Sets `is_closed = true` on polls where `closes_at < now()`

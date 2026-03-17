@@ -18,7 +18,15 @@
       "Bash(find /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync -maxdepth 3 \\\\\\(-name vitest.config.* -o -name jest.config.* -o -name *.config.test.* \\\\\\) -type f)",
       "Bash(bun run:*)",
       "Bash(find /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync -name pricing* -o -name *pricing*)",
-      "Bash(find /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync/apps/web/src -type f \\\\\\(-name *.tsx -o -name *.ts \\\\\\))"
+      "Bash(find /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync/apps/web/src -type f \\\\\\(-name *.tsx -o -name *.ts \\\\\\))",
+      "Bash(bun add:*)",
+      "Bash(npx supabase:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx biome:*)",
+      "Bash(npx skills:*)",
+      "Bash(find /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync -type f -name *poll*)",
+      "Bash(find /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync/apps/app/src/components -type f -name *oll* -o -name *oll*)",
+      "Bash(npx turbo:*)"
     ]
   }
 }
