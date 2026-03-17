@@ -18,6 +18,19 @@
     "enabled": true,
     "rules": {
       "recommended": true,
+      "style": {
+        "noRestrictedImports": {
+          "level": "warn",
+          "options": {
+            "paths": {
+              "react": {
+                "importNames": ["useEffect"],
+                "message": "Do not import useEffect directly. Use derived state, event handlers, a data-fetching library, or useMountEffect."
+              }
+            }
+          }
+        }
+      },
       "suspicious": {
         "noUnknownAtRules": "off"
       }

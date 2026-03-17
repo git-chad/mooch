@@ -16,6 +16,7 @@ When a problem is encountered and fixed, log it here immediately:
 - **Immediate Next Task:** Close pending Phase 3 manual verification checklist items, then request Phase 3 approval before starting full Phase 4 implementation.
 - **Icon Standard:** Always use Lucide icons in the app UI — never emojis. Users can type emojis in their own content (poll options, messages), but any chrome/UI element must use Lucide icons.
 - **Hard User Preference (2026-03-17):** Do not introduce emojis in UI/chrome/decorative copy/options. Use Lucide icons or plain text only.
+- **React Rule (2026-03-17):** Do not import `useEffect` directly in feature code. Prefer derived state, event handlers, query/data libraries, or `useMountEffect` for mount-only external sync.
 - **2026-03-17 Feed Direction Lock (Phase 6):** Instagram-like single-column continuous stream, medium playful tone, docked quick composer, no stories strip v1, no decorative sticker/background layer v1, one reaction per user/item, expense+poll linking in v1 (event linking deferred), private media via signed URLs, optimistic+realtime behavior.
 
 ---
