@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"/c/Users/igna_/Downloads/CLAUDE TESTS/squad-sync/apps/app/src/app/\\(shell\\)/\")",
+      "Bash(ls \"/c/Users/igna_/Downloads/CLAUDE TESTS/squad-sync/apps/app/src/app/\\(shell\\)/profile/\")",
+      "Bash(cd \"/c/Users/igna_/Downloads/CLAUDE TESTS/squad-sync\" && npx tsc --noEmit -p apps/app/tsconfig.json 2>&1 | head -40)",
+      "Bash(cd \"/c/Users/igna_/Downloads/CLAUDE TESTS/squad-sync/apps/app\" && bunx tsc --noEmit 2>&1 | head -50)"
+    ]
+  }
+}
