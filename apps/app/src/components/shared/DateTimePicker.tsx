@@ -83,15 +83,19 @@ export function DateTimePicker({
         <div className="flex items-center gap-1.5">
           <Popover.Trigger
             render={
-              <div
-                role="button"
-                tabIndex={0}
-                className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors cursor-pointer hover:bg-[#F7F4F0]"
+              <button
+                type="button"
+                className="flex-1 flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-left transition-colors cursor-pointer hover:bg-[#F7F4F0] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/45"
                 style={{
                   background: "var(--color-surface)",
                   border: "1px solid var(--color-edge)",
                   color: value ? "var(--color-ink)" : "#A09488",
                 }}
+                aria-label={
+                  value
+                    ? `Selected date: ${format(value, "MMM d, yyyy h:mm a")}`
+                    : placeholder
+                }
               />
             }
           >
@@ -107,6 +111,7 @@ export function DateTimePicker({
               onClick={handleClear}
               className="shrink-0 p-1.5 rounded-lg transition-colors hover:bg-[#F7F2ED]"
               style={{ color: "#8c7463" }}
+              aria-label="Clear date and time"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -132,6 +137,7 @@ export function DateTimePicker({
                     handleMonthChange(prev);
                   }}
                   className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[#F7F2ED] transition-colors text-[#8c7463]"
+                  aria-label="Previous month"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
@@ -168,6 +174,7 @@ export function DateTimePicker({
                     handleMonthChange(next);
                   }}
                   className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[#F7F2ED] transition-colors text-[#8c7463]"
+                  aria-label="Next month"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
@@ -225,6 +232,8 @@ export function DateTimePicker({
                     value={hours}
                     onChange={(e) => handleTimeChange(e.target.value, minutes)}
                     className="w-10 text-center text-sm font-medium rounded-md py-1 tabular-nums outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+                    inputMode="numeric"
+                    aria-label="Hours"
                     style={{
                       background: "#F7F2ED",
                       border: "1px solid #DCCBC0",
@@ -240,6 +249,8 @@ export function DateTimePicker({
                     value={minutes}
                     onChange={(e) => handleTimeChange(hours, e.target.value)}
                     className="w-10 text-center text-sm font-medium rounded-md py-1 tabular-nums outline-none focus:ring-1 focus:ring-[var(--color-accent)]"
+                    inputMode="numeric"
+                    aria-label="Minutes"
                     style={{
                       background: "#F7F2ED",
                       border: "1px solid #DCCBC0",
