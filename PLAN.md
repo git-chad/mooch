@@ -1671,7 +1671,7 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 
 ### 6.1 — Database Migrations: Feed
 
-- [ ] 6.1.1 — Create `supabase/migrations/0013_feed.sql`:
+- [x] 6.1.1 — Create `supabase/migrations/0013_feed.sql`:
 
   ```sql
   create type feed_item_type as enum ('photo', 'voice', 'text');
@@ -1712,15 +1712,15 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
     ));
   ```
 
-- [ ] 6.1.2 — Add `FeedItem`, `FeedReaction` types to `packages/types`.
+- [x] 6.1.2 — Add `FeedItem`, `FeedReaction` types to `packages/types`.
 
 ### 6.2 — Feed Queries & Server Actions
 
-- [ ] 6.2.1 — `packages/db/src/queries/feed.ts`:
+- [x] 6.2.1 — `packages/db/src/queries/feed.ts`:
   - `getFeedItems(supabase, groupId, cursor?)` — paginated 20/page, desc by `created_at`, continuous stream (no day grouping), with creator profile + reaction counts + current user reaction
   - `getFeedItemById(supabase, itemId)` — full detail
   - `getSignedFeedMediaUrl(supabase, mediaPath)` — signed URL for private media rendering
-- [ ] 6.2.2 — `apps/app/src/app/actions/feed.ts` (Server Actions):
+- [x] 6.2.2 — `apps/app/src/app/actions/feed.ts` (Server Actions):
   - `addFeedItem(groupId, data)`
   - `deleteFeedItem(itemId)` — creator/admin only
   - `toggleReaction(itemId, emoji)` — upsert/delete (one reaction per user; switching replaces previous)
@@ -1728,22 +1728,22 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 
 ### 6.3 — Supabase Storage: Media
 
-- [ ] 6.3.1 — Create **private** `feed-media` bucket (authenticated uploads, 10MB photo / 5MB voice limits).
-- [ ] 6.3.2 — Storage RLS: group members can upload + read.
-- [ ] 6.3.3 — `packages/db/src/storage/feed.ts`:
+- [x] 6.3.1 — Create **private** `feed-media` bucket (authenticated uploads, 10MB photo / 5MB voice limits) via `supabase/migrations/0014_feed_media_bucket.sql`.
+- [x] 6.3.2 — Storage RLS: group members can upload + read.
+- [x] 6.3.3 — `packages/db/src/storage/feed.ts`:
   - `uploadFeedPhoto(supabase, groupId, file)` — compress to 1080px max width (Canvas API) → upload → return storage path
   - `uploadFeedVoice(supabase, groupId, blob)` — upload audio blob → return storage path
   - `deleteFeedMedia(supabase, mediaPath)`
 
 ### 6.4 — Feed UI
 
-- [ ] 6.4.1 — `apps/app/src/app/(shell)/[groupId]/feed/page.tsx`:
+- [x] 6.4.1 — `apps/app/src/app/(shell)/[groupId]/feed/page.tsx`:
   - Single-column continuous stream (Instagram-like), infinite scroll (intersection observer), **no day separators**
   - **No stories strip in v1**
   - Docked quick composer bar (Text / Photo / Voice) that stays accessible while scrolling
   - Medium-playful visual direction (homepage spirit through card/composer styling and motion), with **no decorative sticker/background layer in v1**
   - Empty state copy uses edgy homepage tone
-- [ ] 6.4.2 — `apps/app/src/components/feed/FeedItemCard.tsx`:
+- [x] 6.4.2 — `apps/app/src/components/feed/FeedItemCard.tsx`:
   - Header: avatar, name, relative timestamp
   - Comfortable (not compact) card density and spacing
   - **Photo:** full-width image + caption. Tap → lightbox.
@@ -1752,19 +1752,19 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
   - Context badge (expense / poll link in v1; event deferred to Phase 7)
   - Footer: `ReactionBar`
   - Delete button (own items only, confirm)
-- [ ] 6.4.3 — `apps/app/src/components/feed/ReactionBar.tsx`:
+- [x] 6.4.3 — `apps/app/src/components/feed/ReactionBar.tsx`:
   - Emoji chips with counts ("❤️ 3 🔥 2")
   - Tap to toggle your reaction (one reaction per user per item)
   - "+" opens preset picker: ❤️ 😂 🔥 😮 👏 💀
   - Scale bounce animation (Motion) on tap + optimistic count updates
   - Real-time: subscribe to `feed_reactions` changes via Realtime for reconciliation
-- [ ] 6.4.4 — `apps/app/src/components/feed/PostPhotoSheet.tsx`:
+- [x] 6.4.4 — `apps/app/src/components/feed/PostPhotoSheet.tsx`:
   - File input (camera on mobile, gallery on desktop)
   - Client-side preview + compression (Canvas API)
   - Caption textarea (optional, max 200 chars)
   - Optional link to expense/poll (event deferred to Phase 7)
   - "Post" → compress → upload → `addFeedItem`
-- [ ] 6.4.5 — `apps/app/src/components/feed/RecordVoiceSheet.tsx`:
+- [x] 6.4.5 — `apps/app/src/components/feed/RecordVoiceSheet.tsx`:
   - Start/stop recording via `MediaRecorder` API
   - Live audio level bar animation
   - Max 60 seconds
@@ -1772,7 +1772,7 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
   - Caption textarea
   - Optional link to expense/poll (event deferred to Phase 7)
   - "Post" → upload → `addFeedItem`
-- [ ] 6.4.6 — `apps/app/src/components/feed/ImageLightbox.tsx`:
+- [x] 6.4.6 — `apps/app/src/components/feed/ImageLightbox.tsx`:
   - Full-screen overlay, close on Escape or backdrop click
   - Arrow navigation between consecutive photos in feed
   - Pinch-to-zoom on mobile (touch events)
@@ -1824,7 +1824,7 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 
 ### 7.1 — Database Migrations: Events
 
-- [ ] 7.1.1 — Create `supabase/migrations/0014_events.sql`:
+- [ ] 7.1.1 — Create `supabase/migrations/0015_events.sql`:
 
   ```sql
   create type rsvp_status as enum ('yes', 'no', 'maybe');

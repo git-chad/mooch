@@ -15,11 +15,19 @@ When a problem is encountered and fixed, log it here immediately:
 - **Mandatory Standard:** Reuse the shared motion system (`motion.ts`, transition provider/slot/link patterns, reduced-motion behavior) across all remaining user-facing surfaces.
 - **Immediate Next Task:** Close pending Phase 3 manual verification checklist items, then request Phase 3 approval before starting full Phase 4 implementation.
 - **Icon Standard:** Always use Lucide icons in the app UI — never emojis. Users can type emojis in their own content (poll options, messages), but any chrome/UI element must use Lucide icons.
+- **Hard User Preference (2026-03-17):** Do not introduce emojis in UI/chrome/decorative copy/options. Use Lucide icons or plain text only.
 - **2026-03-17 Feed Direction Lock (Phase 6):** Instagram-like single-column continuous stream, medium playful tone, docked quick composer, no stories strip v1, no decorative sticker/background layer v1, one reaction per user/item, expense+poll linking in v1 (event linking deferred), private media via signed URLs, optimistic+realtime behavior.
 
 ---
 
 ## Mistakes Log
+
+### Reintroduced emojis in feed UI after icon standard was already documented
+- **Problem:** Added emoji icons in feed link dropdown options and decorative empty-state copy despite having a documented "Lucide icons, never emojis in UI chrome" rule.
+- **Fix:** Removed emoji option icons from feed select inputs, replaced decorative empty-state emoji with Lucide icon, and reinforced the preference as a hard user rule in Active Memory.
+- **Avoid:** Never add emoji to UI chrome, labels, helper text, placeholders, or decorative states. If visual emphasis is needed, use Lucide icons.
+
+---
 
 ### FAQ section shipped as a monolithic component
 - **Problem:** The FAQ section was implemented as one large file mixing static data, animation math, drag physics, and UI rendering in a single component. This violated basic React composition boundaries and made iteration/debugging slower than necessary.

@@ -122,6 +122,31 @@ export type SettlementPayment = {
   created_at: string;
 };
 
+// --- Feed ---
+
+export type FeedItemType = "photo" | "voice" | "text";
+
+export type FeedItem = {
+  id: string;
+  group_id: string;
+  type: FeedItemType;
+  media_path: string | null;
+  caption: string | null;
+  duration_seconds: number | null;
+  linked_expense_id: string | null;
+  linked_event_id: string | null;
+  linked_poll_id: string | null;
+  created_by: string;
+  created_at: string;
+};
+
+export type FeedReaction = {
+  feed_item_id: string;
+  user_id: string;
+  emoji: string;
+  created_at: string;
+};
+
 // --- Polls ---
 
 export type Poll = {

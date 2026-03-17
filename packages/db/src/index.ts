@@ -26,3 +26,10 @@ export {
   getPollTokenActions,
 } from "./queries/polls";
 export type { PollWithOptions, PollOptionWithVotes, PollTokenActionWithProfile } from "./queries/polls";
+export {
+  getFeedItems,
+  getFeedItemById,
+  getSignedFeedMediaUrl,
+} from "./queries/feed";
+export type { FeedItemWithMeta, FeedReactionCount } from "./queries/feed";
+export { uploadFeedPhoto, uploadFeedVoice, deleteFeedMedia } from "./storage/feed";
