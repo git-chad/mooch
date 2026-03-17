@@ -5,3 +5,8 @@ export {
   type BalanceWithProfiles,
   type SettlementPaymentWithProfiles,
 } from "./expenses";
+export {
+  usePollStore,
+  type PollWithOptions,
+  type PollOptionWithVotes,
+} from "./polls";

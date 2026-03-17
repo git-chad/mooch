@@ -11,10 +11,10 @@ export type CorruptionAction =
 export const ACTION_COSTS: Record<CorruptionAction, number> = {
   double_down: 1,
   the_leak: 1,
-  the_coup: 1,
+  the_coup: 3,
   ghost_vote: 1,
   the_veto: 2,
-  hail_mary: 3,
+  hail_mary: 1,
 };
 
 export type SpendResult = { ok: true; remainingBalance: number };

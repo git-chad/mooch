@@ -19,3 +19,10 @@ export {
 export type { UserPlan, ActionCheck } from "./queries/subscriptions";
 export { spendTokens, ACTION_COSTS } from "./queries/tokens";
 export type { CorruptionAction, SpendResult } from "./queries/tokens";
+export {
+  getPolls,
+  getPollById,
+  getUserVotes,
+  getPollTokenActions,
+} from "./queries/polls";
+export type { PollWithOptions, PollOptionWithVotes } from "./queries/polls";

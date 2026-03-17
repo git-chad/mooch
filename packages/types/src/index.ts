@@ -121,3 +121,55 @@ export type SettlementPayment = {
   created_by: string;
   created_at: string;
 };
+
+// --- Polls ---
+
+export type Poll = {
+  id: string;
+  group_id: string;
+  question: string;
+  is_anonymous: boolean;
+  is_multi_choice: boolean;
+  is_closed: boolean;
+  closes_at: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PollOption = {
+  id: string;
+  poll_id: string;
+  text: string;
+  sort_order: number;
+};
+
+export type PollVote = {
+  id: string;
+  poll_id: string;
+  option_id: string;
+  user_id: string;
+  weight: number;
+  is_ghost: boolean;
+  is_vetoed: boolean;
+  vetoed_by: string | null;
+  created_at: string;
+};
+
+export type CorruptionAction =
+  | "double_down"
+  | "the_leak"
+  | "the_coup"
+  | "ghost_vote"
+  | "the_veto"
+  | "hail_mary";
+
+export type PollTokenAction = {
+  id: string;
+  poll_id: string;
+  user_id: string;
+  action: CorruptionAction;
+  target_user_id: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+};

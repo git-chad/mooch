@@ -24,8 +24,8 @@ describe('Token System', () => {
             expect(ACTION_COSTS.the_leak).toBe(1);
         });
 
-        it('the_coup costs 1 token', () => {
-            expect(ACTION_COSTS.the_coup).toBe(1);
+        it('the_coup costs 3 tokens', () => {
+            expect(ACTION_COSTS.the_coup).toBe(3);
         });
 
         it('ghost_vote costs 1 token', () => {
@@ -36,8 +36,8 @@ describe('Token System', () => {
             expect(ACTION_COSTS.the_veto).toBe(2);
         });
 
-        it('hail_mary costs 3 tokens', () => {
-            expect(ACTION_COSTS.hail_mary).toBe(3);
+        it('hail_mary costs 1 token', () => {
+            expect(ACTION_COSTS.hail_mary).toBe(1);
         });
 
         it('covers all 6 corruption actions', () => {
@@ -119,13 +119,13 @@ describe('Token System', () => {
             });
         });
 
-        it('works for 3-cost actions (hail_mary)', async () => {
+        it('works for 3-cost actions (the_coup)', async () => {
             mockSupabase = createMockSupabase({
                 selectResult: { data: { balance: 3 }, error: null },
                 rpcResult: { data: 0, error: null },
             });
 
-            const result = await spendTokens(mockSupabase as any, 'user-uuid-1', 'hail_mary', 3);
+            const result = await spendTokens(mockSupabase as any, 'user-uuid-1', 'the_coup', 3);
 
             expect(result).toEqual({ ok: true, remainingBalance: 0 });
         });
