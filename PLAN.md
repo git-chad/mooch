@@ -547,18 +547,18 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 
 ### Route structure
 
-| URL | File | Purpose |
-|-----|------|---------|
-| `/` | `(shell)/page.tsx` | Root dashboard |
-| `/[groupId]` | `(shell)/[groupId]/page.tsx` | Group overview (canonical) |
-| `/[groupId]/feed` | `(shell)/[groupId]/feed/page.tsx` | Feed placeholder |
-| `/[groupId]/expenses` | `(shell)/[groupId]/expenses/page.tsx` | Expenses placeholder |
-| `/[groupId]/polls` | `(shell)/[groupId]/polls/page.tsx` | Polls placeholder |
-| `/[groupId]/plans` | `(shell)/[groupId]/plans/page.tsx` | Plans placeholder |
-| `/[groupId]/events` | `(shell)/[groupId]/events/page.tsx` | Events placeholder |
-| `/[groupId]/insights` | `(shell)/[groupId]/insights/page.tsx` | Insights placeholder |
-| `/groups` | `(shell)/groups/page.tsx` | Groups list (unchanged) |
-| `/groups/[groupId]/settings` | `(shell)/groups/[groupId]/settings/page.tsx` | Settings (unchanged) |
+| URL                          | File                                         | Purpose                    |
+| ---------------------------- | -------------------------------------------- | -------------------------- |
+| `/`                          | `(shell)/page.tsx`                           | Root dashboard             |
+| `/[groupId]`                 | `(shell)/[groupId]/page.tsx`                 | Group overview (canonical) |
+| `/[groupId]/feed`            | `(shell)/[groupId]/feed/page.tsx`            | Feed placeholder           |
+| `/[groupId]/expenses`        | `(shell)/[groupId]/expenses/page.tsx`        | Expenses placeholder       |
+| `/[groupId]/polls`           | `(shell)/[groupId]/polls/page.tsx`           | Polls placeholder          |
+| `/[groupId]/plans`           | `(shell)/[groupId]/plans/page.tsx`           | Plans placeholder          |
+| `/[groupId]/events`          | `(shell)/[groupId]/events/page.tsx`          | Events placeholder         |
+| `/[groupId]/insights`        | `(shell)/[groupId]/insights/page.tsx`        | Insights placeholder       |
+| `/groups`                    | `(shell)/groups/page.tsx`                    | Groups list (unchanged)    |
+| `/groups/[groupId]/settings` | `(shell)/groups/[groupId]/settings/page.tsx` | Settings (unchanged)       |
 
 ---
 
@@ -599,6 +599,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 - [x] 3.1.3 — Added `ExpenseCategory`, `SplitType`, `Expense`, `ExpenseParticipant`, `Balance`, `SettlementPayment` types to `packages/types/src/index.ts`.
 
 - [x] 3.1.4 — **NEW:** Add `Tab` type to `packages/types/src/index.ts`:
+
   ```ts
   type TabStatus = "open" | "closed";
   type Tab = {
@@ -612,6 +613,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
     updated_at: string;
   };
   ```
+
   Update `Expense`, `Balance` types to include `tab_id`.
 
 - [x] 3.1.5 — (was 3.1.2) Implement `recalculateBalances` in TypeScript — **UPDATED:** now takes `(groupId, tabId)` and recalculates per-tab. Added `recalculateAllBalances(groupId)` for global settlements:
@@ -671,6 +673,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 ### 3.4 — Tabs & Expenses UI
 
 **Routes:**
+
 - `/{groupId}/expenses` — tab list + global balance overview
 - `/{groupId}/expenses/{tabId}` — expenses within a tab + tab balances + receipt
 
@@ -757,6 +760,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
 **Phase 3 Testing Checklist (must all pass before APPROVED):**
 
 Implementation coverage added in this pass:
+
 - Expense detail page with edit/delete flow
 - Receipt sheet from tab detail
 - PNG export for receipts
@@ -788,6 +792,7 @@ These checklist items stay unchecked until browser/manual verification is comple
 **Status:** ⬜
 
 **Intent:**
+
 - Prove the motion language on real screens instead of abstract demos.
 - Improve clarity and delight without slowing high-frequency actions.
 - Create reusable transition primitives that later phases can inherit.
@@ -967,11 +972,11 @@ These checklist items stay unchecked until browser/manual verification is comple
 
 - [ ] 3B.1.2 — Seed `public.plans` with Free / Pro / Club rows in the same migration:
 
-  | id    | monthly_price_cents | annual_price_cents | max_groups | max_members | history_months | tokens_monthly_grant |
-  |-------|--------------------|--------------------|------------|-------------|----------------|----------------------|
-  | free  | 0                  | 0                  | 1          | 8           | 3              | 2                    |
-  | pro   | 499                | 4990               | null       | 20          | null           | 10                   |
-  | club  | 1499               | 14990              | null       | 50          | null           | 30                   |
+  | id   | monthly_price_cents | annual_price_cents | max_groups | max_members | history_months | tokens_monthly_grant |
+  | ---- | ------------------- | ------------------ | ---------- | ----------- | -------------- | -------------------- |
+  | free | 0                   | 0                  | 1          | 8           | 3              | 2                    |
+  | pro  | 499                 | 4990               | null       | 20          | null           | 10                   |
+  | club | 1499                | 14990              | null       | 50          | null           | 30                   |
 
   > Users receive their monthly grant automatically. They can also purchase additional tokens at any time with no cap. Balance carries over — unspent tokens are never removed.
 
@@ -991,33 +996,37 @@ These checklist items stay unchecked until browser/manual verification is comple
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
   ```
 - [ ] Create Stripe singleton `apps/app/lib/stripe.ts` — import this everywhere; never instantiate Stripe inline:
+
   ```typescript
-  import Stripe from 'stripe';
+  import Stripe from "stripe";
 
   export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2023-10-16',
+    apiVersion: "2023-10-16",
     typescript: true,
   });
   ```
+
 - [ ] Create client-side singleton `apps/app/lib/stripe-client.ts`:
+
   ```typescript
-  import { loadStripe } from '@stripe/stripe-js';
+  import { loadStripe } from "@stripe/stripe-js";
 
   export const stripePromise = loadStripe(
-    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
   );
   ```
 
 #### 3B.2.2 — Customer Management
 
 - [ ] Create `apps/app/lib/stripe-customers.ts` with a `createOrRetrieveCustomer` helper. Called on first checkout — never create duplicate customers:
+
   ```typescript
-  import { stripe } from './stripe';
-  import type Stripe from 'stripe';
+  import { stripe } from "./stripe";
+  import type Stripe from "stripe";
 
   export async function createOrRetrieveCustomer(
     email: string,
-    userId: string
+    userId: string,
   ): Promise<Stripe.Customer> {
     const existing = await stripe.customers.list({ email, limit: 1 });
     if (existing.data.length > 0) return existing.data[0];
@@ -1058,45 +1067,56 @@ All actions are `'use server'`. All Stripe calls use idempotency keys for safety
 Must be a Next.js Route Handler (not a Server Action) — Stripe requires access to the raw request body for signature verification.
 
 - [ ] Implement the route handler:
+
   ```typescript
-  import { headers } from 'next/headers';
-  import { stripe } from '@/lib/stripe';
-  import type Stripe from 'stripe';
+  import { headers } from "next/headers";
+  import { stripe } from "@/lib/stripe";
+  import type Stripe from "stripe";
 
   export async function POST(request: Request) {
     const body = await request.text(); // raw body required for sig verification
-    const signature = headers().get('stripe-signature')!;
+    const signature = headers().get("stripe-signature")!;
 
     let event: Stripe.Event;
     try {
       event = stripe.webhooks.constructEvent(
         body,
         signature,
-        process.env.STRIPE_WEBHOOK_SECRET!
+        process.env.STRIPE_WEBHOOK_SECRET!,
       );
     } catch {
-      return new Response('Webhook signature verification failed', { status: 400 });
+      return new Response("Webhook signature verification failed", {
+        status: 400,
+      });
     }
 
     switch (event.type) {
-      case 'checkout.session.completed':
-        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
+      case "checkout.session.completed":
+        await handleCheckoutCompleted(
+          event.data.object as Stripe.Checkout.Session,
+        );
         break;
-      case 'customer.subscription.updated':
-        await handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
+      case "customer.subscription.updated":
+        await handleSubscriptionUpdated(
+          event.data.object as Stripe.Subscription,
+        );
         break;
-      case 'customer.subscription.deleted':
-        await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
+      case "customer.subscription.deleted":
+        await handleSubscriptionDeleted(
+          event.data.object as Stripe.Subscription,
+        );
         break;
-      case 'payment_intent.succeeded':
-        await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
+      case "payment_intent.succeeded":
+        await handlePaymentIntentSucceeded(
+          event.data.object as Stripe.PaymentIntent,
+        );
         break;
-      case 'invoice.payment_failed':
+      case "invoice.payment_failed":
         await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
         break;
     }
 
-    return new Response('ok', { status: 200 });
+    return new Response("ok", { status: 200 });
   }
   ```
 
@@ -1127,17 +1147,17 @@ Must be a Next.js Route Handler (not a Server Action) — Stripe requires access
 All Stripe calls in Server Actions must use typed error catching:
 
 ```typescript
-import Stripe from 'stripe';
+import Stripe from "stripe";
 
 try {
   // stripe call
 } catch (error) {
   if (error instanceof Stripe.errors.StripeCardError) {
-    throw new Error('card_declined');
+    throw new Error("card_declined");
   } else if (error instanceof Stripe.errors.StripeInvalidRequestError) {
-    throw new Error('invalid_request');
+    throw new Error("invalid_request");
   } else {
-    throw new Error('stripe_error');
+    throw new Error("stripe_error");
   }
 }
 ```
@@ -1151,20 +1171,36 @@ try {
   - `getUserTokenBalance(userId)` — fetches `token_balances.balance`.
 
 - [ ] 3B.3.2 — `packages/types/src/plans.ts`:
+
   ```typescript
-  export type PlanId = 'free' | 'pro' | 'club';
+  export type PlanId = "free" | "pro" | "club";
 
   export interface PlanLimits {
-    maxGroups: number | null;       // null = unlimited
+    maxGroups: number | null; // null = unlimited
     maxMembersPerGroup: number;
     expenseHistoryMonths: number | null;
     tokensMonthlyGrant: number;
   }
 
   export const PLAN_LIMITS: Record<PlanId, PlanLimits> = {
-    free:  { maxGroups: 1,    maxMembersPerGroup: 8,  expenseHistoryMonths: 3,    tokensMonthlyGrant: 2  },
-    pro:   { maxGroups: null, maxMembersPerGroup: 20, expenseHistoryMonths: null, tokensMonthlyGrant: 10 },
-    club:  { maxGroups: null, maxMembersPerGroup: 50, expenseHistoryMonths: null, tokensMonthlyGrant: 30 },
+    free: {
+      maxGroups: 1,
+      maxMembersPerGroup: 8,
+      expenseHistoryMonths: 3,
+      tokensMonthlyGrant: 2,
+    },
+    pro: {
+      maxGroups: null,
+      maxMembersPerGroup: 20,
+      expenseHistoryMonths: null,
+      tokensMonthlyGrant: 10,
+    },
+    club: {
+      maxGroups: null,
+      maxMembersPerGroup: 50,
+      expenseHistoryMonths: null,
+      tokensMonthlyGrant: 30,
+    },
   };
   ```
 
@@ -1195,11 +1231,11 @@ try {
 - [ ] 3B.4.2 — Action slugs and costs (enforce in the `spendTokens` call site):
 
   | Slug          | Display Name   | Cost |
-  |---------------|----------------|------|
-  | `double_down` | Double Down 🎰  | 1    |
+  | ------------- | -------------- | ---- |
+  | `double_down` | Double Down 🎰 | 1    |
   | `the_leak`    | The Leak 🕵️    | 1    |
-  | `the_coup`    | The Coup 👑     | 1    |
-  | `ghost_vote`  | Ghost Vote 👻   | 1    |
+  | `the_coup`    | The Coup 👑    | 1    |
+  | `ghost_vote`  | Ghost Vote 👻  | 1    |
   | `the_veto`    | The Veto ☠️    | 2    |
   | `hail_mary`   | Hail Mary 🙏   | 3    |
 
@@ -2169,31 +2205,31 @@ try {
 
 _(Do not start until Phase 10 is APPROVED and shipped)_
 
-| Feature                   | Notes                                                                                                      |
-| ------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Squad Pro subscription    | Stripe or LemonSqueezy, feature gates                                                                      |
-| AI weekly recaps          | LLM-generated fun facts (Claude API)                                                                       |
-| Custom group themes       | Color palettes, profile cosmetics                                                                          |
-| PDF exports               | Monthly expense reports, event summaries                                                                   |
-| PWA offline support       | Service Worker caching for offline viewing                                                                 |
+| Feature                      | Notes                                                                                                                                                                                            |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Squad Pro subscription       | Stripe or LemonSqueezy, feature gates                                                                                                                                                            |
+| AI weekly recaps             | LLM-generated fun facts (Claude API)                                                                                                                                                             |
+| Custom group themes          | Color palettes, profile cosmetics                                                                                                                                                                |
+| PDF exports                  | Monthly expense reports, event summaries                                                                                                                                                         |
+| PWA offline support          | Service Worker caching for offline viewing                                                                                                                                                       |
 | Item-level receipt splitting | OCR extracts line items → each item assigned to specific members → generates per-person exact splits. E.g. alcohol buyers vs non-drinkers on the same receipt. Builds on Phase 9 OCR foundation. |
 
 ---
 
 ## Approval Log
 
-| Phase                        | Status | Approved By | Date | Notes |
-| ---------------------------- | ------ | ----------- | ---- | ----- |
-| Phase 0: Monorepo Foundation | ⬜     | —           | —    | —     |
-| Phase 1: Auth & Profiles     | ⬜     | —           | —    | —     |
-| Phase 2: Groups System       | 🟢     | Tobias      | 2026-03-05 | All tests passed, RLS verified |
-| Phase 3: Expense Tracker     | ⬜     | —           | —    | —     |
-| Phase 3A: Motion & Transitions | 🟢   | Tobias      | 2026-03-06 | Expense surfaces pilot approved; motion/layout transitions now required across remaining user-facing surfaces |
-| Phase 3B: Monetization       | ⬜     | —           | —    | —     |
-| Phase 4: Voting & Polls      | ⬜     | —           | —    | —     |
-| Phase 5: Plans Board         | ⬜     | —           | —    | —     |
-| Phase 6: Squad Feed          | ⬜     | —           | —    | —     |
-| Phase 7: Events              | ⬜     | —           | —    | —     |
-| Phase 8: Insights            | ⬜     | —           | —    | —     |
-| Phase 9: Polish & Marketing  | ⬜     | —           | —    | —     |
-| Phase 10: Testing & Deploy   | ⬜     | —           | —    | —     |
+| Phase                          | Status | Approved By | Date       | Notes                                                                                                         |
+| ------------------------------ | ------ | ----------- | ---------- | ------------------------------------------------------------------------------------------------------------- |
+| Phase 0: Monorepo Foundation   | ⬜     | —           | —          | —                                                                                                             |
+| Phase 1: Auth & Profiles       | ⬜     | —           | —          | —                                                                                                             |
+| Phase 2: Groups System         | 🟢     | Tobias      | 2026-03-05 | All tests passed, RLS verified                                                                                |
+| Phase 3: Expense Tracker       | ⬜     | —           | —          | —                                                                                                             |
+| Phase 3A: Motion & Transitions | 🟢     | Tobias      | 2026-03-06 | Expense surfaces pilot approved; motion/layout transitions now required across remaining user-facing surfaces |
+| Phase 3B: Monetization         | ⬜     | —           | —          | —                                                                                                             |
+| Phase 4: Voting & Polls        | ⬜     | —           | —          | —                                                                                                             |
+| Phase 5: Plans Board           | ⬜     | —           | —          | —                                                                                                             |
+| Phase 6: Squad Feed            | ⬜     | —           | —          | —                                                                                                             |
+| Phase 7: Events                | ⬜     | —           | —          | —                                                                                                             |
+| Phase 8: Insights              | ⬜     | —           | —          | —                                                                                                             |
+| Phase 9: Polish & Marketing    | ⬜     | —           | —          | —                                                                                                             |
+| Phase 10: Testing & Deploy     | ⬜     | —           | —          | —                                                                                                             |
