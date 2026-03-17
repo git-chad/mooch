@@ -7,9 +7,13 @@ export type PollOptionWithVotes = PollOption & {
   voters: Profile[];
 };
 
+export type PollTokenActionWithProfile = PollTokenAction & {
+  user: Profile;
+};
+
 export type PollWithOptions = Poll & {
   options: PollOptionWithVotes[];
-  token_actions: PollTokenAction[];
+  token_actions: PollTokenActionWithProfile[];
   created_by_profile: Profile;
   total_votes: number;
 };

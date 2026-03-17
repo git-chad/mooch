@@ -247,3 +247,48 @@ export async function deletePoll(
 
   return { success: true, groupId: poll.group_id };
 }
+
+export async function togglePinPoll(
+  pollId: string,
+): Promise<{ poll: Poll } | { error: string }> {
+  const supabase = await createClient();
+  const admin = createAdminClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+
+  const { data: poll } = await admin
+    .from("polls")
+    .select("id, group_id, created_by, is_pinned")
+    .eq("id", pollId)
+    .single();
+
+  if (!poll) return { error: "Poll not found" };
+
+  // Check creator or admin
+  const { data: member } = await admin
+    .from("group_members")
+    .select("role")
+    .eq("group_id", poll.group_id)
+    .eq("user_id", user.id)
+    .single();
+
+  if (poll.created_by !== user.id && member?.role !== "admin" && member?.role !== "owner")
+    return { error: "Only the poll creator or an admin can pin/unpin this poll" };
+
+  const { data: updated, error } = await admin
+    .from("polls")
+    .update({ is_pinned: !poll.is_pinned, updated_at: new Date().toISOString() })
+    .eq("id", pollId)
+    .select("*")
+    .single();
+
+  if (error || !updated) return { error: error?.message ?? "Failed to toggle pin" };
+
+  // No revalidatePath — realtime handles sync, and revalidation
+  // would overwrite the client's optimistic state before it settles.
+
+  return { poll: updated as Poll };
+}

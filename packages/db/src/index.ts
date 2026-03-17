@@ -25,4 +25,4 @@ export {
   getUserVotes,
   getPollTokenActions,
 } from "./queries/polls";
-export type { PollWithOptions, PollOptionWithVotes } from "./queries/polls";
+export type { PollWithOptions, PollOptionWithVotes, PollTokenActionWithProfile } from "./queries/polls";

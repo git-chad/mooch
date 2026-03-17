@@ -31,7 +31,13 @@ export function PollListClient({ groupId, currentUserId }: Props) {
     [reducedMotion],
   );
 
-  const activePolls = polls.filter((p) => !p.is_closed);
+  const activePolls = polls
+    .filter((p) => !p.is_closed)
+    .sort((a, b) => {
+      // Pinned first, then by created_at desc
+      if (a.is_pinned !== b.is_pinned) return a.is_pinned ? -1 : 1;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
   const closedPolls = polls.filter((p) => p.is_closed);
 
   return (

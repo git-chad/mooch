@@ -131,6 +131,7 @@ export type Poll = {
   is_anonymous: boolean;
   is_multi_choice: boolean;
   is_closed: boolean;
+  is_pinned: boolean;
   closes_at: string | null;
   created_by: string;
   created_at: string;

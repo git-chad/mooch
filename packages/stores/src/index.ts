@@ -9,4 +9,5 @@ export {
   usePollStore,
   type PollWithOptions,
   type PollOptionWithVotes,
+  type PollTokenActionWithProfile,
 } from "./polls";

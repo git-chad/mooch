@@ -292,6 +292,16 @@ body {
   transform: scale(0.95);
 }
 
+/* ── Poll countdown pulse animations ────────────────────────────────────── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+@keyframes pulse-breathe {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.3; transform: scale(0.7); }
+}
+
 @starting-style {
   .icon-picker-popup[data-starting-style] {
     opacity: 0;

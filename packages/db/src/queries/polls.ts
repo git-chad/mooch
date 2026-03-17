@@ -13,9 +13,13 @@ export type PollOptionWithVotes = PollOption & {
   voters: Profile[];
 };
 
+export type PollTokenActionWithProfile = PollTokenAction & {
+  user: Profile;
+};
+
 export type PollWithOptions = Poll & {
   options: PollOptionWithVotes[];
-  token_actions: PollTokenAction[];
+  token_actions: PollTokenActionWithProfile[];
   created_by_profile: Profile;
   total_votes: number;
 };
@@ -27,18 +31,22 @@ export async function getPolls(
   const { data, error } = await supabase
     .from("polls")
     .select(
-      "*, created_by_profile:profiles!created_by(*), poll_options(*), poll_votes(*, voter:profiles!user_id(*)), poll_token_actions(*)",
+      "*, created_by_profile:profiles!created_by(*), poll_options(*), poll_votes(*, voter:profiles!user_id(*)), poll_token_actions(*, user:profiles!user_id(*))",
     )
     .eq("group_id", groupId)
     .order("is_closed", { ascending: true })
+    .order("is_pinned", { ascending: false })
     .order("created_at", { ascending: false });
 
-  if (error || !data) return [];
+  if (error || !data) {
+    console.error("[getPolls] query failed:", error?.message);
+    return [];
+  }
 
   return data.map((poll) => {
     const options = (poll.poll_options ?? []) as PollOption[];
     const votes = (poll.poll_votes ?? []) as (PollVote & { voter: Profile })[];
-    const tokenActions = (poll.poll_token_actions ?? []) as PollTokenAction[];
+    const tokenActions = (poll.poll_token_actions ?? []) as PollTokenActionWithProfile[];
     const activeVotes = votes.filter((v) => !v.is_vetoed);
 
     return {
@@ -74,7 +82,7 @@ export async function getPollById(
   const { data, error } = await supabase
     .from("polls")
     .select(
-      "*, created_by_profile:profiles!created_by(*), poll_options(*), poll_votes(*, voter:profiles!user_id(*)), poll_token_actions(*)",
+      "*, created_by_profile:profiles!created_by(*), poll_options(*), poll_votes(*, voter:profiles!user_id(*)), poll_token_actions(*, user:profiles!user_id(*))",
     )
     .eq("id", pollId)
     .single();
@@ -83,7 +91,7 @@ export async function getPollById(
 
   const options = (data.poll_options ?? []) as PollOption[];
   const votes = (data.poll_votes ?? []) as (PollVote & { voter: Profile })[];
-  const tokenActions = (data.poll_token_actions ?? []) as PollTokenAction[];
+  const tokenActions = (data.poll_token_actions ?? []) as PollTokenActionWithProfile[];
   const activeVotes = votes.filter((v) => !v.is_vetoed);
 
   return {

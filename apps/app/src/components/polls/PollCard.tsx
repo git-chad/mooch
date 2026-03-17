@@ -1,14 +1,21 @@
 "use client";
 
 import type { PollOptionWithVotes, PollWithOptions } from "@mooch/stores";
+import { usePollStore } from "@mooch/stores";
 import { Badge, Text } from "@mooch/ui";
+import { BarChart3, Pin } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { vote } from "@/app/actions/polls";
+import { toast } from "sonner";
+import { togglePinPoll, vote } from "@/app/actions/polls";
+import { AnimatedNumber } from "@/components/shared/AnimatedNumber";
 import { relativeTime } from "@/lib/expenses";
 import { getSurfaceTransition, motionDuration, motionEase } from "@/lib/motion";
 import { CorruptionActionsBar } from "./CorruptionActionsBar";
+import { CorruptionActivityLog } from "./CorruptionActivityLog";
+import { PollCountdown } from "./PollCountdown";
 import { PollOptionTile } from "./PollOptionTile";
+import { PollResultsSheet } from "./PollResultsSheet";
 
 type Props = {
   poll: PollWithOptions;
@@ -34,6 +41,19 @@ function deriveSelectedIds(
 
 export function PollCard({ poll, currentUserId, groupId }: Props) {
   const reducedMotion = useReducedMotion() ?? false;
+  const [resultsOpen, setResultsOpen] = useState(false);
+  const upsertPoll = usePollStore((s) => s.upsertPoll);
+
+  // Optimistic pin state — null means "use server data"
+  const [optimisticPinned, setOptimisticPinned] = useState<boolean | null>(null);
+  const isPinned = optimisticPinned ?? poll.is_pinned;
+
+  // Clear optimistic pin when server catches up
+  useEffect(() => {
+    if (optimisticPinned !== null && poll.is_pinned === optimisticPinned) {
+      setOptimisticPinned(null);
+    }
+  }, [poll.is_pinned, optimisticPinned]);
 
   const transition = useMemo(
     () => getSurfaceTransition(reducedMotion, motionDuration.fast),
@@ -60,7 +80,6 @@ export function PollCard({ poll, currentUserId, groupId }: Props) {
   useEffect(() => {
     if (!optimistic || !pendingVoteRef.current) return;
 
-    // Check if server data now reflects our optimistic vote
     const serverIds = deriveSelectedIds(poll.options, currentUserId);
     const optimisticIds = optimistic.selectedIds;
 
@@ -71,7 +90,6 @@ export function PollCard({ poll, currentUserId, groupId }: Props) {
       serverArr.length === optimisticArr.length &&
       serverArr.every((id, i) => id === optimisticArr[i])
     ) {
-      // Server caught up — clear optimistic state
       setOptimistic(null);
       pendingVoteRef.current = null;
     }
@@ -90,6 +108,28 @@ export function PollCard({ poll, currentUserId, groupId }: Props) {
     (a) => a.action === "hail_mary",
   );
 
+  // Leading option (highest weighted_count)
+  const maxWeighted = Math.max(
+    ...displayOptions.map((o) => o.weighted_count),
+    0,
+  );
+
+  // Winner(s) for closed polls
+  const winnerIds = useMemo(() => {
+    if (!poll.is_closed || displayTotal === 0) return new Set<string>();
+    return new Set(
+      displayOptions
+        .filter((o) => o.weighted_count === maxWeighted && maxWeighted > 0)
+        .map((o) => o.id),
+    );
+  }, [poll.is_closed, displayOptions, displayTotal, maxWeighted]);
+
+  // Hot poll heuristic: open + has corruption actions + 5+ votes
+  const isHot =
+    !poll.is_closed &&
+    poll.token_actions.length > 0 &&
+    displayTotal >= 5;
+
   // Derive badges
   const badges: { label: string; emoji: string; color?: string }[] = [];
   if (poll.is_anonymous) badges.push({ label: "Anonymous", emoji: "🕶️" });
@@ -103,12 +143,10 @@ export function PollCard({ poll, currentUserId, groupId }: Props) {
     (optionId: string) => {
       if (poll.is_closed) return;
 
-      // Use current display state as basis (handles rapid clicks)
       const currentIds = optimistic
         ? optimistic.selectedIds
         : serverSelectedIds;
 
-      // Compute next selected option IDs
       let nextIds: Set<string>;
       if (poll.is_multi_choice) {
         nextIds = new Set(currentIds);
@@ -120,7 +158,6 @@ export function PollCard({ poll, currentUserId, groupId }: Props) {
           : new Set([optionId]);
       }
 
-      // Build optimistic option data
       const baseOptions = optimistic ? optimistic.options : poll.options;
       const fakeProfile = {
         id: currentUserId,
@@ -154,7 +191,6 @@ export function PollCard({ poll, currentUserId, groupId }: Props) {
       const removed = [...currentIds].filter((id) => !nextIds.has(id)).length;
       const newTotal = Math.max(0, baseTotal + added - removed);
 
-      // Set optimistic state — this renders IMMEDIATELY, independent of store
       const voteKey = [...nextIds].sort().join(",");
       pendingVoteRef.current = voteKey;
       setOptimistic({
@@ -163,108 +199,196 @@ export function PollCard({ poll, currentUserId, groupId }: Props) {
         totalVotes: newTotal,
       });
 
-      // Fire server action in background
       vote(poll.id, [...nextIds]).then((result) => {
         if ("error" in result) {
-          // Revert — clear optimistic, fall back to server data
           setOptimistic(null);
           pendingVoteRef.current = null;
         }
-        // On success: realtime will sync and the useEffect above clears optimistic
       });
     },
     [poll, serverSelectedIds, currentUserId, optimistic],
   );
 
+  const handleTogglePin = useCallback(async () => {
+    const next = !isPinned;
+    // Optimistic update
+    setOptimisticPinned(next);
+    upsertPoll({ ...poll, is_pinned: next });
+
+    const result = await togglePinPoll(poll.id);
+    if ("error" in result) {
+      // Revert
+      setOptimisticPinned(null);
+      upsertPoll(poll);
+      toast.error(result.error);
+    }
+  }, [poll, isPinned, upsertPoll]);
+
+  // Status dot color: green for open, muted for closed
+  const statusDotColor = poll.is_closed ? "#C4B8AE" : "#5B8C5A";
+
   return (
-    <motion.div
-      layout="position"
-      transition={transition}
-      className="rounded-2xl overflow-hidden"
-      style={{
-        background: "var(--color-surface)",
-        border: "1px solid var(--color-edge)",
-        opacity: poll.is_closed ? 0.7 : 1,
-      }}
-    >
-      <div className="px-4 pt-4 pb-3 space-y-3">
-        {/* Header: question + meta */}
-        <div>
-          <div className="flex items-start justify-between gap-2">
-            <Text variant="heading" className="flex-1">
-              {poll.question}
-            </Text>
-            {poll.is_closed && !coupAction && (
-              <Badge variant="closed" label="Closed" size="sm" />
-            )}
-          </div>
+    <>
+      <motion.div
+        layout="position"
+        transition={transition}
+        className="rounded-2xl overflow-hidden"
+        style={{
+          background: "var(--color-surface)",
+          border: "1px solid var(--color-edge)",
+          boxShadow: isHot
+            ? "0 0 20px rgba(255, 107, 53, 0.08)"
+            : undefined,
+        }}
+      >
+        <div className="px-5 pt-5 pb-4 space-y-3">
+          {/* Header: question + meta + results button */}
+          <div>
+            <div className="flex items-start justify-between gap-2">
+              {/* Status dot + question */}
+              <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                <span
+                  className="w-2.5 h-2.5 rounded-full shrink-0 mt-[7px]"
+                  style={{ background: statusDotColor }}
+                />
+                <Text variant="heading" className="flex-1 min-w-0">
+                  {poll.question}
+                </Text>
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                {/* Pin button */}
+                <button
+                  type="button"
+                  onClick={handleTogglePin}
+                  className="inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors hover:bg-[#F0EDE8]"
+                  style={{
+                    color: isPinned ? "var(--color-accent)" : "var(--color-ink-subtle)",
+                  }}
+                  aria-label={isPinned ? "Unpin poll" : "Pin poll"}
+                >
+                  <Pin className="w-3.5 h-3.5" style={{ fill: isPinned ? "currentColor" : "none" }} />
+                </button>
+                {/* Results button */}
+                <button
+                  type="button"
+                  onClick={() => setResultsOpen(true)}
+                  className="inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors hover:bg-[#F0EDE8]"
+                  style={{ color: "var(--color-ink-subtle)" }}
+                  aria-label="View results"
+                >
+                  <BarChart3 className="w-4 h-4" />
+                </button>
+                {poll.is_closed && !coupAction && (
+                  <Badge variant="closed" label="Closed" size="sm" />
+                )}
+              </div>
+            </div>
 
-          <div className="flex items-center gap-2 mt-1.5">
-            {poll.created_by_profile?.display_name && (
+            <div className="flex items-center gap-2 mt-1.5 flex-wrap ml-5">
+              {poll.created_by_profile?.display_name && (
+                <Text variant="caption" color="subtle">
+                  {poll.created_by_profile.display_name}
+                </Text>
+              )}
               <Text variant="caption" color="subtle">
-                {poll.created_by_profile.display_name}
+                · {relativeTime(poll.created_at)}
               </Text>
-            )}
-            <Text variant="caption" color="subtle">
-              · {relativeTime(poll.created_at)}
-            </Text>
-            <Text variant="caption" color="subtle">
-              · {displayTotal} {displayTotal === 1 ? "vote" : "votes"}
-            </Text>
+              <Text variant="caption" color="subtle">
+                ·{" "}
+                <AnimatedNumber
+                  value={displayTotal}
+                  className="tabular-nums"
+                />{" "}
+                {displayTotal === 1 ? "vote" : "votes"}
+              </Text>
+              {/* Countdown timer for polls with closes_at */}
+              {poll.closes_at && !poll.is_closed && (
+                <PollCountdown closesAt={poll.closes_at} />
+              )}
+            </div>
+
+            {/* Badges */}
+            <AnimatePresence initial={false}>
+              {(badges.length > 0 || isHot) && (
+                <motion.div
+                  className="flex flex-wrap gap-1.5 mt-2 ml-5"
+                  initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{
+                    duration: motionDuration.fast,
+                    ease: motionEase.out,
+                  }}
+                >
+                  {isHot && (
+                    <Badge
+                      label="Hot"
+                      emoji="🔥"
+                      size="sm"
+                      color="#FF6B35"
+                    />
+                  )}
+                  {badges.map((b) => (
+                    <Badge
+                      key={b.label}
+                      label={b.label}
+                      emoji={b.emoji}
+                      size="sm"
+                      color={b.color}
+                    />
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
-          {/* Badges */}
-          <AnimatePresence initial={false}>
-            {badges.length > 0 && (
-              <motion.div
-                className="flex flex-wrap gap-1.5 mt-2"
-                initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{
-                  duration: motionDuration.fast,
-                  ease: motionEase.out,
-                }}
-              >
-                {badges.map((b) => (
-                  <Badge
-                    key={b.label}
-                    label={b.label}
-                    emoji={b.emoji}
-                    size="sm"
-                    color={b.color}
-                  />
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Options */}
+          <div className="space-y-2">
+            {displayOptions.map((option) => (
+              <PollOptionTile
+                key={option.id}
+                option={option}
+                totalWeightedVotes={displayTotal}
+                isSelected={displaySelectedIds.has(option.id)}
+                isClosed={poll.is_closed}
+                isAnonymous={poll.is_anonymous}
+                isMultiChoice={poll.is_multi_choice}
+                isLeading={
+                  !poll.is_closed &&
+                  option.weighted_count === maxWeighted &&
+                  maxWeighted > 0
+                }
+                isWinner={winnerIds.has(option.id)}
+                onVote={() => handleVote(option.id)}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* Options */}
-        <div className="space-y-2">
-          {displayOptions.map((option) => (
-            <PollOptionTile
-              key={option.id}
-              option={option}
-              totalWeightedVotes={displayTotal}
-              isSelected={displaySelectedIds.has(option.id)}
-              isClosed={poll.is_closed}
-              isAnonymous={poll.is_anonymous}
-              isMultiChoice={poll.is_multi_choice}
-              onVote={() => handleVote(option.id)}
-            />
-          ))}
-        </div>
-      </div>
+        {/* Corruption activity log — between options and card deck */}
+        {poll.token_actions.length > 0 && (
+          <CorruptionActivityLog tokenActions={poll.token_actions} />
+        )}
 
-      {/* Corruption actions bar — only for open polls */}
-      {!poll.is_closed && (
-        <CorruptionActionsBar
-          poll={poll}
-          currentUserId={currentUserId}
-          groupId={groupId}
-        />
-      )}
-    </motion.div>
+        {/* Corruption actions bar — only for open polls */}
+        {!poll.is_closed && (
+          <CorruptionActionsBar
+            poll={poll}
+            currentUserId={currentUserId}
+            groupId={groupId}
+          />
+        )}
+      </motion.div>
+
+      {/* Results sheet */}
+      <PollResultsSheet
+        open={resultsOpen}
+        onOpenChange={setResultsOpen}
+        poll={poll}
+        displayOptions={displayOptions}
+        displayTotal={displayTotal}
+        winnerIds={winnerIds}
+      />
+    </>
   );
 }
