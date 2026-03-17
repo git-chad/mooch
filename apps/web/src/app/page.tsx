@@ -3,6 +3,7 @@ import { CTA } from "@/components/sections/cta";
 import { FAQ } from "@/components/sections/faq";
 import { Features } from "@/components/sections/features/Features";
 import { Hero } from "@/components/sections/hero";
+import { Suspense } from "react";
 
 export default function Home() {
   return (
@@ -18,7 +19,9 @@ export default function Home() {
         <Features />
       </section>
       <section id="faq" className="relative z-10 bg-[#FCFCFB]">
-        <FAQ />
+        <Suspense>
+          <FAQ />
+        </Suspense>
       </section>
       <section id="cta" className="relative z-10 bg-[#FCFCFB]">
         <CTA />
