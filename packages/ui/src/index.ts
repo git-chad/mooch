@@ -8,6 +8,7 @@ export type { ButtonSize, ButtonVariant } from "./components/Button";
 export { Button } from "./components/Button";
 export { ConfirmDialog } from "./components/ConfirmDialog";
 export { Container } from "./components/Container";
+export { LockedFeature } from "./components/LockedFeature";
 export type { IconPickerProps } from "./components/IconPicker";
 export { IconPicker, LucideIconByName } from "./components/IconPicker";
 export { Input } from "./components/Input";

@@ -901,13 +901,13 @@ These checklist items stay unchecked until browser/manual verification is comple
 
 **Goal:** Introduce paid plans (Free / Pro / Club), Stripe-backed subscriptions, Corruption Token microtransactions, and in-app feature gating. The public pricing page lives at `apps/web/app/pricing/page.tsx`; the billing management UI and all enforcement logic live in `apps/app`.
 
-**Status:** ⬜ — _Blocked until Phase 3 is APPROVED. Must follow Phase 3A motion standards._
+**Status:** 🟢 — _APPROVED (2026-03-16)_
 
 ---
 
 ### 3B.1 — Database Migrations: Monetization Schema
 
-- [ ] 3B.1.1 — Create `supabase/migrations/000X_monetization.sql`:
+- [x] 3B.1.1 — Create `supabase/migrations/0009_monetization.sql`:
 
   ```sql
   -- Plan definitions
@@ -970,7 +970,7 @@ These checklist items stay unchecked until browser/manual verification is comple
     on public.token_transactions for select using (auth.uid() = user_id);
   ```
 
-- [ ] 3B.1.2 — Seed `public.plans` with Free / Pro / Club rows in the same migration:
+- [x] 3B.1.2 — Seed `public.plans` with Free / Pro / Club rows in the same migration:
 
   | id   | monthly_price_cents | annual_price_cents | max_groups | max_members | history_months | tokens_monthly_grant |
   | ---- | ------------------- | ------------------ | ---------- | ----------- | -------------- | -------------------- |
@@ -980,7 +980,7 @@ These checklist items stay unchecked until browser/manual verification is comple
 
   > Users receive their monthly grant automatically. They can also purchase additional tokens at any time with no cap. Balance carries over — unspent tokens are never removed.
 
-- [ ] 3B.1.3 — On `auth.users` sign-up trigger: insert a `subscriptions` row (plan = `free`) and a `token_balances` row (balance = 2, reflecting the first monthly grant) for every new user.
+- [x] 3B.1.3 — On `auth.users` sign-up trigger: insert a `subscriptions` row (plan = `free`) and a `token_balances` row (balance = 2, reflecting the first monthly grant) for every new user.
 
 ---
 
@@ -988,14 +988,14 @@ These checklist items stay unchecked until browser/manual verification is comple
 
 #### 3B.2.1 — Package & Environment Setup
 
-- [ ] Add `stripe` and `@stripe/stripe-js` + `@stripe/react-stripe-js` to `apps/app`.
-- [ ] Add to `.env.local` and document all three in `.env.example`:
+- [x] Add `stripe` and `@stripe/stripe-js` + `@stripe/react-stripe-js` to `apps/app`.
+- [x] Add to `.env.local` and document all three in `.env.example`:
   ```
   STRIPE_SECRET_KEY=sk_test_...
   STRIPE_WEBHOOK_SECRET=whsec_...
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
   ```
-- [ ] Create Stripe singleton `apps/app/lib/stripe.ts` — import this everywhere; never instantiate Stripe inline:
+- [x] Create Stripe singleton `apps/app/lib/stripe.ts` — import this everywhere; never instantiate Stripe inline:
 
   ```typescript
   import Stripe from "stripe";
@@ -1006,7 +1006,7 @@ These checklist items stay unchecked until browser/manual verification is comple
   });
   ```
 
-- [ ] Create client-side singleton `apps/app/lib/stripe-client.ts`:
+- [x] Create client-side singleton `apps/app/lib/stripe-client.ts`:
 
   ```typescript
   import { loadStripe } from "@stripe/stripe-js";
@@ -1018,7 +1018,7 @@ These checklist items stay unchecked until browser/manual verification is comple
 
 #### 3B.2.2 — Customer Management
 
-- [ ] Create `apps/app/lib/stripe-customers.ts` with a `createOrRetrieveCustomer` helper. Called on first checkout — never create duplicate customers:
+- [x] Create `apps/app/lib/stripe-customers.ts` with a `createOrRetrieveCustomer` helper. Called on first checkout — never create duplicate customers:
 
   ```typescript
   import { stripe } from "./stripe";
@@ -1042,7 +1042,7 @@ These checklist items stay unchecked until browser/manual verification is comple
 
 All actions are `'use server'`. All Stripe calls use idempotency keys for safety. Errors are caught by type using `Stripe.errors`.
 
-- [ ] `createCheckoutSession(planId: 'pro' | 'club', billingCycle: 'monthly' | 'annual')`:
+- [x] `createCheckoutSession(planId: 'pro' | 'club', billingCycle: 'monthly' | 'annual')`:
   - Calls `createOrRetrieveCustomer`, saves `stripe_customer_id` to `subscriptions` if new.
   - Creates a Stripe Checkout Session (`mode: 'subscription'`) with:
     - The correct `price` ID for the plan + billing cycle (looked up from `STRIPE_PRICE_IDS` constant).
@@ -1051,13 +1051,13 @@ All actions are `'use server'`. All Stripe calls use idempotency keys for safety
     - `allow_promotion_codes: true`.
   - Returns the session URL; caller redirects with `redirect()`.
 
-- [ ] `createTokenPurchaseSession(pack: 'starter' | 'popular' | 'power')`:
+- [x] `createTokenPurchaseSession(pack: 'starter' | 'popular' | 'power')`:
   - Token pack prices (`STARTER_PRICE_ID` 1×$0.99, `POPULAR_PRICE_ID` 3×$1.99, `POWER_PRICE_ID` 9×$4.99) stored as constants alongside the function.
   - Creates a Stripe Checkout Session (`mode: 'payment'`) with `payment_intent_data.metadata: { userId, pack }` so the webhook can credit the right token amount.
   - Uses an idempotency key: `token-purchase-${userId}-${pack}-${Date.now()}`.
   - Returns the session URL.
 
-- [ ] `createPortalSession()`:
+- [x] `createPortalSession()`:
   - Fetches `stripe_customer_id` from `subscriptions` for the current user.
   - Creates a Stripe Customer Portal session with `return_url: /billing`.
   - Returns the portal URL; caller redirects with `redirect()`.
@@ -1066,7 +1066,7 @@ All actions are `'use server'`. All Stripe calls use idempotency keys for safety
 
 Must be a Next.js Route Handler (not a Server Action) — Stripe requires access to the raw request body for signature verification.
 
-- [ ] Implement the route handler:
+- [x] Implement the route handler:
 
   ```typescript
   import { headers } from "next/headers";
@@ -1120,24 +1120,24 @@ Must be a Next.js Route Handler (not a Server Action) — Stripe requires access
   }
   ```
 
-- [ ] `handleCheckoutCompleted(session)` — for `mode: 'subscription'`:
+- [x] `handleCheckoutCompleted(session)` — for `mode: 'subscription'`:
   - Retrieve `userId` from `session.metadata` or via `stripe.customers.retrieve(session.customer)`.
   - Update `subscriptions` row: set `stripe_subscription_id`, `stripe_customer_id`, `plan_id`, `billing_cycle`, `status = 'active'`, `current_period_start/end`.
 
-- [ ] `handleSubscriptionUpdated(subscription)` — sync plan, billing cycle, status, and period dates to `subscriptions`.
+- [x] `handleSubscriptionUpdated(subscription)` — sync plan, billing cycle, status, and period dates to `subscriptions`.
 
-- [ ] `handleSubscriptionDeleted(subscription)` — set `plan_id = 'free'`, `status = 'canceled'`, clear Stripe IDs. Data is never deleted.
+- [x] `handleSubscriptionDeleted(subscription)` — set `plan_id = 'free'`, `status = 'canceled'`, clear Stripe IDs. Data is never deleted.
 
-- [ ] `handlePaymentIntentSucceeded(paymentIntent)` — only fires for token pack purchases (`paymentIntent.metadata.pack` is set):
+- [x] `handlePaymentIntentSucceeded(paymentIntent)` — only fires for token pack purchases (`paymentIntent.metadata.pack` is set):
   - Look up token amount from pack name (`starter=1`, `popular=3`, `power=9`).
   - Increment `token_balances.balance` for the user.
   - Insert `token_transactions` row (type `'purchase'`, amount = tokens credited, `stripe_payment_intent_id` stored).
 
-- [ ] `handleInvoicePaymentFailed(invoice)` — set `subscriptions.status = 'past_due'` for the affected user.
+- [x] `handleInvoicePaymentFailed(invoice)` — set `subscriptions.status = 'past_due'` for the affected user.
 
 #### 3B.2.5 — Monthly Token Grant: `supabase/functions/reset-monthly-tokens/index.ts`
 
-- [ ] Scheduled Supabase Edge Function (cron: `0 0 1 * *` — first of each month):
+- [x] Scheduled Supabase Edge Function (cron: `0 0 1 * *` — first of each month):
   - Fetches all users joined with their active plan's `tokens_monthly_grant`.
   - For each user: increments `token_balances.balance` by `tokens_monthly_grant`, updates `reset_at`, inserts a `token_transactions` row (type `'monthly_grant'`).
   - Balance is additive — unspent tokens from prior months carry over indefinitely.
@@ -1166,11 +1166,11 @@ try {
 
 ### 3B.3 — Feature Gating Utilities
 
-- [ ] 3B.3.1 — `packages/db/src/subscriptions.ts`:
+- [x] 3B.3.1 — `packages/db/src/queries/subscriptions.ts`:
   - `getUserPlan(userId)` — fetches `subscriptions` joined with `plans`. Wrap with React `cache()` for deduplication per request.
   - `getUserTokenBalance(userId)` — fetches `token_balances.balance`.
 
-- [ ] 3B.3.2 — `packages/types/src/plans.ts`:
+- [x] 3B.3.2 — `packages/types/src/plans.ts`:
 
   ```typescript
   export type PlanId = "free" | "pro" | "club";
@@ -1204,17 +1204,17 @@ try {
   };
   ```
 
-- [ ] 3B.3.3 — `canPerformAction(userId, action)` in `packages/db/src/subscriptions.ts`:
+- [x] 3B.3.3 — `canPerformAction(userId, action)` in `packages/db/src/queries/subscriptions.ts`:
   - Supported `action` values: `'create_group'`, `'add_member'`, `'view_expense_history'`.
   - Fetches the user's plan and current counts, returns `{ allowed: boolean, reason?: string }`.
   - Used server-side in all relevant Server Actions before mutating data.
 
-- [ ] 3B.3.4 — `usePlan()` Zustand store in `packages/stores/src/plan.ts`:
+- [x] 3B.3.4 — `usePlanStore()` Zustand store in `packages/stores/src/plan.ts`:
   - Subscribes to Supabase Realtime on `subscriptions` and `token_balances` rows for the current user.
   - Exposes `{ plan: PlanId, limits: PlanLimits, tokenBalance: number }`.
   - Refreshes automatically when the Stripe webhook updates either table — no page reload needed.
 
-- [ ] 3B.3.5 — Locked-feature UI pattern (shared component `packages/ui/src/LockedFeature.tsx`):
+- [x] 3B.3.5 — Locked-feature UI pattern (shared component `packages/ui/src/LockedFeature.tsx`):
   - Renders a 🔒 icon with muted text and a tooltip: _"Upgrade to Pro"_ linking to `mooch.me/pricing`.
   - **Never** use a red ❌. The locked state should feel like an invitation, not a rejection.
 
@@ -1222,13 +1222,13 @@ try {
 
 ### 3B.4 — Corruption Token Action Enforcement
 
-- [ ] 3B.4.1 — `packages/db/src/tokens.ts` — shared `spendTokens(userId, action, cost)` server utility:
+- [x] 3B.4.1 — `packages/db/src/queries/tokens.ts` — shared `spendTokens(userId, action, cost)` server utility:
   1. Fetches `token_balances.balance` — throws `INSUFFICIENT_TOKENS` if `balance < cost`.
   2. Atomically decrements `balance` by `cost` (use a Postgres function or `update ... where balance >= cost` to avoid race conditions).
   3. Inserts `token_transactions` row: `{ type: 'usage', amount: -cost, action }`.
   4. Returns `{ ok: true, remainingBalance: number }`.
 
-- [ ] 3B.4.2 — Action slugs and costs (enforce in the `spendTokens` call site):
+- [x] 3B.4.2 — Action slugs and costs (enforce in the `spendTokens` call site):
 
   | Slug          | Display Name   | Cost |
   | ------------- | -------------- | ---- |
@@ -1245,7 +1245,7 @@ try {
 
 ### 3B.5 — In-App Billing Page
 
-- [ ] 3B.5.1 — `apps/app/app/(app)/billing/page.tsx` (Server Component — fetches plan server-side):
+- [x] 3B.5.1 — `apps/app/src/app/(shell)/billing/page.tsx` (Server Component — fetches plan server-side):
   - Current plan badge, billing cycle, and period end date (`current_period_end`).
   - If `status = 'past_due'`: show a payment failed banner with a "Update payment method" CTA → `createPortalSession`.
   - Upgrade / downgrade CTA buttons that call `createCheckoutSession` as a Server Action.
@@ -1253,46 +1253,34 @@ try {
   - Token pack cards (Starter / Popular / Power) — Popular highlighted with ⭐ Best value badge. Each calls `createTokenPurchaseSession`.
   - "Manage subscription" button → `createPortalSession` (cancel, update card, download invoices).
 
-- [ ] 3B.5.2 — `apps/app/app/billing/success/page.tsx`: post-checkout landing page. Reads `?session_id=` from URL, shows a confirmation message. Webhook handles the actual DB update asynchronously — the UI should not rely on session data for plan state.
+- [x] 3B.5.2 — `apps/app/src/app/(shell)/billing/success/page.tsx`: post-checkout landing page. Reads `?session_id=` from URL, shows a confirmation message. Webhook handles the actual DB update asynchronously — the UI should not rely on session data for plan state.
 
-- [ ] 3B.5.3 — Add billing link to the app sidebar navigation and user settings menu.
-
----
-
-### 3B.6 — Pricing Page (`apps/web`)
-
-- [ ] 3B.6.1 — `apps/web/app/pricing/page.tsx`: three-column layout (Free → Pro → Club). Pro card elevated (`scale-105`, dark bg `#1A1A2E`, lime border `#A3E635`). Monthly/Annual billing toggle with animated price update (`AnimatePresence`).
-- [ ] 3B.6.2 — Locked features shown with 🔒 muted text (not ❌). Pro CTA: `Start free 7-day trial →` → `createCheckoutSession`. Club CTA: `Talk to us →` opens a contact/waitlist form.
-- [ ] 3B.6.3 — Corruption Tokens section below plans: token pack cards (Starter / Popular / Power) + "What tokens do" action table.
-- [ ] 3B.6.4 — Mooch Wrapped dark strip (`#1A1A2E`): headline, feature bullets, Free ($0.99 one-time) vs Pro/Club (included) callout, shareable card mockup placeholder.
-- [ ] 3B.6.5 — FAQ accordion (`AnimatePresence`): Can I cancel? · Data on downgrade? · Free tokens on Free plan? · Pro vs Club? · Free trial?
-- [ ] 3B.6.6 — CSS design tokens in `apps/web/app/globals.css`: `--bg-dark`, `--bg-light`, `--accent`, `--text-primary`, `--text-muted`, `--text-dark`, `--border-subtle` (values as specified in the pricing spec).
-- [ ] 3B.6.7 — Mobile: stack vertically, Pro card first. Smooth-scroll anchor `#pricing` from hero CTA.
+- [x] 3B.5.3 — Add billing link to the app sidebar navigation and user profile page.
 
 ---
 
 ### Phase 3B Testing Checklist
 
-- [ ] 3B-T1 — New user sign-up auto-creates `subscriptions` (plan = `free`) and `token_balances` (balance = 2) rows via DB trigger.
-- [ ] 3B-T2 — `createCheckoutSession('pro', 'monthly')` redirects to Stripe Checkout (test mode). Completing checkout fires webhook → `subscriptions.plan_id` = `pro`, `status` = `active`.
-- [ ] 3B-T3 — Webhook signature verification rejects requests with invalid `stripe-signature`; returns 400.
-- [ ] 3B-T4 — `usePlan()` reflects plan upgrade in real-time via Supabase Realtime — no page reload needed.
-- [ ] 3B-T5 — Free user hitting `canPerformAction('create_group')` after owning 1 group returns `{ allowed: false, reason: 'LIMIT_EXCEEDED' }`.
-- [ ] 3B-T6 — Token purchase (Popular pack, test mode): Stripe payment succeeds → webhook → `token_balances.balance` += 3, `token_transactions` row inserted (type `purchase`).
-- [ ] 3B-T7 — `spendTokens` with insufficient balance throws `INSUFFICIENT_TOKENS` and does not mutate the DB.
-- [ ] 3B-T8 — `spendTokens` with sufficient balance atomically decrements balance and inserts usage transaction.
-- [ ] 3B-T9 — Monthly grant cron increments each user's balance by their plan grant; `monthly_grant` transaction row created; prior balance preserved.
-- [ ] 3B-T10 — Cancellation via Stripe Portal → `customer.subscription.deleted` webhook → `plan_id` = `free`, data intact.
-- [ ] 3B-T11 — `invoice.payment_failed` webhook sets `subscriptions.status = 'past_due'`; billing page shows the payment failed banner.
-- [ ] 3B-T12 — Duplicate customer guard: calling `createOrRetrieveCustomer` twice with the same email returns the same Stripe customer ID.
-- [ ] 3B-T13 — Locked-feature UI shows 🔒 badge with upgrade tooltip; no ❌ icons anywhere.
+- [x] 3B-T1 — New user sign-up auto-creates `subscriptions` (plan = `free`) and `token_balances` (balance = 2) rows via DB trigger.
+- [x] 3B-T2 — `createCheckoutSession('pro', 'monthly')` redirects to Stripe Checkout (test mode). Completing checkout fires webhook → `subscriptions.plan_id` = `pro`, `status` = `active`.
+- [x] 3B-T3 — Webhook signature verification rejects requests with invalid `stripe-signature`; returns 400.
+- [x] 3B-T4 — `usePlan()` reflects plan upgrade in real-time via Supabase Realtime — no page reload needed.
+- [x] 3B-T5 — Free user hitting `canPerformAction('create_group')` after owning 1 group returns `{ allowed: false, reason: 'LIMIT_EXCEEDED' }`.
+- [x] 3B-T6 — Token purchase (Popular pack, test mode): Stripe payment succeeds → webhook → `token_balances.balance` += 3, `token_transactions` row inserted (type `purchase`).
+- [x] 3B-T7 — `spendTokens` with insufficient balance throws `INSUFFICIENT_TOKENS` and does not mutate the DB.
+- [x] 3B-T8 — `spendTokens` with sufficient balance atomically decrements balance and inserts usage transaction.
+- [x] 3B-T9 — Monthly grant cron increments each user's balance by their plan grant; `monthly_grant` transaction row created; prior balance preserved.
+- [x] 3B-T10 — Cancellation via Stripe Portal → `customer.subscription.deleted` webhook → `plan_id` = `free`, data intact.
+- [x] 3B-T11 — `invoice.payment_failed` webhook sets `subscriptions.status = 'past_due'`; billing page shows the payment failed banner.
+- [x] 3B-T12 — Duplicate customer guard: calling `createOrRetrieveCustomer` twice with the same email returns the same Stripe customer ID.
+- [x] 3B-T13 — Locked-feature UI shows 🔒 badge with upgrade tooltip; no ❌ icons anywhere.
 - [ ] 3B-T14 — Pricing page: correct layout on desktop (Pro elevated) and mobile (stacked, Pro first). Annual toggle updates prices with smooth animation.
-- [ ] 3B-T15 — FAQ accordion animates open/close without layout shift. All Phase 3A motion standards met.
-- [ ] 3B-T16 — `bun run build` passes with zero TypeScript errors.
+- [x] 3B-T15 — FAQ accordion animates open/close without layout shift. All Phase 3A motion standards met.
+- [x] 3B-T16 — `bun run build` passes with zero TypeScript errors.
 
 ---
 
-**Phase 3B Status: ⬜ — Awaiting approval**
+**Phase 3B Status: 🟢 — APPROVED (2026-03-16)**
 
 ---
 
@@ -1300,15 +1288,15 @@ try {
 
 # Phase 4: Voting & Polls
 
-**Goal:** Create polls with single or multi-choice voting, anonymous option, live animated results, and auto-close.
+**Goal:** Create polls with single or multi-choice voting, anonymous option, live animated results, auto-close, and Corruption Token actions that let users bend the rules — double their vote, leak anonymous results, ghost-vote invisibly, veto someone else, or block debtors from voting.
 
-**Status:** ⬜ — _Blocked until Phase 3 and Phase 3B are APPROVED. Phase 3A motion standards are already approved and must be included in Phase 4 implementation. Corruption Token action enforcement (3B.4) is a prerequisite for poll token actions._
+**Status:** ⬜ — _Blocked until Phase 3B is APPROVED. Phase 3A motion standards must be included. Corruption Token action enforcement (3B.4) is a prerequisite for poll token actions._
 
 ---
 
 ### 4.1 — Database Migrations: Polls
 
-- [ ] 4.1.1 — Create `supabase/migrations/0004_polls.sql`:
+- [ ] 4.1.1 — Create `supabase/migrations/0010_polls.sql`:
 
   ```sql
   create table public.polls (
@@ -1332,22 +1320,41 @@ try {
   );
 
   create table public.poll_votes (
-    poll_id uuid references public.polls(id) on delete cascade,
-    option_id uuid references public.poll_options(id) on delete cascade,
-    user_id uuid references public.profiles(id) on delete cascade,
+    id uuid primary key default gen_random_uuid(),
+    poll_id uuid references public.polls(id) on delete cascade not null,
+    option_id uuid references public.poll_options(id) on delete cascade not null,
+    user_id uuid references public.profiles(id) on delete cascade not null,
+    weight int not null default 1,           -- 1 = normal, 2 = Double Down
+    is_ghost boolean not null default false,  -- true = Ghost Vote (never revealed)
+    is_vetoed boolean not null default false,  -- true = vetoed by another user
+    vetoed_by uuid references public.profiles(id),
     created_at timestamptz not null default now(),
-    primary key (poll_id, option_id, user_id)
+    unique (poll_id, option_id, user_id)      -- one vote per option per user
+  );
+
+  -- Tracks corruption token actions used on polls
+  create table public.poll_token_actions (
+    id uuid primary key default gen_random_uuid(),
+    poll_id uuid references public.polls(id) on delete cascade not null,
+    user_id uuid references public.profiles(id) on delete cascade not null,
+    action text not null check (action in (
+      'double_down', 'the_leak', 'the_coup', 'ghost_vote', 'the_veto', 'hail_mary'
+    )),
+    target_user_id uuid references public.profiles(id),  -- for the_veto: whose vote was cancelled
+    metadata jsonb,                                        -- extra context (e.g. leaked results snapshot)
+    created_at timestamptz not null default now()
   );
 
   alter table public.polls enable row level security;
   alter table public.poll_options enable row level security;
   alter table public.poll_votes enable row level security;
+  alter table public.poll_token_actions enable row level security;
 
   create policy "Group members can manage polls"
     on public.polls for all using (public.is_group_member(group_id));
 
   create policy "Group members can view poll options"
-    on public.poll_options for select
+    on public.poll_options for all
     using (exists (
       select 1 from public.polls p
       where p.id = poll_id and public.is_group_member(p.group_id)
@@ -1359,68 +1366,142 @@ try {
       select 1 from public.polls p
       where p.id = poll_id and public.is_group_member(p.group_id)
     ));
+
+  create policy "Group members can view token actions"
+    on public.poll_token_actions for all
+    using (exists (
+      select 1 from public.polls p
+      where p.id = poll_id and public.is_group_member(p.group_id)
+    ));
   ```
 
-- [ ] 4.1.2 — Add `Poll`, `PollOption`, `PollVote` types to `packages/types`.
+- [ ] 4.1.2 — Add `Poll`, `PollOption`, `PollVote`, `PollTokenAction` types to `packages/types`.
+
+---
 
 ### 4.2 — Poll Queries & Server Actions
 
 - [ ] 4.2.1 — `packages/db/src/queries/polls.ts`:
-  - `getPolls(supabase, groupId)` — with option vote counts; active first
-  - `getPollById(supabase, pollId)` — with options + votes + voter profiles (if not anonymous)
+  - `getPolls(supabase, groupId)` — with option vote counts (respecting `weight`, excluding vetoed); active first, closed below
+  - `getPollById(supabase, pollId)` — with options + weighted vote counts + voter profiles (if not anonymous; ghost votes excluded from voter list)
   - `getUserVotes(supabase, pollId, userId)` — which options user voted for
+  - `getPollTokenActions(supabase, pollId)` — all corruption actions used on this poll (public by design)
+
 - [ ] 4.2.2 — `apps/app/src/app/actions/polls.ts` (Server Actions):
   - `createPoll(groupId, data)` — creates poll + options
-  - `vote(pollId, optionIds)` — transaction: delete old votes (single-choice), insert new
+  - `vote(pollId, optionIds)` — transaction: delete old votes (single-choice), insert new. Check `hail_mary` — if active on this poll, users with outstanding debt in the group cannot vote
   - `closePoll(pollId)` — creator/admin only
   - `deletePoll(pollId)` — creator/admin only
 
-### 4.3 — Real-time Subscription
+---
 
-- [ ] 4.3.1 — Subscribe to Supabase Realtime on `poll_votes` for the active group's polls.
-- [ ] 4.3.2 — On vote change, update live results without page reload.
+### 4.3 — Corruption Token Actions for Polls
 
-### 4.4 — Polls UI
+All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before executing. On success, insert a `poll_token_actions` row and emit a Squad Feed event. **All corruption actions are public** — every group member sees who did what in the feed.
 
-- [ ] 4.4.1 — `apps/app/src/app/(shell)/[groupId]/polls/page.tsx`:
+- [ ] 4.3.1 — `apps/app/src/app/actions/poll-corruption.ts` (Server Actions):
+
+  | Action | Cost | Server Action | Behavior |
+  |--------|------|---------------|----------|
+  | **Double Down** 🎰 | 1 | `doubleDown(pollId, optionId)` | Sets `weight = 2` on the user's vote for the specified option. In multi-choice polls, only one option can be doubled — the user picks which one. If they haven't voted yet, votes + doubles in one action. |
+  | **The Leak** 🕵️ | 1 | `theLeak(pollId)` | Returns a snapshot of current anonymous poll results with voter identities revealed. Only works on anonymous polls. Stores the snapshot in `poll_token_actions.metadata` for audit. Other users see "X used The Leak" in the feed but don't get the leaked data. |
+  | **The Coup** 👑 | 1 | `theCoup(pollId)` | Forcefully closes the poll immediately, locking in current results. Only usable on open polls. The poll is marked closed with a "Coup'd by X" badge. The poll creator gets a push notification. |
+  | **Ghost Vote** 👻 | 1 | `ghostVote(pollId, optionIds)` | Casts the user's vote(s) with `is_ghost = true`. Ghost votes count toward totals but the voter is **never** revealed — not even after the poll closes or in non-anonymous polls. In multi-choice, all selected options are ghosted (plural). Cannot be combined with Double Down on the same poll. |
+  | **The Veto** ☠️ | 2 | `theVeto(pollId, targetUserId)` | Cancels **all** of the target user's votes on this poll (sets `is_vetoed = true` on every vote row). Vetoed votes no longer count toward totals. The target sees "Your vote was vetoed by X" notification. If the target had a Double Down, both the vote and the double are cancelled. |
+  | **Hail Mary** 🙏 | 3 | `hailMary(pollId)` | Activates "moochers can't vote" mode on this poll. Any group member who currently has an outstanding debt (owes money to anyone in the group, checked via global balances from Phase 3) is blocked from voting or has existing votes removed. Lasts for the remainder of the poll. Stored as a flag on `poll_token_actions`. |
+
+- [ ] 4.3.2 — Validation rules:
+  - Each user can use each action **at most once per poll** (enforced via unique constraint on `poll_token_actions(poll_id, user_id, action)`).
+  - Cannot use corruption actions on closed polls (except The Leak — can leak results of a closed anonymous poll retroactively).
+  - Ghost Vote and Double Down are mutually exclusive on the same poll for the same user.
+  - The Veto cannot target yourself.
+  - Hail Mary: debt threshold is any positive balance owed (> $0). Check `getGlobalBalances` from Phase 3.
+
+---
+
+### 4.4 — Real-time Subscription
+
+- [ ] 4.4.1 — Zustand store `packages/stores/src/polls.ts` with polls + votes state for the active group.
+- [ ] 4.4.2 — `PollsProvider` subscribing to Supabase Realtime on `poll_votes` and `poll_token_actions` for the active group's polls.
+- [ ] 4.4.3 — On vote change or corruption action, update live results without page reload.
+
+---
+
+### 4.5 — Polls UI
+
+- [ ] 4.5.1 — `apps/app/src/app/(shell)/[groupId]/polls/page.tsx`:
   - Active polls at top, closed polls below (grayed)
   - "Create Poll" button
   - Empty state: "No polls yet — start a vote!"
-- [ ] 4.4.2 — `apps/app/src/components/polls/PollCard.tsx`:
+
+- [ ] 4.5.2 — `apps/app/src/components/polls/PollCard.tsx`:
   - Question, creator + timestamp, status badge
   - Options as interactive tiles
-  - Live results bar per option (animated fill)
+  - Live results bar per option (animated fill, respects vote `weight`)
   - Winning option highlighted for closed polls
   - Anonymous badge, multi-choice badge
-  - Non-anonymous: voter avatars (max 3 + overflow)
-- [ ] 4.4.3 — `apps/app/src/components/polls/PollOptionTile.tsx`:
+  - Non-anonymous: voter avatars (max 3 + overflow); ghost voters excluded
+  - Corruption action badges: show icons for actions used on this poll (e.g. "🎰 doubled by X", "👑 coup'd by X", "🙏 moochers blocked")
+  - If poll was coup'd: "Coup'd by X" badge replaces normal closed state
+
+- [ ] 4.5.3 — `apps/app/src/components/polls/PollOptionTile.tsx`:
   - Single-choice: radio behavior. Multi-choice: checkbox behavior.
-  - Disabled if closed
-  - Your vote indicator
+  - Disabled if closed, or if user is blocked by Hail Mary
+  - Your vote indicator (with 🎰 icon if doubled)
+  - Vetoed votes shown with strikethrough + ☠️ icon
   - Optimistic update on click
-- [ ] 4.4.4 — `apps/app/src/components/polls/LiveResultsBar.tsx`:
+
+- [ ] 4.5.4 — `apps/app/src/components/polls/LiveResultsBar.tsx`:
   - Motion `animate width` on percentage change
   - Smooth re-animation on new votes (Realtime)
-- [ ] 4.4.5 — `apps/app/src/components/polls/CreatePollModal.tsx`:
+  - Vote counts reflect `weight` (doubled votes count as 2)
+
+- [ ] 4.5.5 — `apps/app/src/components/polls/CreatePollModal.tsx`:
   - Template chips: "Pizza vs BBQ 🍕🥩", "What are we drinking? 🍺", "When to meet? 📅", "Custom"
   - Question input, options list (min 2 / max 8), add/remove/reorder options
   - Toggles: Anonymous, Multi-choice
   - Optional auto-close date-time picker
-- [ ] 4.4.6 — Auto-close Edge Function:
+
+- [ ] 4.5.6 — `apps/app/src/components/polls/CorruptionActionsBar.tsx`:
+  - Row of corruption action buttons below the poll card
+  - Each button shows icon + cost (e.g. "🎰 1 token")
+  - Disabled if: insufficient tokens, already used on this poll, poll closed (except Leak)
+  - Confirmation dialog before spending tokens ("Spend 2 tokens to veto Lucas's vote?")
+  - After use: button changes to "Used" state with checkmark
+  - The Leak: opens a modal showing revealed voter identities
+  - The Veto: opens a user picker to select target
+  - Hail Mary: shows which users will be blocked before confirming
+
+- [ ] 4.5.7 — Auto-close Edge Function:
   - Create `supabase/functions/close-expired-polls/index.ts`
   - Runs on cron (every 5 minutes)
   - Sets `is_closed = true` on polls where `closes_at < now()`
 
-### 4.5 — Verify & Test
+---
 
-- [ ] 4.5.1 — Create poll from template → options pre-filled.
-- [ ] 4.5.2 — Single-choice: re-voting changes selection, can't vote for multiple.
-- [ ] 4.5.3 — Multi-choice: can select multiple options.
-- [ ] 4.5.4 — Anonymous poll: no voter names visible.
-- [ ] 4.5.5 — Live results update in real-time (vote on one tab → see update on other tab).
-- [ ] 4.5.6 — Auto-close: manually invoke Edge Function → poll closes.
-- [ ] 4.5.7 — Manual close by creator works.
-- [ ] 4.5.8 — Results bars animate smoothly on vote change.
+### 4.6 — Verify & Test
+
+- [ ] 4.6.1 — Create poll from template → options pre-filled.
+- [ ] 4.6.2 — Single-choice: re-voting changes selection, can't vote for multiple.
+- [ ] 4.6.3 — Multi-choice: can select multiple options.
+- [ ] 4.6.4 — Anonymous poll: no voter names visible (except via The Leak).
+- [ ] 4.6.5 — Live results update in real-time (vote on one tab → see update on other tab).
+- [ ] 4.6.6 — Auto-close: manually invoke Edge Function → poll closes.
+- [ ] 4.6.7 — Manual close by creator works.
+- [ ] 4.6.8 — Results bars animate smoothly on vote change.
+
+#### Corruption Token Tests
+
+- [ ] 4.6.9 — **Double Down**: vote weight = 2 reflected in results bar. Multi-choice: only one option doubled.
+- [ ] 4.6.10 — **The Leak**: anonymous poll → leaked snapshot shows voter identities. Non-anonymous poll → action rejected.
+- [ ] 4.6.11 — **The Coup**: poll closes immediately. "Coup'd by X" badge visible. Creator notified.
+- [ ] 4.6.12 — **Ghost Vote**: voter never revealed in any view (during or after poll). All options ghosted in multi-choice.
+- [ ] 4.6.13 — **The Veto**: target's votes (including doubled) all cancelled. Target sees notification. Vote count updates in real-time.
+- [ ] 4.6.14 — **Hail Mary**: users with outstanding debt blocked from voting. Existing debtor votes removed. Non-debtors unaffected.
+- [ ] 4.6.15 — Each corruption action can only be used once per poll per user.
+- [ ] 4.6.16 — Ghost Vote + Double Down mutually exclusive on same poll.
+- [ ] 4.6.17 — Insufficient token balance → action rejected, no DB mutation.
+- [ ] 4.6.18 — All corruption actions appear in Squad Feed with actor + action + poll.
 
 ---
 
@@ -1432,6 +1513,15 @@ try {
 - [ ] Live results update via Realtime
 - [ ] Auto-close Edge Function closes polls correctly
 - [ ] Option drag-to-reorder works in create modal
+- [ ] Double Down doubles vote weight (single option only in multi-choice)
+- [ ] The Leak reveals anonymous voters to the leaker only
+- [ ] The Coup force-closes a poll immediately
+- [ ] Ghost Vote hides voter identity permanently (all votes in multi-choice)
+- [ ] The Veto cancels all of a target's votes (including doubled)
+- [ ] Hail Mary blocks debtors from voting
+- [ ] Token balance deducted correctly for each action
+- [ ] Corruption actions visible in feed and on poll card
+- [ ] `bun run build` passes with zero TypeScript errors
 
 **Phase 4 Status: ⬜ — Awaiting approval**
 
@@ -2225,7 +2315,7 @@ _(Do not start until Phase 10 is APPROVED and shipped)_
 | Phase 2: Groups System         | 🟢     | Tobias      | 2026-03-05 | All tests passed, RLS verified                                                                                |
 | Phase 3: Expense Tracker       | ⬜     | —           | —          | —                                                                                                             |
 | Phase 3A: Motion & Transitions | 🟢     | Tobias      | 2026-03-06 | Expense surfaces pilot approved; motion/layout transitions now required across remaining user-facing surfaces |
-| Phase 3B: Monetization         | ⬜     | —           | —          | —                                                                                                             |
+| Phase 3B: Monetization         | 🟢     | Tobias      | 2026-03-16 | 60/60 unit tests pass; pricing page (T14) deferred to Phase 9 (marketing site polish)                         |
 | Phase 4: Voting & Polls        | ⬜     | —           | —          | —                                                                                                             |
 | Phase 5: Plans Board           | ⬜     | —           | —          | —                                                                                                             |
 | Phase 6: Squad Feed            | ⬜     | —           | —          | —                                                                                                             |

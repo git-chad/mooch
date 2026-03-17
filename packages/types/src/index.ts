@@ -1,3 +1,5 @@
+export { type PlanId, type PlanLimits, PLAN_LIMITS } from "./plans";
+
 export type User = {
   id: string;
   display_name: string;

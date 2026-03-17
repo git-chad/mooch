@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"/c/Users/igna_/Downloads/CLAUDE TESTS/squad-sync/apps/app/src/app/\\(shell\\)/\")",
+      "Bash(ls \"/c/Users/igna_/Downloads/CLAUDE TESTS/squad-sync/apps/app/src/app/\\(shell\\)/profile/\")",
+      "Bash(cd \"/c/Users/igna_/Downloads/CLAUDE TESTS/squad-sync\" && npx tsc --noEmit -p apps/app/tsconfig.json 2>&1 | head -40)",
+      "Bash(cd \"/c/Users/igna_/Downloads/CLAUDE TESTS/squad-sync/apps/app\" && bunx tsc --noEmit 2>&1 | head -50)",
+      "Bash(find /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync/apps/app/src/app/api -type f -name *.ts -o -name *.tsx)",
+      "Bash(grep -r webhook /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync/apps/app/src --include=*.ts --include=*.tsx)",
+      "Bash(grep -r STRIPE /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync --include=.env* --include=*.ts --include=*.tsx)",
+      "Bash(ls:*)",
+      "Bash(cat /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync/apps/app/src/app/\\\\\\(shell\\\\\\)/billing/page.tsx)",
+      "Bash(cat:*)",
+      "Bash(grep:*)",
+      "Bash(wc:*)",
+      "Bash(stripe --version)",
+      "Bash(bun install:*)",
+      "Bash(find /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync -maxdepth 3 \\\\\\(-name vitest.config.* -o -name jest.config.* -o -name *.config.test.* \\\\\\) -type f)",
+      "Bash(bun run:*)",
+      "Bash(find /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync -name pricing* -o -name *pricing*)",
+      "Bash(find /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync/apps/web/src -type f \\\\\\(-name *.tsx -o -name *.ts \\\\\\))"
+    ]
+  }
+}
