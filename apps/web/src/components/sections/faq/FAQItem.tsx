@@ -35,8 +35,8 @@ export function FAQItem({ item, isOpen, onToggle }: FAQItemProps) {
       className={cn(
         "relative overflow-hidden rounded-[28px] p-2",
         isOpen
-          ? "bg-white shadow-[0_22px_40px_rgba(95,123,146,0.16)]"
-          : "bg-[#FFFFFFCC] backdrop-blur-md shadow-[0_12px_24px_rgba(95,123,146,0.08)]",
+          ? "bg-white shadow-[0px_6px_8px_rgba(95,123,146,0.16)]"
+          : "bg-[#FFFFFFCC] backdrop-blur-md shadow-[0_4px_6px_rgba(95,123,146,0.08)]",
       )}
     >
 
