@@ -68,7 +68,7 @@ export const Navbar = () => {
           }
         >
           <div className="flex items-center justify-between gap-3">
-            <Link href="#hero" className="min-w-0">
+            <Link href="/" className="min-w-0">
               <Text
                 as="p"
                 variant="web-lead"
