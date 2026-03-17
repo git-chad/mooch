@@ -21,38 +21,46 @@ export async function POST(request: Request) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!,
     );
-  } catch {
+  } catch (err) {
+    console.error("[stripe-webhook] Signature verification failed:", err);
     return new Response("Webhook signature verification failed", {
       status: 400,
     });
   }
 
+  console.log(`[stripe-webhook] Received event: ${event.type} (${event.id})`);
+
   const supabase = createAdminClient();
 
-  switch (event.type) {
-    case "checkout.session.completed":
-      await handleCheckoutCompleted(
-        event.data.object as Stripe.Checkout.Session,
-      );
-      break;
-    case "customer.subscription.updated":
-      await handleSubscriptionUpdated(
-        event.data.object as Stripe.Subscription,
-      );
-      break;
-    case "customer.subscription.deleted":
-      await handleSubscriptionDeleted(
-        event.data.object as Stripe.Subscription,
-      );
-      break;
-    case "payment_intent.succeeded":
-      await handlePaymentIntentSucceeded(
-        event.data.object as Stripe.PaymentIntent,
-      );
-      break;
-    case "invoice.payment_failed":
-      await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
-      break;
+  try {
+    switch (event.type) {
+      case "checkout.session.completed":
+        await handleCheckoutCompleted(
+          event.data.object as Stripe.Checkout.Session,
+        );
+        break;
+      case "customer.subscription.updated":
+        await handleSubscriptionUpdated(
+          event.data.object as Stripe.Subscription,
+        );
+        break;
+      case "customer.subscription.deleted":
+        await handleSubscriptionDeleted(
+          event.data.object as Stripe.Subscription,
+        );
+        break;
+      case "payment_intent.succeeded":
+        await handlePaymentIntentSucceeded(
+          event.data.object as Stripe.PaymentIntent,
+        );
+        break;
+      case "invoice.payment_failed":
+        await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+        break;
+    }
+  } catch (err) {
+    console.error(`[stripe-webhook] Handler error for ${event.type}:`, err);
+    return new Response("Webhook handler error", { status: 500 });
   }
 
   return new Response("ok", { status: 200 });
@@ -80,7 +88,14 @@ export async function POST(request: Request) {
         userId = customer.metadata?.userId;
       }
     }
-    if (!userId) return;
+    if (!userId) {
+      console.error("[stripe-webhook] checkout.session.completed: no userId found in metadata", {
+        sessionId: session.id,
+        subscription: session.subscription,
+        customer: session.customer,
+      });
+      return;
+    }
 
     const subscription = await stripe.subscriptions.retrieve(
       session.subscription as string,
@@ -91,8 +106,9 @@ export async function POST(request: Request) {
 
     // Determine plan from price ID
     const planId = determinePlanFromPrice(priceId);
+    console.log(`[stripe-webhook] Upgrading user ${userId} to ${planId} (${interval})`);
 
-    await supabase
+    const { error } = await supabase
       .from("subscriptions")
       .update({
         stripe_subscription_id: subscription.id,
@@ -109,20 +125,30 @@ export async function POST(request: Request) {
         updated_at: new Date().toISOString(),
       })
       .eq("user_id", userId);
+
+    if (error) {
+      console.error("[stripe-webhook] Failed to update subscription:", error);
+      throw error;
+    }
   }
 
   async function handleSubscriptionUpdated(
     subscription: Stripe.Subscription,
   ) {
     const userId = subscription.metadata?.userId;
-    if (!userId) return;
+    if (!userId) {
+      console.error("[stripe-webhook] subscription.updated: no userId in metadata", {
+        subscriptionId: subscription.id,
+      });
+      return;
+    }
 
     const item = subscription.items.data[0];
     const priceId = item?.price.id;
     const interval = item?.price.recurring?.interval;
     const planId = determinePlanFromPrice(priceId);
 
-    await supabase
+    const { error } = await supabase
       .from("subscriptions")
       .update({
         plan_id: planId,
@@ -137,15 +163,25 @@ export async function POST(request: Request) {
         updated_at: new Date().toISOString(),
       })
       .eq("user_id", userId);
+
+    if (error) {
+      console.error("[stripe-webhook] Failed to update subscription:", error);
+      throw error;
+    }
   }
 
   async function handleSubscriptionDeleted(
     subscription: Stripe.Subscription,
   ) {
     const userId = subscription.metadata?.userId;
-    if (!userId) return;
+    if (!userId) {
+      console.error("[stripe-webhook] subscription.deleted: no userId in metadata", {
+        subscriptionId: subscription.id,
+      });
+      return;
+    }
 
-    await supabase
+    const { error } = await supabase
       .from("subscriptions")
       .update({
         plan_id: "free",
@@ -157,6 +193,11 @@ export async function POST(request: Request) {
         updated_at: new Date().toISOString(),
       })
       .eq("user_id", userId);
+
+    if (error) {
+      console.error("[stripe-webhook] Failed to delete subscription:", error);
+      throw error;
+    }
   }
 
   async function handlePaymentIntentSucceeded(
@@ -168,14 +209,21 @@ export async function POST(request: Request) {
     const tokenAmount = TOKEN_PACK_AMOUNTS[pack];
     if (!tokenAmount) return;
 
+    console.log(`[stripe-webhook] Adding ${tokenAmount} tokens for user ${userId} (pack: ${pack})`);
+
     // Increment token balance
-    const { data: currentBalance } = await supabase
+    const { data: currentBalance, error: fetchError } = await supabase
       .from("token_balances")
       .select("balance")
       .eq("user_id", userId)
       .single();
 
-    await supabase
+    if (fetchError) {
+      console.error("[stripe-webhook] Failed to fetch token balance:", fetchError);
+      throw fetchError;
+    }
+
+    const { error: updateError } = await supabase
       .from("token_balances")
       .update({
         balance: (currentBalance?.balance ?? 0) + tokenAmount,
@@ -183,13 +231,23 @@ export async function POST(request: Request) {
       })
       .eq("user_id", userId);
 
+    if (updateError) {
+      console.error("[stripe-webhook] Failed to update token balance:", updateError);
+      throw updateError;
+    }
+
     // Record transaction
-    await supabase.from("token_transactions").insert({
+    const { error: insertError } = await supabase.from("token_transactions").insert({
       user_id: userId,
       type: "purchase",
       amount: tokenAmount,
       stripe_payment_intent_id: paymentIntent.id,
     });
+
+    if (insertError) {
+      console.error("[stripe-webhook] Failed to insert token transaction:", insertError);
+      throw insertError;
+    }
   }
 
   async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
@@ -207,13 +265,18 @@ export async function POST(request: Request) {
     const userId = subscription.metadata?.userId;
     if (!userId) return;
 
-    await supabase
+    const { error } = await supabase
       .from("subscriptions")
       .update({
         status: "past_due",
         updated_at: new Date().toISOString(),
       })
       .eq("user_id", userId);
+
+    if (error) {
+      console.error("[stripe-webhook] Failed to mark subscription past_due:", error);
+      throw error;
+    }
   }
 }
 

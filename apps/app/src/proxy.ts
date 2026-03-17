@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 
 const AUTH_ROUTES = ["/login", "/signup", "/forgot-password"];
 const PUBLIC_ROUTES = [
+  "/api/webhooks/",
   "/auth/callback",
   "/auth/confirm",
   "/auth/reset-callback",

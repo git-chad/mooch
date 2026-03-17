@@ -59,7 +59,7 @@ export async function createCheckoutSession(
           metadata: { userId: user.id, planId },
           ...(planId === "pro" ? { trial_period_days: 7 } : {}),
         },
-        success_url: `${process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000") : "http://localhost:3000"}/billing?session_id={CHECKOUT_SESSION_ID}`,
+        success_url: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/billing?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/billing`,
         allow_promotion_codes: true,
       },
