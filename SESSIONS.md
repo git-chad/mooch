@@ -22,6 +22,21 @@ When a problem is encountered and fixed, log it here immediately:
 
 ---
 
+## Deferred Cleanup Queue
+
+### Low-priority `useEffect` follow-ups (2026-03-18)
+- `apps/app/src/components/feed/PostTextSheet.tsx` — replace open-reset effect with keyed remount pattern at caller level (same approach used for expense/tab modals).
+- `apps/app/src/components/feed/PostPhotoSheet.tsx` — same as above; keep object URL cleanup behavior intact while moving reset lifecycle to remount boundaries.
+- `apps/app/src/components/feed/FeedListClient.tsx` — `itemsRef.current = items` can be assigned during render instead of effect to reduce lifecycle bookkeeping.
+- `apps/app/src/components/groups/GroupsPageClient.tsx` — remove mount-only animation flag effect (`animateStatsIn`) by deriving animation state from motion primitives or initial props.
+- `apps/app/src/components/polls/PollListClient.tsx` — `revealedGroups.add(groupId)` can be moved out of effect into safer render-time memoized gate if entrance behavior remains equivalent.
+- `apps/app/src/components/expenses/ExpenseList.tsx` — same pattern as PollListClient for `revealedTabs`.
+- `apps/app/src/components/polls/corruptionIconPack.tsx` — source reset effect in `CorruptionIconImage` can be refactored to key-based remount by `file` to avoid prop-sync effect choreography.
+- `apps/web/src/hooks/usePointerUniform.ts` — initial-value sync effect can be folded into hook initialization/update strategy (low risk; web-only).
+- `apps/app/src/app/design/TextMorphDemo.tsx` — demo-only intervals are fine functionally, but can be migrated to shared timer utility if this surface becomes production-facing.
+
+---
+
 ## Mistakes Log
 
 ### `useEffect` usage drift created avoidable sync and load risks
