@@ -30,7 +30,9 @@
       "Bash(find /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync -name web-haptics* -o -name *haptic* -type f)",
       "Bash(cat \"/Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync/apps/app/src/app/\\(shell\\)/[groupId]/expenses/[tabId]/page.tsx\")",
       "Bash(find /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync/node_modules/geist -name *pixel* -o -name *Pixel*)",
-      "Bash(bun remove:*)"
+      "Bash(bun remove:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
