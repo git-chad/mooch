@@ -1,6 +1,13 @@
 "use server";
 
 import { createClient } from "@mooch/db/server";
+import {
+  buildFeedPhotoPath,
+  buildFeedVoicePath,
+  PHOTO_MAX_UPLOAD_BYTES,
+  pathMatchesGroup,
+} from "@mooch/db/storage/feed";
+import { isR2Configured, uploadToR2 } from "@mooch/db/storage/r2";
 import type {
   FeedItem,
   FeedItemType,
@@ -8,11 +15,16 @@ import type {
   FeedReply,
   GroupMember,
 } from "@mooch/types";
+import {
+  deleteFeedMediaForPath,
+  getSignedFeedMediaUrlForPath,
+} from "@/lib/feed-media";
 import { createAdminClient } from "@/lib/supabase-admin";
 
 const TEXT_MAX_CHARS = 500;
 const CAPTION_MAX_CHARS = 200;
 const VOICE_MAX_SECONDS = 60;
+const VOICE_MAX_BYTES = 5 * 1024 * 1024;
 
 // Mention pattern: @[Display Name](userId)
 const MENTION_PATTERN = /@\[([^\]]+)\]\(([a-f0-9-]+)\)/g;
@@ -77,6 +89,31 @@ function canModerate(role: GroupRole | null): boolean {
   return role === "admin" || role === "owner";
 }
 
+function normalizeFileType(value: string | null | undefined): string {
+  return value?.trim().toLowerCase() || "application/octet-stream";
+}
+
+function isAllowedPhotoType(contentType: string): boolean {
+  return [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+    "image/heic",
+  ].includes(contentType);
+}
+
+function isAllowedVoiceType(contentType: string): boolean {
+  return [
+    "audio/webm",
+    "audio/mpeg",
+    "audio/mp4",
+    "audio/wav",
+    "audio/x-wav",
+    "audio/ogg",
+  ].includes(contentType);
+}
+
 async function getAuthenticatedUserId(): Promise<string | null> {
   const supabase = await createClient();
   const {
@@ -98,6 +135,70 @@ async function getMemberRole(
     .maybeSingle();
 
   return (member?.role as GroupRole | undefined) ?? null;
+}
+
+async function requireGroupMembership(
+  groupId: string,
+): Promise<{ userId: string; role: GroupRole } | { error: string }> {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return { error: "Not authenticated" };
+
+  const role = await getMemberRole(groupId, userId);
+  if (!role) return { error: "Not a member of this group" };
+
+  return { userId, role };
+}
+
+async function uploadFeedFileToR2(
+  groupId: string,
+  file: File,
+  options: {
+    kind: "photo" | "voice";
+    maxBytes: number;
+    isAllowedType: (contentType: string) => boolean;
+  },
+): Promise<{ media_path: string } | { error: string }> {
+  if (!isR2Configured()) {
+    return { error: "Cloudflare R2 is not configured yet." };
+  }
+
+  const membership = await requireGroupMembership(groupId);
+  if ("error" in membership) return membership;
+
+  const contentType = normalizeFileType(file.type);
+  if (!options.isAllowedType(contentType)) {
+    return {
+      error:
+        options.kind === "photo"
+          ? "Unsupported image format."
+          : "Unsupported audio format.",
+    };
+  }
+
+  if (file.size <= 0) {
+    return { error: "Upload cannot be empty." };
+  }
+
+  if (file.size > options.maxBytes) {
+    return {
+      error:
+        options.kind === "photo"
+          ? "Photo exceeds the 3MB limit."
+          : "Voice note exceeds the 5MB limit.",
+    };
+  }
+
+  const media_path =
+    options.kind === "photo"
+      ? buildFeedPhotoPath(groupId, file.name, contentType)
+      : buildFeedVoicePath(groupId, contentType);
+
+  await uploadToR2(
+    media_path,
+    new Uint8Array(await file.arrayBuffer()),
+    contentType,
+  );
+  return { media_path };
 }
 
 export async function addFeedItem(
@@ -220,6 +321,71 @@ export async function addFeedItem(
   return { item: item as FeedItem };
 }
 
+export async function uploadFeedPhotoToR2(
+  groupId: string,
+  formData: FormData,
+): Promise<{ media_path: string } | { error: string }> {
+  const file = formData.get("file");
+  if (!(file instanceof File)) {
+    return { error: "Photo file is required." };
+  }
+
+  return uploadFeedFileToR2(groupId, file, {
+    kind: "photo",
+    maxBytes: PHOTO_MAX_UPLOAD_BYTES,
+    isAllowedType: isAllowedPhotoType,
+  });
+}
+
+export async function uploadFeedVoiceToR2(
+  groupId: string,
+  formData: FormData,
+): Promise<{ media_path: string } | { error: string }> {
+  const file = formData.get("file");
+  if (!(file instanceof File)) {
+    return { error: "Voice file is required." };
+  }
+
+  return uploadFeedFileToR2(groupId, file, {
+    kind: "voice",
+    maxBytes: VOICE_MAX_BYTES,
+    isAllowedType: isAllowedVoiceType,
+  });
+}
+
+export async function getFeedMediaUrl(
+  groupId: string,
+  mediaPath: string,
+): Promise<string | null> {
+  const membership = await requireGroupMembership(groupId);
+  if ("error" in membership) return null;
+  if (!pathMatchesGroup(mediaPath, groupId)) return null;
+  return getSignedFeedMediaUrlForPath(mediaPath);
+}
+
+export async function deleteUploadedFeedMedia(
+  groupId: string,
+  mediaPath: string,
+): Promise<{ success: true } | { error: string }> {
+  const membership = await requireGroupMembership(groupId);
+  if ("error" in membership) return membership;
+  if (!pathMatchesGroup(mediaPath, groupId)) {
+    return { error: "Media path does not belong to this group." };
+  }
+
+  try {
+    await deleteFeedMediaForPath(mediaPath);
+    return { success: true };
+  } catch (error) {
+    return {
+      error:
+        error instanceof Error
+          ? error.message
+          : "Could not delete uploaded media.",
+    };
+  }
+}
+
 export async function editFeedItem(
   itemId: string,
   data: { caption: string; location_name?: string | null },
@@ -291,7 +457,7 @@ export async function deleteFeedItem(
   const admin = createAdminClient();
   const { data: item } = await admin
     .from("feed_items")
-    .select("id, group_id, created_by")
+    .select("id, group_id, created_by, media_path")
     .eq("id", itemId)
     .maybeSingle();
 
@@ -306,6 +472,18 @@ export async function deleteFeedItem(
 
   const { error } = await admin.from("feed_items").delete().eq("id", itemId);
   if (error) return { error: error.message };
+
+  if (item.media_path) {
+    try {
+      await deleteFeedMediaForPath(item.media_path as string);
+    } catch (error) {
+      console.error("Failed to delete feed media object", {
+        itemId,
+        mediaPath: item.media_path,
+        error,
+      });
+    }
+  }
 
   return { success: true };
 }

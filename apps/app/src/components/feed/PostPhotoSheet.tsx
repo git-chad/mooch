@@ -1,10 +1,12 @@
 "use client";
 
+import { PHOTO_MAX_UPLOAD_BYTES } from "@mooch/db/storage/feed";
 import { Button, Sheet, Text } from "@mooch/ui";
 import { Camera, Loader2, RefreshCw, X } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import * as React from "react";
 import { useCallback, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { getSurfaceTransition, motionDuration } from "@/lib/motion";
 import { LinkSelectors } from "./LinkSelectors";
 import { LocationInput } from "./LocationInput";
@@ -13,6 +15,7 @@ import { MentionSuggestions, useMentionInput } from "./MentionInput";
 import type { FeedLinkOption } from "./types";
 
 const CAPTION_MAX = 200;
+const PHOTO_MAX_UPLOAD_MB = Math.floor(PHOTO_MAX_UPLOAD_BYTES / (1024 * 1024));
 
 type Props = {
   open: boolean;
@@ -91,20 +94,30 @@ export function PostPhotoSheet({
     fileInputRef.current?.click();
   }
 
-  function onFileChange(nextFile: File | null) {
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
+  const onFileChange = useCallback(
+    (nextFile: File | null) => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
 
-    if (!nextFile) {
-      setFile(null);
-      setPreviewUrl(null);
-      return;
-    }
+      if (!nextFile) {
+        setFile(null);
+        setPreviewUrl(null);
+        return;
+      }
 
-    setFile(nextFile);
-    setPreviewUrl(URL.createObjectURL(nextFile));
-  }
+      if (nextFile.size > PHOTO_MAX_UPLOAD_BYTES) {
+        setFile(null);
+        setPreviewUrl(null);
+        toast.error(`Images must be ${PHOTO_MAX_UPLOAD_MB}MB or smaller.`);
+        return;
+      }
+
+      setFile(nextFile);
+      setPreviewUrl(URL.createObjectURL(nextFile));
+    },
+    [previewUrl],
+  );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -118,20 +131,19 @@ export function PostPhotoSheet({
     setDragging(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragging(false);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setDragging(false);
 
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile?.type.startsWith("image/")) {
-      setFile(droppedFile);
-      setPreviewUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return URL.createObjectURL(droppedFile);
-      });
-    }
-  }, []);
+      const droppedFile = e.dataTransfer.files[0];
+      if (droppedFile?.type.startsWith("image/")) {
+        onFileChange(droppedFile);
+      }
+    },
+    [onFileChange],
+  );
 
   async function handlePost() {
     if (!canPost || !file || !previewUrl) return;

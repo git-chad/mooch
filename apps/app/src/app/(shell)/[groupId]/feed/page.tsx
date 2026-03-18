@@ -3,13 +3,13 @@ import {
   getGroupMembers,
   getProfile,
   getReplyCounts,
-  getSignedFeedMediaUrl,
 } from "@mooch/db";
 import { createClient } from "@mooch/db/server";
 import type { Profile } from "@mooch/types";
 import { notFound, redirect } from "next/navigation";
 import { FeedListClient } from "@/components/feed/FeedListClient";
 import type { FeedItemUI, FeedLinkOption } from "@/components/feed/types";
+import { getSignedFeedMediaUrlForPath } from "@/lib/feed-media";
 import { createAdminClient } from "@/lib/supabase-admin";
 
 export const dynamic = "force-dynamic";
@@ -61,7 +61,7 @@ export default async function FeedPage({ params }: Props) {
     initialFeedItemsRaw.map(async (item) => ({
       ...item,
       media_url: item.media_path
-        ? await getSignedFeedMediaUrl(admin, item.media_path)
+        ? await getSignedFeedMediaUrlForPath(item.media_path)
         : null,
       reply_count: replyCounts.get(item.id) ?? 0,
     })),

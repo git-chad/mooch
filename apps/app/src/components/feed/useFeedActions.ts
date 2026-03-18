@@ -1,13 +1,11 @@
 "use client";
 
 import type { FeedItemWithMeta } from "@mooch/db";
+import { getFeedItemById, getReplyCount } from "@mooch/db";
 import {
-  getFeedItemById,
-  getReplyCount,
-  getSignedFeedMediaUrl,
-  uploadFeedPhoto,
-  uploadFeedVoice,
-} from "@mooch/db";
+  compressFeedPhotoIfPossible,
+  PHOTO_MAX_UPLOAD_BYTES,
+} from "@mooch/db/storage/feed";
 import type { Profile } from "@mooch/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { useCallback, useRef } from "react";
@@ -15,8 +13,12 @@ import { toast } from "sonner";
 import {
   addFeedItem,
   deleteFeedItem,
+  deleteUploadedFeedMedia,
   editFeedItem,
+  getFeedMediaUrl,
   toggleReaction,
+  uploadFeedPhotoToR2,
+  uploadFeedVoiceToR2,
 } from "@/app/actions/feed";
 import {
   buildFallbackCreatedItem,
@@ -42,6 +44,7 @@ export function useFeedActions({
   setTextOpen,
   setPhotoOpen,
   setVoiceOpen,
+  setPendingDeleteItemId,
   setDeletingItemId,
   setReactionBusy,
 }: {
@@ -53,6 +56,7 @@ export function useFeedActions({
   setTextOpen: (v: boolean) => void;
   setPhotoOpen: (v: boolean) => void;
   setVoiceOpen: (v: boolean) => void;
+  setPendingDeleteItemId: (v: string | null) => void;
   setDeletingItemId: (v: string | null) => void;
   setReactionBusy: React.Dispatch<
     React.SetStateAction<Record<string, boolean>>
@@ -67,9 +71,7 @@ export function useFeedActions({
   const hydrateItem = useCallback(
     async (item: FeedItemWithMeta): Promise<FeedItemUI> => {
       const [media_url, reply_count] = await Promise.all([
-        item.media_path
-          ? getSignedFeedMediaUrl(supabase, item.media_path)
-          : null,
+        item.media_path ? getFeedMediaUrl(groupId, item.media_path) : null,
         getReplyCount(supabase, item.id),
       ]);
 
@@ -81,7 +83,7 @@ export function useFeedActions({
         optimistic: false,
       };
     },
-    [supabase],
+    [groupId, supabase],
   );
 
   const fetchHydratedItemById = useCallback(
@@ -163,7 +165,7 @@ export function useFeedActions({
       try {
         const signedMedia = result.item.media_path
           ? await withTimeout(
-              getSignedFeedMediaUrl(supabase, result.item.media_path),
+              getFeedMediaUrl(groupId, result.item.media_path),
               CREATE_ITEM_TIMEOUT_MS,
               "Media signing timed out.",
             )
@@ -194,7 +196,7 @@ export function useFeedActions({
       }
       return true;
     },
-    [groupId, currentUserProfile, supabase, fetchHydratedItemById, setItems],
+    [groupId, currentUserProfile, fetchHydratedItemById, setItems],
   );
 
   const handleTextSubmit = useCallback(
@@ -235,21 +237,41 @@ export function useFeedActions({
     }): Promise<boolean> => {
       setPosting(true);
       try {
+        const processedFile = await compressFeedPhotoIfPossible(data.file);
+        if (processedFile.size > PHOTO_MAX_UPLOAD_BYTES) {
+          throw new Error("Photo exceeds the 3MB limit after compression.");
+        }
+
         const media_path = await withTimeout(
-          uploadFeedPhoto(supabase, groupId, data.file),
+          (async () => {
+            const formData = new FormData();
+            formData.append("file", processedFile);
+            const result = await uploadFeedPhotoToR2(groupId, formData);
+            if ("error" in result) {
+              throw new Error(result.error);
+            }
+            return result.media_path;
+          })(),
           MEDIA_UPLOAD_TIMEOUT_MS,
           "Something went wrong, please try again.",
         );
 
-        const success = await createItem({
-          type: "photo",
-          caption: data.caption,
-          media_path,
-          local_object_url: data.preview_url,
-          linked_expense_id: data.linked_expense_id,
-          linked_poll_id: data.linked_poll_id,
-          location_name: data.location_name,
-        });
+        let success = false;
+        try {
+          success = await createItem({
+            type: "photo",
+            caption: data.caption,
+            media_path,
+            local_object_url: data.preview_url,
+            linked_expense_id: data.linked_expense_id,
+            linked_poll_id: data.linked_poll_id,
+            location_name: data.location_name,
+          });
+        } finally {
+          if (!success) {
+            await deleteUploadedFeedMedia(groupId, media_path);
+          }
+        }
 
         if (success) {
           setPhotoOpen(false);
@@ -267,7 +289,7 @@ export function useFeedActions({
         setPosting(false);
       }
     },
-    [supabase, groupId, createItem, setPosting, setPhotoOpen],
+    [groupId, createItem, setPosting, setPhotoOpen],
   );
 
   const handleVoiceSubmit = useCallback(
@@ -284,21 +306,36 @@ export function useFeedActions({
       try {
         localUrl = URL.createObjectURL(data.blob);
         const media_path = await withTimeout(
-          uploadFeedVoice(supabase, groupId, data.blob),
+          (async () => {
+            const formData = new FormData();
+            formData.append("file", data.blob, "voice.webm");
+            const result = await uploadFeedVoiceToR2(groupId, formData);
+            if ("error" in result) {
+              throw new Error(result.error);
+            }
+            return result.media_path;
+          })(),
           MEDIA_UPLOAD_TIMEOUT_MS,
           "Voice upload timed out.",
         );
 
-        const success = await createItem({
-          type: "voice",
-          caption: data.caption,
-          media_path,
-          local_object_url: localUrl,
-          duration_seconds: data.duration_seconds,
-          linked_expense_id: data.linked_expense_id,
-          linked_poll_id: data.linked_poll_id,
-          location_name: data.location_name,
-        });
+        let success = false;
+        try {
+          success = await createItem({
+            type: "voice",
+            caption: data.caption,
+            media_path,
+            local_object_url: localUrl,
+            duration_seconds: data.duration_seconds,
+            linked_expense_id: data.linked_expense_id,
+            linked_poll_id: data.linked_poll_id,
+            location_name: data.location_name,
+          });
+        } finally {
+          if (!success) {
+            await deleteUploadedFeedMedia(groupId, media_path);
+          }
+        }
 
         if (success) {
           setVoiceOpen(false);
@@ -316,17 +353,24 @@ export function useFeedActions({
         setPosting(false);
       }
     },
-    [supabase, groupId, createItem, setPosting, setVoiceOpen],
+    [groupId, createItem, setPosting, setVoiceOpen],
   );
 
-  const handleDelete = useCallback(
+  const requestDelete = useCallback(
+    (itemId: string) => {
+      const target = itemsRef.current.find((item) => item.id === itemId);
+      if (!target) return;
+      setPendingDeleteItemId(itemId);
+    },
+    [setPendingDeleteItemId],
+  );
+
+  const confirmDelete = useCallback(
     async (itemId: string) => {
       const target = itemsRef.current.find((item) => item.id === itemId);
       if (!target) return;
 
-      const confirmed = window.confirm("Delete this post?");
-      if (!confirmed) return;
-
+      setPendingDeleteItemId(null);
       setDeletingItemId(itemId);
       setItems((prev) => prev.filter((item) => item.id !== itemId));
 
@@ -338,7 +382,7 @@ export function useFeedActions({
         toast.error(result.error);
       }
     },
-    [setItems, setDeletingItemId],
+    [setItems, setPendingDeleteItemId, setDeletingItemId],
   );
 
   const handleEdit = useCallback(
@@ -405,7 +449,8 @@ export function useFeedActions({
     handleTextSubmit,
     handlePhotoSubmit,
     handleVoiceSubmit,
-    handleDelete,
+    requestDelete,
+    confirmDelete,
     handleEdit,
     handleReactionToggle,
   };

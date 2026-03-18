@@ -2,7 +2,7 @@
 
 import { createBrowserClient, getFeedItems } from "@mooch/db";
 import type { Profile } from "@mooch/types";
-import { Container, Text } from "@mooch/ui";
+import { ConfirmDialog, Container, Text } from "@mooch/ui";
 import {
   Camera,
   Loader2,
@@ -11,7 +11,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import * as React from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/EmptyState";
 import { TransitionSlot } from "@/components/TransitionSlot";
@@ -58,6 +59,9 @@ export function FeedListClient({
   const [photoOpen, setPhotoOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
   const [posting, setPosting] = useState(false);
+  const [pendingDeleteItemId, setPendingDeleteItemId] = useState<string | null>(
+    null,
+  );
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [reactionBusy, setReactionBusy] = useState<Record<string, boolean>>({});
 
@@ -75,7 +79,8 @@ export function FeedListClient({
     handleTextSubmit,
     handlePhotoSubmit,
     handleVoiceSubmit,
-    handleDelete,
+    requestDelete,
+    confirmDelete,
     handleEdit,
     handleReactionToggle,
   } = useFeedActions({
@@ -87,15 +92,16 @@ export function FeedListClient({
     setTextOpen,
     setPhotoOpen,
     setVoiceOpen,
+    setPendingDeleteItemId,
     setDeletingItemId,
     setReactionBusy,
   });
 
-  useEffect(() => {
+  React.useEffect(() => {
     syncItemsRef(items);
   }, [items, syncItemsRef]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     // On group switch, replace with the server snapshot.
     if (prevGroupIdRef.current !== groupId) {
       prevGroupIdRef.current = groupId;
@@ -137,7 +143,7 @@ export function FeedListClient({
     );
   }, [groupId, initialItems]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     revealedGroups.add(groupId);
   }, [groupId]);
 
@@ -145,6 +151,10 @@ export function FeedListClient({
     () => getSurfaceTransition(reducedMotion, motionDuration.fast),
     [reducedMotion],
   );
+  const pendingDeleteItem =
+    pendingDeleteItemId == null
+      ? null
+      : (items.find((item) => item.id === pendingDeleteItemId) ?? null);
 
   const loadMore = useCallback(async () => {
     if (loadingMoreRef.current || !hasMore) return;
@@ -192,7 +202,7 @@ export function FeedListClient({
     itemsRef,
   ]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const node = sentinelRef.current;
     if (!node || !hasMore) return;
 
@@ -214,7 +224,7 @@ export function FeedListClient({
     return () => observer.disconnect();
   }, [hasMore, loadMore]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const channel = supabase
       .channel(`feed-${groupId}`)
       .on(
@@ -422,7 +432,7 @@ export function FeedListClient({
                         currentUserProfile={currentUserProfile}
                         deleting={deletingItemId === item.id}
                         reacting={reactionBusy[item.id] ?? false}
-                        onDelete={handleDelete}
+                        onDelete={requestDelete}
                         onEdit={handleEdit}
                         onToggleReaction={handleReactionToggle}
                         onReplyCountChange={handleReplyCountChange}
@@ -534,6 +544,24 @@ export function FeedListClient({
         members={members}
         onSubmit={handleVoiceSubmit}
       />
+
+      {pendingDeleteItem && (
+        <ConfirmDialog
+          open={!!pendingDeleteItem}
+          onOpenChange={(open) => {
+            if (!open) setPendingDeleteItemId(null);
+          }}
+          title="Delete post"
+          description="This post will be permanently removed from the squad feed. No funeral, no witnesses."
+          confirmLabel={
+            deletingItemId === pendingDeleteItem.id ? "Deleting..." : "Delete"
+          }
+          cancelLabel="Keep post"
+          variant="destructive"
+          onConfirm={() => void confirmDelete(pendingDeleteItem.id)}
+          onCancel={() => setPendingDeleteItemId(null)}
+        />
+      )}
     </Container>
   );
 }
