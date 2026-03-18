@@ -206,7 +206,7 @@ function VoicePlayer({
         }
         void ctx.close();
       } catch {
-        // keep pseudo-peaks
+        // keep default baseline peaks
       }
     }
 
