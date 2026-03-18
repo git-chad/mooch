@@ -189,6 +189,7 @@ export function FeedListClient({
   const [lightboxItemId, setLightboxItemId] = useState<string | null>(null);
 
   const itemsRef = useRef(items);
+  const prevGroupIdRef = useRef(groupId);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const loadingMoreRef = useRef(false);
   const shouldAnimateIn = !revealedGroups.has(groupId);
@@ -199,9 +200,44 @@ export function FeedListClient({
   }, [items]);
 
   useEffect(() => {
-    setItems(uniqueById(initialItems));
-    setHasMore(initialItems.length >= PAGE_SIZE);
-  }, [initialItems]);
+    // On group switch, replace with the server snapshot.
+    if (prevGroupIdRef.current !== groupId) {
+      prevGroupIdRef.current = groupId;
+      setItems(uniqueById(initialItems));
+      setHasMore(initialItems.length >= PAGE_SIZE);
+      return;
+    }
+
+    // Same group: merge server snapshot without clobbering local optimistic/realtime state.
+    setItems((current) => {
+      const optimistic = current.filter((item) => item.optimistic);
+      const persisted = current.filter((item) => !item.optimistic);
+      const persistedById = new Map(persisted.map((item) => [item.id, item]));
+      const incomingIds = new Set(initialItems.map((item) => item.id));
+
+      const mergedIncoming = initialItems.map((incoming) => {
+        const existing = persistedById.get(incoming.id);
+        if (!existing) return incoming;
+
+        const preservedLocalUrl =
+          existing.local_object_url && !incoming.media_url
+            ? existing.local_object_url
+            : null;
+
+        return {
+          ...existing,
+          ...incoming,
+          local_object_url: preservedLocalUrl,
+          optimistic: false,
+        } satisfies FeedItemUI;
+      });
+
+      const localOnly = persisted.filter((item) => !incomingIds.has(item.id));
+      return uniqueById([...optimistic, ...mergedIncoming, ...localOnly]);
+    });
+
+    setHasMore((currentHasMore) => currentHasMore || initialItems.length >= PAGE_SIZE);
+  }, [groupId, initialItems]);
 
   useEffect(() => {
     revealedGroups.add(groupId);

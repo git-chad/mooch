@@ -373,6 +373,7 @@ export function ExpenseDetailClient({
         )}
 
         <AddExpenseModal
+          key={`edit-expense-${expense.id}-${editOpen ? "open" : "closed"}`}
           open={editOpen}
           onOpenChange={setEditOpen}
           groupId={groupId}

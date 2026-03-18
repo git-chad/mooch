@@ -132,6 +132,7 @@ export function TabListClient({
         )}
 
         <CreateTabModal
+          key={`create-tab-${groupId}-${createOpen ? "open" : "closed"}`}
           open={createOpen}
           onOpenChange={setCreateOpen}
           groupId={groupId}
