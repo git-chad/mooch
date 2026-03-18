@@ -168,7 +168,8 @@ function VoicePlayer({
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [duration, setDuration] = useState(durationHint ?? 0);
-  const [peaks, setPeaks] = useState<number[]>(() => pseudoPeaks());
+  const [peaks, setPeaks] = useState<number[]>(() => defaultVoicePeaks());
+  const [hasExtractedPeaks, setHasExtractedPeaks] = useState(false);
 
   // Extract real peaks from audio on mount
   useEffect(() => {
@@ -198,6 +199,7 @@ function VoicePlayer({
         const peakMax = Math.max(...extracted, 0.01);
         if (!cancelled) {
           setPeaks(extracted.map((v) => v / peakMax));
+          setHasExtractedPeaks(true);
           if (decoded.duration && Number.isFinite(decoded.duration)) {
             setDuration(decoded.duration);
           }
@@ -351,10 +353,14 @@ function VoicePlayer({
                 <span
                   // biome-ignore lint/suspicious/noArrayIndexKey: deterministic peaks
                   key={idx}
-                  className="block flex-1 rounded-sm transition-colors duration-100"
+                  className="block flex-1 rounded-sm motion-reduce:transition-none"
                   style={{
                     height: h,
                     backgroundColor: played ? "#5A9629" : "#C0B0A4",
+                    transitionProperty: "height, background-color",
+                    transitionDuration: hasExtractedPeaks ? "240ms, 100ms" : "100ms",
+                    transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
+                    transitionDelay: hasExtractedPeaks ? `${idx * 6}ms` : "0ms",
                   }}
                 />
               );
@@ -375,10 +381,9 @@ function VoicePlayer({
   );
 }
 
-function pseudoPeaks(): number[] {
+function defaultVoicePeaks(): number[] {
   return Array.from({ length: VOICE_PEAK_COUNT }, (_, i) => {
-    const v = 0.2 + Math.abs(Math.sin(i * 0.7)) * 0.6 + ((i * 17) % 7) / 14;
-    return v / 1.2;
+    return 0.1 + ((i * 17) % 5) * 0.015;
   });
 }
 
