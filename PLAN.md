@@ -1726,7 +1726,7 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
   - `toggleReaction(itemId, emoji)` — upsert/delete (one reaction per user; switching replaces previous)
   - All actions apply optimistic local state first; realtime reconciles final truth
 
-### 6.3 — Supabase Storage: Media
+### 6.3 — Feed Media Storage (Initial Prototype)
 
 - [x] 6.3.1 — Create **private** `feed-media` bucket (authenticated uploads, 10MB photo / 5MB voice limits) via `supabase/migrations/0014_feed_media_bucket.sql`.
 - [x] 6.3.2 — Storage RLS: group members can upload + read.
@@ -1734,6 +1734,8 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
   - `uploadFeedPhoto(supabase, groupId, file)` — compress to 1080px max width (Canvas API) → upload → return storage path
   - `uploadFeedVoice(supabase, groupId, blob)` — upload audio blob → return storage path
   - `deleteFeedMedia(supabase, mediaPath)`
+
+Note: this Supabase Storage bucket was a working prototype to unblock feed development. Supabase remains the backend for auth, DB, RLS, and feed metadata, but the long-term plan for large media objects is Cloudflare R2.
 
 ### 6.4 — Feed UI
 
@@ -1823,21 +1825,39 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 - [x] 6.8.4 — Composer UI: optional "Add location" button in all three composer sheets. Opens a text input for place name (free text, no geocoding API in v1).
 - [x] 6.8.5 — `FeedItemCard`: show location pill below the header when `location_name` is set (MapPin icon + name).
 
-### 6.9 — Cloudflare R2 Migration
+### 6.9 — Cloudflare R2-Backed Feed Media
 
-- [ ] 6.9.1 — Set up Cloudflare R2 bucket (`mooch-feed-media`), generate S3-compatible API credentials.
-- [ ] 6.9.2 — Create `packages/db/src/storage/r2.ts`:
+**Architecture note:** Supabase stays the primary backend for auth, Postgres, RLS, server actions, and feed item metadata. Cloudflare R2 is used only for storing blob media (photos, voice, and later videos). `feed_items.media_path` continues to store the object key/path; the app resolves that key to a signed R2 URL server-side.
+
+- [ ] 6.9.1 — Set up Cloudflare R2 bucket (`mooch-feed-media`) and generate S3-compatible API credentials.
+- [ ] 6.9.2 — Add server-only R2 env vars for local dev and deployment:
+  - `R2_ACCOUNT_ID`
+  - `R2_ACCESS_KEY_ID`
+  - `R2_SECRET_ACCESS_KEY`
+  - `R2_BUCKET_NAME`
+  - Update `.env.example` / app env examples accordingly
+- [ ] 6.9.3 — Create `packages/db/src/storage/r2.ts`:
   - R2 client using `@aws-sdk/client-s3` with Cloudflare endpoint
   - `uploadToR2(key, body, contentType)` — PutObject
   - `getSignedR2Url(key, expiresIn)` — GetObject presigned URL
   - `deleteFromR2(key)` — DeleteObject
-- [ ] 6.9.3 — Update `uploadFeedPhoto` and `uploadFeedVoice` to upload to R2 instead of Supabase Storage. Keep same path structure (`{groupId}/photos/...`, `{groupId}/voice/...`).
-- [ ] 6.9.4 — Update `getSignedFeedMediaUrl` to generate R2 presigned URLs.
-- [ ] 6.9.5 — Update `deleteFeedMedia` to delete from R2.
-- [ ] 6.9.6 — Add R2 env vars to Vercel: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`.
-- [ ] 6.9.7 — Optional: set R2 lifecycle rule to auto-delete objects older than 180 days.
-- [ ] 6.9.8 — Remove `feed-media` Supabase bucket and migration (or keep as fallback).
-- [ ] 6.9.9 — Verify: upload photo, upload voice, signed URLs work, delete works.
+- [ ] 6.9.4 — Move feed media uploads behind a server-controlled boundary:
+  - Do **not** expose R2 credentials in the client
+  - Either add a server action / route handler that uploads to R2, or a server-generated presigned upload URL flow
+  - Keep the existing logical path structure (`{groupId}/photos/...`, `{groupId}/voice/...`)
+- [ ] 6.9.5 — Update feed media write/delete helpers so photo + voice uploads go to R2, while Supabase remains the authority for membership/authorization checks.
+- [ ] 6.9.6 — Update `getSignedFeedMediaUrl` to resolve `media_path` through R2 presigned URLs server-side.
+- [ ] 6.9.7 — Keep Supabase feed records unchanged apart from storing the R2 object key in `media_path`.
+- [ ] 6.9.8 — Decide the treatment of the existing `feed-media` Supabase bucket prototype:
+  - Preferred: keep it temporarily for existing/dev objects while new uploads go to R2
+  - Add an explicit follow-up if a full backfill or cleanup is later desired
+- [ ] 6.9.9 — Do **not** add object auto-expiry unless product explicitly wants disappearing media. Default behavior: feed media persists.
+- [ ] 6.9.10 — Verify end-to-end:
+  - Photo upload stores object in R2 and item in Supabase
+  - Voice upload stores object in R2 and item in Supabase
+  - Signed read URLs render correctly in feed
+  - Delete post removes the object from R2
+  - Non-members still cannot create/read feed items because authorization remains enforced through Supabase-backed server logic
 
 ### 6.10 — Verify & Test
 
