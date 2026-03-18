@@ -74,7 +74,9 @@ function DockItemButton({
     : null;
 
   const distance =
-    pointerX == null || centerX == null ? MAX_DISTANCE + 1 : Math.abs(pointerX - centerX);
+    pointerX == null || centerX == null
+      ? MAX_DISTANCE + 1
+      : Math.abs(pointerX - centerX);
   const scale = getDockScale(distance, reducedMotion);
   const y = reducedMotion ? 0 : -(scale - 1) * 10;
   const active = pointerX != null && distance < 68;

@@ -19,6 +19,7 @@ import { getSurfaceTransition, motionDuration, motionEase } from "@/lib/motion";
 import { ComposerDock, type ComposerDockItem } from "./ComposerDock";
 import { FeedItemCard } from "./FeedItemCard";
 import { uniqueById } from "./feed-utils";
+import type { MentionMember } from "./MentionInput";
 import { PostPhotoSheet } from "./PostPhotoSheet";
 import { PostTextSheet } from "./PostTextSheet";
 import { RecordVoiceSheet } from "./RecordVoiceSheet";
@@ -34,6 +35,7 @@ type Props = {
   initialItems: FeedItemUI[];
   pollOptions: FeedLinkOption[];
   expenseOptions: FeedLinkOption[];
+  members: MentionMember[];
 };
 
 export function FeedListClient({
@@ -42,6 +44,7 @@ export function FeedListClient({
   initialItems,
   pollOptions,
   expenseOptions,
+  members,
 }: Props) {
   const reducedMotion = useReducedMotion() ?? false;
   const supabase = useMemo(() => createBrowserClient(), []);
@@ -263,6 +266,19 @@ export function FeedListClient({
     };
   }, [supabase, groupId, refreshItemById, itemsRef]);
 
+  const handleReplyCountChange = useCallback(
+    (feedItemId: string, delta: number) => {
+      setItems((prev) =>
+        prev.map((item) =>
+          item.id === feedItemId
+            ? { ...item, reply_count: Math.max(0, item.reply_count + delta) }
+            : item,
+        ),
+      );
+    },
+    [],
+  );
+
   const openTextComposer = useCallback(() => {
     setTextOpen(true);
     setPhotoOpen(false);
@@ -403,11 +419,14 @@ export function FeedListClient({
                         groupId={groupId}
                         item={item}
                         currentUserId={currentUserProfile.id}
+                        currentUserProfile={currentUserProfile}
                         deleting={deletingItemId === item.id}
                         reacting={reactionBusy[item.id] ?? false}
                         onDelete={handleDelete}
                         onEdit={handleEdit}
                         onToggleReaction={handleReactionToggle}
+                        onReplyCountChange={handleReplyCountChange}
+                        members={members}
                       />
                     </motion.div>
                   ))}
@@ -478,6 +497,7 @@ export function FeedListClient({
         groupId={groupId}
         pollOptions={pollOptions}
         expenseOptions={expenseOptions}
+        members={members}
         onSubmit={handleTextSubmit}
       />
 
@@ -494,6 +514,7 @@ export function FeedListClient({
         groupId={groupId}
         pollOptions={pollOptions}
         expenseOptions={expenseOptions}
+        members={members}
         onSubmit={handlePhotoSubmit}
       />
 
@@ -510,6 +531,7 @@ export function FeedListClient({
         groupId={groupId}
         pollOptions={pollOptions}
         expenseOptions={expenseOptions}
+        members={members}
         onSubmit={handleVoiceSubmit}
       />
     </Container>

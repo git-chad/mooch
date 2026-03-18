@@ -5,6 +5,7 @@ import type {
   FeedItem,
   FeedItemType,
   FeedReaction,
+  FeedReply,
   GroupMember,
 } from "@mooch/types";
 import { createAdminClient } from "@/lib/supabase-admin";
@@ -12,6 +13,44 @@ import { createAdminClient } from "@/lib/supabase-admin";
 const TEXT_MAX_CHARS = 500;
 const CAPTION_MAX_CHARS = 200;
 const VOICE_MAX_SECONDS = 60;
+
+// Mention pattern: @[Display Name](userId)
+const MENTION_PATTERN = /@\[([^\]]+)\]\(([a-f0-9-]+)\)/g;
+
+function extractMentionIds(text: string | null | undefined): string[] {
+  if (!text) return [];
+  const ids: string[] = [];
+  for (const match of text.matchAll(MENTION_PATTERN)) {
+    const id = match[2];
+    if (id && !ids.includes(id)) ids.push(id);
+  }
+  return ids;
+}
+
+async function syncMentions(
+  admin: ReturnType<typeof createAdminClient>,
+  mentionedUserIds: string[],
+  opts: { feedItemId?: string; feedReplyId?: string },
+) {
+  const { feedItemId, feedReplyId } = opts;
+
+  // Delete existing mentions for this parent
+  if (feedItemId) {
+    await admin.from("feed_mentions").delete().eq("feed_item_id", feedItemId);
+  } else if (feedReplyId) {
+    await admin.from("feed_mentions").delete().eq("feed_reply_id", feedReplyId);
+  }
+
+  if (mentionedUserIds.length === 0) return;
+
+  const rows = mentionedUserIds.map((userId) => ({
+    feed_item_id: feedItemId ?? null,
+    feed_reply_id: feedReplyId ?? null,
+    mentioned_user_id: userId,
+  }));
+
+  await admin.from("feed_mentions").insert(rows);
+}
 
 type GroupRole = GroupMember["role"];
 
@@ -23,6 +62,7 @@ type AddFeedItemInput = {
   linked_expense_id?: string | null;
   linked_poll_id?: string | null;
   linked_event_id?: string | null;
+  location_name?: string | null;
 };
 
 type ToggleStatus = "added" | "removed" | "switched";
@@ -79,6 +119,7 @@ export async function addFeedItem(
   const duration_seconds = data.duration_seconds ?? null;
   const linked_expense_id = data.linked_expense_id?.trim() || null;
   const linked_poll_id = data.linked_poll_id?.trim() || null;
+  const location_name = data.location_name?.trim()?.slice(0, 100) || null;
 
   if (data.type === "text") {
     if (!caption) return { error: "Text posts cannot be empty" };
@@ -162,6 +203,7 @@ export async function addFeedItem(
       linked_expense_id,
       linked_event_id: null,
       linked_poll_id,
+      location_name,
       created_by: userId,
     })
     .select("*")
@@ -170,12 +212,17 @@ export async function addFeedItem(
   if (error || !item)
     return { error: error?.message ?? "Failed to create feed item" };
 
+  const mentionIds = extractMentionIds(caption);
+  if (mentionIds.length > 0) {
+    await syncMentions(admin, mentionIds, { feedItemId: item.id as string });
+  }
+
   return { item: item as FeedItem };
 }
 
 export async function editFeedItem(
   itemId: string,
-  data: { caption: string },
+  data: { caption: string; location_name?: string | null },
 ): Promise<{ item: FeedItem } | { error: string }> {
   const userId = await getAuthenticatedUserId();
   if (!userId) return { error: "Not authenticated" };
@@ -214,7 +261,13 @@ export async function editFeedItem(
 
   const { data: updated, error } = await admin
     .from("feed_items")
-    .update({ caption, edited_at: new Date().toISOString() })
+    .update({
+      caption,
+      edited_at: new Date().toISOString(),
+      ...(data.location_name !== undefined && {
+        location_name: data.location_name?.trim()?.slice(0, 100) || null,
+      }),
+    })
     .eq("id", itemId)
     .select("*")
     .single();
@@ -222,6 +275,9 @@ export async function editFeedItem(
   if (error || !updated) {
     return { error: error?.message ?? "Failed to update feed item" };
   }
+
+  const mentionIds = extractMentionIds(caption);
+  await syncMentions(admin, mentionIds, { feedItemId: itemId });
 
   return { item: updated as FeedItem };
 }
@@ -329,4 +385,81 @@ export async function toggleReaction(
   }
 
   return { status: "added", reaction: inserted as FeedReaction };
+}
+
+// --- Replies ---
+
+const REPLY_MAX_CHARS = 500;
+
+export async function addReply(
+  feedItemId: string,
+  content: string,
+): Promise<{ reply: FeedReply } | { error: string }> {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return { error: "Not authenticated" };
+
+  const trimmed = content.trim();
+  if (!trimmed) return { error: "Reply cannot be empty" };
+  if (trimmed.length > REPLY_MAX_CHARS) {
+    return { error: `Reply must be ${REPLY_MAX_CHARS} characters or fewer` };
+  }
+
+  const admin = createAdminClient();
+  const { data: item } = await admin
+    .from("feed_items")
+    .select("id, group_id")
+    .eq("id", feedItemId)
+    .maybeSingle();
+
+  if (!item) return { error: "Feed item not found" };
+
+  const role = await getMemberRole(item.group_id, userId);
+  if (!role) return { error: "Not a member of this group" };
+
+  const { data: reply, error } = await admin
+    .from("feed_replies")
+    .insert({
+      feed_item_id: feedItemId,
+      user_id: userId,
+      content: trimmed,
+    })
+    .select("*")
+    .single();
+
+  if (error || !reply) {
+    return { error: error?.message ?? "Failed to add reply" };
+  }
+
+  const mentionIds = extractMentionIds(trimmed);
+  if (mentionIds.length > 0) {
+    await syncMentions(admin, mentionIds, {
+      feedReplyId: reply.id as string,
+    });
+  }
+
+  return { reply: reply as FeedReply };
+}
+
+export async function deleteReply(
+  replyId: string,
+): Promise<{ success: true } | { error: string }> {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return { error: "Not authenticated" };
+
+  const admin = createAdminClient();
+  const { data: reply } = await admin
+    .from("feed_replies")
+    .select("id, user_id, feed_item_id")
+    .eq("id", replyId)
+    .maybeSingle();
+
+  if (!reply) return { error: "Reply not found" };
+  if (reply.user_id !== userId) {
+    return { error: "Only the author can delete this reply" };
+  }
+
+  const { error } = await admin.from("feed_replies").delete().eq("id", replyId);
+
+  if (error) return { error: error.message };
+  return { success: true };
 }

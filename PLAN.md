@@ -1792,36 +1792,36 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 
 ### 6.6 — Reply Threads
 
-- [ ] 6.6.1 — Migration: create `feed_replies` table:
+- [x] 6.6.1 — Migration: create `feed_replies` table:
   - `id` (UUID PK), `feed_item_id` (FK → feed_items ON DELETE CASCADE), `user_id` (FK → profiles), `content` (text, max 500 chars), `created_at` (timestamptz)
   - RLS: group members can SELECT/INSERT/DELETE (own replies only for delete)
-- [ ] 6.6.2 — Types: add `FeedReply` to `packages/types`.
-- [ ] 6.6.3 — Queries: `getReplies(supabase, feedItemId)` — returns replies with creator profile, ordered by `created_at` asc.
-- [ ] 6.6.4 — Server actions: `addReply(feedItemId, content)`, `deleteReply(replyId)`.
-- [ ] 6.6.5 — `FeedItemCard`: show reply count badge. Tap to expand inline reply thread below the card.
-- [ ] 6.6.6 — Reply input: compact text input at bottom of expanded thread, with send button.
-- [ ] 6.6.7 — Realtime: subscribe to `feed_replies` inserts/deletes for visible threads.
-- [ ] 6.6.8 — Optimistic replies: instant local insert, reconcile via realtime.
+- [x] 6.6.2 — Types: add `FeedReply` to `packages/types`.
+- [x] 6.6.3 — Queries: `getReplies(supabase, feedItemId)` — returns replies with creator profile, ordered by `created_at` asc. Also `getReplyCount` and `getReplyCounts` for batch counts.
+- [x] 6.6.4 — Server actions: `addReply(feedItemId, content)`, `deleteReply(replyId)`.
+- [x] 6.6.5 — `FeedItemCard`: show reply count badge. Tap to expand inline reply thread below the card.
+- [x] 6.6.6 — Reply input: compact text input at bottom of expanded thread, with send button.
+- [x] 6.6.7 — Realtime: subscribe to `feed_replies` inserts/deletes for visible threads.
+- [x] 6.6.8 — Optimistic replies: instant local insert, reconcile via realtime.
 
 ### 6.7 — Mentions
 
-- [ ] 6.7.1 — Mention detection: parse `@displayName` from caption/reply content at save time.
-- [ ] 6.7.2 — Migration: create `feed_mentions` table:
+- [x] 6.7.1 — Mention detection: parse `@[Display Name](userId)` from caption/reply content at save time.
+- [x] 6.7.2 — Migration: create `feed_mentions` table:
   - `id` (UUID PK), `feed_item_id` (FK → feed_items, nullable), `feed_reply_id` (FK → feed_replies, nullable), `mentioned_user_id` (FK → profiles), `created_at` (timestamptz)
   - CHECK: exactly one of `feed_item_id` or `feed_reply_id` must be non-null
-  - RLS: group members can SELECT; insert handled by server action
-- [ ] 6.7.3 — Mention autocomplete: in text/caption/reply inputs, typing `@` opens a member dropdown filtered by typed characters.
-- [ ] 6.7.4 — Mention rendering: `@Name` rendered as a styled inline pill/highlight in captions and replies.
-- [ ] 6.7.5 — Server-side: extract mentions from content in `addFeedItem`, `editFeedItem`, `addReply` — upsert into `feed_mentions`.
-- [ ] 6.7.6 — (Notification hook: defer to Phase 9 — for now, just store mentions for future notification system.)
+  - RLS: group members can SELECT; insert handled by server action via admin client
+- [x] 6.7.3 — Mention autocomplete: in text/caption/reply inputs, typing `@` opens a member dropdown filtered by typed characters. Keyboard navigation (arrows, Enter/Tab, Escape).
+- [x] 6.7.4 — Mention rendering: `@Name` rendered as a styled inline pill/highlight in captions, text posts, and replies.
+- [x] 6.7.5 — Server-side: extract mentions from content in `addFeedItem`, `editFeedItem`, `addReply` — upsert into `feed_mentions` via `syncMentions`.
+- [x] 6.7.6 — (Notification hook: defer to Phase 9 — for now, just store mentions for future notification system.)
 
 ### 6.8 — Location Tags
 
-- [ ] 6.8.1 — Migration: add `location_name` (text, nullable, max 100 chars) and `location_coords` (point, nullable) to `feed_items`.
-- [ ] 6.8.2 — Update `addFeedItem` and `editFeedItem` to accept optional `location_name` and `location_coords`.
-- [ ] 6.8.3 — Update `FeedItem` type with new fields.
-- [ ] 6.8.4 — Composer UI: optional "Add location" button in all three composer sheets. Opens a text input for place name (free text, no geocoding API in v1).
-- [ ] 6.8.5 — `FeedItemCard`: show location pill below the header when `location_name` is set (MapPin icon + name).
+- [x] 6.8.1 — Migration: add `location_name` (text, nullable, max 100 chars) and `location_coords` (point, nullable) to `feed_items`.
+- [x] 6.8.2 — Update `addFeedItem` and `editFeedItem` to accept optional `location_name` and `location_coords`.
+- [x] 6.8.3 — Update `FeedItem` type with new fields.
+- [x] 6.8.4 — Composer UI: optional "Add location" button in all three composer sheets. Opens a text input for place name (free text, no geocoding API in v1).
+- [x] 6.8.5 — `FeedItemCard`: show location pill below the header when `location_name` is set (MapPin icon + name).
 
 ### 6.9 — Cloudflare R2 Migration
 

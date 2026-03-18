@@ -4,6 +4,7 @@ export type FeedItemUI = FeedItemWithMeta & {
   media_url: string | null;
   optimistic?: boolean;
   local_object_url?: string | null;
+  reply_count: number;
 };
 
 export type FeedLinkOption = {

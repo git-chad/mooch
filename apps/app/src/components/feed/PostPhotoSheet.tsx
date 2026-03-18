@@ -7,6 +7,9 @@ import * as React from "react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { getSurfaceTransition, motionDuration } from "@/lib/motion";
 import { LinkSelectors } from "./LinkSelectors";
+import { LocationInput } from "./LocationInput";
+import type { MentionMember } from "./MentionInput";
+import { MentionSuggestions, useMentionInput } from "./MentionInput";
 import type { FeedLinkOption } from "./types";
 
 const CAPTION_MAX = 200;
@@ -18,11 +21,13 @@ type Props = {
   groupId: string;
   pollOptions: FeedLinkOption[];
   expenseOptions: FeedLinkOption[];
+  members: MentionMember[];
   onSubmit: (data: {
     file: File;
     caption: string;
     linked_expense_id: string | null;
     linked_poll_id: string | null;
+    location_name: string | null;
     preview_url: string;
   }) => Promise<boolean>;
 };
@@ -34,6 +39,7 @@ export function PostPhotoSheet({
   groupId,
   pollOptions,
   expenseOptions,
+  members,
   onSubmit,
 }: Props) {
   const reducedMotion = useReducedMotion() ?? false;
@@ -41,8 +47,11 @@ export function PostPhotoSheet({
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
+  const mention = useMentionInput(caption, setCaption, members);
   const [linkedPoll, setLinkedPoll] = useState("");
   const [linkedExpense, setLinkedExpense] = useState("");
+  const [locationName, setLocationName] = useState("");
+  const [showLocation, setShowLocation] = useState(false);
   const [dragging, setDragging] = useState(false);
 
   React.useEffect(() => {
@@ -53,9 +62,12 @@ export function PostPhotoSheet({
       setCaption("");
       setLinkedPoll("");
       setLinkedExpense("");
+      setLocationName("");
+      setShowLocation(false);
       setDragging(false);
+      mention.reset();
     }
-  }, [open, previewUrl]);
+  }, [open, previewUrl, mention.reset]);
 
   const canPost = useMemo(
     () => !posting && !!file && !!previewUrl,
@@ -126,9 +138,10 @@ export function PostPhotoSheet({
 
     const success = await onSubmit({
       file,
-      caption: caption.trim(),
+      caption: mention.encode(caption.trim()),
       linked_expense_id: linkedExpense || null,
       linked_poll_id: linkedPoll || null,
+      location_name: locationName.trim() || null,
       preview_url: previewUrl,
     });
 
@@ -138,6 +151,8 @@ export function PostPhotoSheet({
       setCaption("");
       setLinkedPoll("");
       setLinkedExpense("");
+      setLocationName("");
+      setShowLocation(false);
     }
   }
 
@@ -295,16 +310,36 @@ export function PostPhotoSheet({
             </Text>
           </div>
 
-          <textarea
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            maxLength={CAPTION_MAX}
-            rows={3}
-            placeholder="Optional caption..."
-            disabled={posting}
-            className="w-full rounded-xl border border-[#DECFC2] bg-[#FFFEFD] px-3 py-2.5 text-[14px] leading-relaxed text-ink outline-none transition-colors placeholder:text-[#AF9F93] focus:border-[#93BB6D]"
-          />
+          <div className="relative">
+            <MentionSuggestions
+              suggestions={mention.suggestions}
+              highlightIndex={mention.highlightIndex}
+              onSelect={mention.selectMention}
+            />
+            <textarea
+              value={caption}
+              onChange={(e) => mention.handleChange(e.target.value)}
+              onKeyDown={mention.handleKeyDown}
+              maxLength={CAPTION_MAX}
+              rows={3}
+              placeholder="Optional caption... (@ to mention)"
+              disabled={posting}
+              className="w-full rounded-xl border border-[#DECFC2] bg-[#FFFEFD] px-3 py-2.5 text-[14px] leading-relaxed text-ink outline-none transition-colors placeholder:text-[#AF9F93] focus:border-[#93BB6D]"
+            />
+          </div>
         </div>
+
+        {/* Location */}
+        <LocationInput
+          show={showLocation}
+          value={locationName}
+          onChange={setLocationName}
+          onToggle={() => {
+            if (showLocation) setLocationName("");
+            setShowLocation(!showLocation);
+          }}
+          disabled={posting}
+        />
 
         {/* Link selectors */}
         <div className={posting ? "pointer-events-none opacity-75" : undefined}>

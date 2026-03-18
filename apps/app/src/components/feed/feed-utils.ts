@@ -89,6 +89,7 @@ export type CreatePayload = {
   duration_seconds?: number | null;
   linked_expense_id?: string | null;
   linked_poll_id?: string | null;
+  location_name?: string | null;
 };
 
 export function buildOptimisticItem({
@@ -116,6 +117,8 @@ export function buildOptimisticItem({
     linked_expense_id: payload.linked_expense_id ?? null,
     linked_event_id: null,
     linked_poll_id: payload.linked_poll_id ?? null,
+    location_name: payload.location_name ?? null,
+    location_coords: null,
     created_by: profile.id,
     created_at: now,
     edited_at: null,
@@ -124,6 +127,7 @@ export function buildOptimisticItem({
     reaction_counts: [],
     current_user_reaction: null,
     total_reactions: 0,
+    reply_count: 0,
     optimistic: true,
   };
 }
@@ -146,6 +150,7 @@ export function buildFallbackCreatedItem({
     total_reactions: 0,
     media_url: mediaUrl,
     local_object_url: null,
+    reply_count: 0,
     optimistic: false,
   };
 }

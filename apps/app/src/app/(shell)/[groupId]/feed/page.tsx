@@ -1,4 +1,10 @@
-import { getFeedItems, getProfile, getSignedFeedMediaUrl } from "@mooch/db";
+import {
+  getFeedItems,
+  getGroupMembers,
+  getProfile,
+  getReplyCounts,
+  getSignedFeedMediaUrl,
+} from "@mooch/db";
 import { createClient } from "@mooch/db/server";
 import type { Profile } from "@mooch/types";
 import { notFound, redirect } from "next/navigation";
@@ -29,22 +35,27 @@ export default async function FeedPage({ params }: Props) {
 
   if (!member) notFound();
 
-  const [profile, initialFeedItemsRaw, pollsRaw, expensesRaw] = await Promise.all([
-    getProfile(admin, user.id),
-    getFeedItems(admin, groupId, undefined, user.id),
-    admin
-      .from("polls")
-      .select("id, question, created_at")
-      .eq("group_id", groupId)
-      .order("created_at", { ascending: false })
-      .limit(20),
-    admin
-      .from("expenses")
-      .select("id, description, created_at, tab_id")
-      .eq("group_id", groupId)
-      .order("created_at", { ascending: false })
-      .limit(20),
-  ]);
+  const [profile, initialFeedItemsRaw, pollsRaw, expensesRaw, groupMembers] =
+    await Promise.all([
+      getProfile(admin, user.id),
+      getFeedItems(admin, groupId, undefined, user.id),
+      admin
+        .from("polls")
+        .select("id, question, created_at")
+        .eq("group_id", groupId)
+        .order("created_at", { ascending: false })
+        .limit(20),
+      admin
+        .from("expenses")
+        .select("id, description, created_at, tab_id")
+        .eq("group_id", groupId)
+        .order("created_at", { ascending: false })
+        .limit(20),
+      getGroupMembers(admin, groupId),
+    ]);
+
+  const feedItemIds = initialFeedItemsRaw.map((item) => item.id);
+  const replyCounts = await getReplyCounts(admin, feedItemIds);
 
   const initialFeedItems = (await Promise.all(
     initialFeedItemsRaw.map(async (item) => ({
@@ -52,6 +63,7 @@ export default async function FeedPage({ params }: Props) {
       media_url: item.media_path
         ? await getSignedFeedMediaUrl(admin, item.media_path)
         : null,
+      reply_count: replyCounts.get(item.id) ?? 0,
     })),
   )) as FeedItemUI[];
 
@@ -85,6 +97,11 @@ export default async function FeedPage({ params }: Props) {
       initialItems={initialFeedItems}
       pollOptions={pollOptions}
       expenseOptions={expenseOptions}
+      members={groupMembers.map((m) => ({
+        userId: m.user_id,
+        displayName: m.profile.display_name || "Unknown",
+        photoUrl: m.profile.photo_url,
+      }))}
     />
   );
 }

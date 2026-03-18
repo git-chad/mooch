@@ -1,4 +1,4 @@
-import type { FeedItem, FeedReaction, Profile } from "@mooch/types";
+import type { FeedItem, FeedReaction, FeedReply, Profile } from "@mooch/types";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type FeedReactionCount = {
@@ -35,7 +35,7 @@ function toFeedItemWithMeta(
     .sort((a, b) => b.count - a.count);
 
   const current_user_reaction = userId
-    ? reactions.find((r) => r.user_id === userId)?.emoji ?? null
+    ? (reactions.find((r) => r.user_id === userId)?.emoji ?? null)
     : null;
 
   return {
@@ -101,4 +101,66 @@ export async function getSignedFeedMediaUrl(
 
   if (error || !data?.signedUrl) return null;
   return data.signedUrl;
+}
+
+// --- Replies ---
+
+export type FeedReplyWithProfile = FeedReply & {
+  profile: Profile;
+};
+
+type RawFeedReply = FeedReply & {
+  profile: Profile;
+};
+
+export async function getReplies(
+  supabase: SupabaseClient,
+  feedItemId: string,
+): Promise<FeedReplyWithProfile[]> {
+  const { data, error } = await supabase
+    .from("feed_replies")
+    .select("*, profile:profiles!user_id(*)")
+    .eq("feed_item_id", feedItemId)
+    .order("created_at", { ascending: true });
+
+  if (error || !data) return [];
+
+  return (data as RawFeedReply[]).map((row) => ({
+    ...row,
+    profile: row.profile as Profile,
+  }));
+}
+
+export async function getReplyCount(
+  supabase: SupabaseClient,
+  feedItemId: string,
+): Promise<number> {
+  const { count, error } = await supabase
+    .from("feed_replies")
+    .select("id", { count: "exact", head: true })
+    .eq("feed_item_id", feedItemId);
+
+  if (error || count == null) return 0;
+  return count;
+}
+
+export async function getReplyCounts(
+  supabase: SupabaseClient,
+  feedItemIds: string[],
+): Promise<Map<string, number>> {
+  if (feedItemIds.length === 0) return new Map();
+
+  const { data, error } = await supabase
+    .from("feed_replies")
+    .select("feed_item_id")
+    .in("feed_item_id", feedItemIds);
+
+  const counts = new Map<string, number>();
+  if (error || !data) return counts;
+
+  for (const row of data) {
+    const id = (row as { feed_item_id: string }).feed_item_id;
+    counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+  return counts;
 }

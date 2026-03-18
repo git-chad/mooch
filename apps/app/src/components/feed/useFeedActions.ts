@@ -3,6 +3,7 @@
 import type { FeedItemWithMeta } from "@mooch/db";
 import {
   getFeedItemById,
+  getReplyCount,
   getSignedFeedMediaUrl,
   uploadFeedPhoto,
   uploadFeedVoice,
@@ -65,14 +66,18 @@ export function useFeedActions({
 
   const hydrateItem = useCallback(
     async (item: FeedItemWithMeta): Promise<FeedItemUI> => {
-      const media_url = item.media_path
-        ? await getSignedFeedMediaUrl(supabase, item.media_path)
-        : null;
+      const [media_url, reply_count] = await Promise.all([
+        item.media_path
+          ? getSignedFeedMediaUrl(supabase, item.media_path)
+          : null,
+        getReplyCount(supabase, item.id),
+      ]);
 
       return {
         ...item,
         media_url,
         local_object_url: null,
+        reply_count,
         optimistic: false,
       };
     },
@@ -130,6 +135,7 @@ export function useFeedActions({
             duration_seconds: payload.duration_seconds ?? null,
             linked_expense_id: payload.linked_expense_id ?? null,
             linked_poll_id: payload.linked_poll_id ?? null,
+            location_name: payload.location_name ?? null,
           }),
           CREATE_ITEM_TIMEOUT_MS,
           "Post request timed out.",
@@ -196,6 +202,7 @@ export function useFeedActions({
       caption: string;
       linked_expense_id: string | null;
       linked_poll_id: string | null;
+      location_name: string | null;
     }): Promise<boolean> => {
       setPosting(true);
       try {
@@ -204,6 +211,7 @@ export function useFeedActions({
           caption: data.caption,
           linked_expense_id: data.linked_expense_id,
           linked_poll_id: data.linked_poll_id,
+          location_name: data.location_name,
         });
         if (success) {
           setTextOpen(false);
@@ -222,6 +230,7 @@ export function useFeedActions({
       caption: string;
       linked_expense_id: string | null;
       linked_poll_id: string | null;
+      location_name: string | null;
       preview_url: string;
     }): Promise<boolean> => {
       setPosting(true);
@@ -239,6 +248,7 @@ export function useFeedActions({
           local_object_url: data.preview_url,
           linked_expense_id: data.linked_expense_id,
           linked_poll_id: data.linked_poll_id,
+          location_name: data.location_name,
         });
 
         if (success) {
@@ -267,6 +277,7 @@ export function useFeedActions({
       duration_seconds: number;
       linked_expense_id: string | null;
       linked_poll_id: string | null;
+      location_name: string | null;
     }): Promise<boolean> => {
       setPosting(true);
       let localUrl: string | null = null;
@@ -286,6 +297,7 @@ export function useFeedActions({
           duration_seconds: data.duration_seconds,
           linked_expense_id: data.linked_expense_id,
           linked_poll_id: data.linked_poll_id,
+          location_name: data.location_name,
         });
 
         if (success) {

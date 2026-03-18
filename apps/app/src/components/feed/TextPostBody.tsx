@@ -1,18 +1,20 @@
 "use client";
 
 import { Text } from "@mooch/ui";
+import { renderMentionText } from "./MentionInput";
 
 const SHORT_TEXT_THRESHOLD = 40;
 const LONG_TEXT_THRESHOLD = 80;
 
 export function TextPostBody({ text }: { text: string }) {
   const len = text.length;
+  const content = renderMentionText(text);
 
   // Short punchy text — large Geist Pixel
   if (len <= SHORT_TEXT_THRESHOLD) {
     return (
       <Text variant="web-section" color="default">
-        {text}
+        {content}
       </Text>
     );
   }
@@ -25,7 +27,7 @@ export function TextPostBody({ text }: { text: string }) {
         style={{ borderColor: "#C4B5A6" }}
       >
         <Text variant="body" className="text-[15px] leading-[1.55]">
-          {text}
+          {content}
         </Text>
       </div>
     );
@@ -34,7 +36,7 @@ export function TextPostBody({ text }: { text: string }) {
   // Medium text — standard body
   return (
     <Text variant="body" className="text-[15px] leading-[1.55]">
-      {text}
+      {content}
     </Text>
   );
 }

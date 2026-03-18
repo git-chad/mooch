@@ -71,15 +71,23 @@ export function ReactionBar({
                 initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
-                transition={getSurfaceTransition(reducedMotion, motionDuration.fast)}
+                transition={getSurfaceTransition(
+                  reducedMotion,
+                  motionDuration.fast,
+                )}
               >
                 <span>{entry.emoji}</span>
                 <motion.span
                   key={`${entry.emoji}-${entry.count}`}
                   className="tabular-nums"
-                  initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.85 }}
+                  initial={
+                    reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.85 }
+                  }
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={getSurfaceTransition(reducedMotion, motionDuration.fast)}
+                  transition={getSurfaceTransition(
+                    reducedMotion,
+                    motionDuration.fast,
+                  )}
                 >
                   {entry.count}
                 </motion.span>
@@ -112,7 +120,10 @@ export function ReactionBar({
             initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -4 }}
-            transition={getSurfaceTransition(reducedMotion, motionDuration.fast)}
+            transition={getSurfaceTransition(
+              reducedMotion,
+              motionDuration.fast,
+            )}
           >
             {PRESET_EMOJIS.map((emoji) => {
               const active = currentUserReaction === emoji;

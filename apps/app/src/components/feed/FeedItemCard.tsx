@@ -1,11 +1,13 @@
 "use client";
 
+import type { Profile } from "@mooch/types";
 import { Avatar, Text } from "@mooch/ui";
 import {
   ArrowUpRight,
   BarChart3,
   ImageOff,
   Loader2,
+  MapPin,
   Pencil,
   ReceiptText,
   Trash2,
@@ -16,7 +18,10 @@ import { useMemo, useState } from "react";
 import { relativeTime } from "@/lib/expenses";
 import { getSurfaceTransition, motionDuration } from "@/lib/motion";
 import { EditCaption } from "./EditCaption";
+import type { MentionMember } from "./MentionInput";
+import { renderMentionText } from "./MentionInput";
 import { ReactionBar } from "./ReactionBar";
+import { ReplyThread } from "./ReplyThread";
 import { TextPostBody } from "./TextPostBody";
 import type { FeedItemUI } from "./types";
 import { VoicePlayer } from "./VoicePlayer";
@@ -28,22 +33,28 @@ type Props = {
   groupId: string;
   item: FeedItemUI;
   currentUserId: string;
+  currentUserProfile: Profile;
   deleting?: boolean;
   reacting?: boolean;
   onToggleReaction: (itemId: string, emoji: string) => void;
   onDelete: (itemId: string) => void;
   onEdit: (itemId: string, caption: string) => Promise<boolean>;
+  onReplyCountChange: (feedItemId: string, delta: number) => void;
+  members: MentionMember[];
 };
 
 export function FeedItemCard({
   groupId,
   item,
   currentUserId,
+  currentUserProfile,
   deleting = false,
   reacting = false,
   onToggleReaction,
   onDelete,
   onEdit,
+  onReplyCountChange,
+  members,
 }: Props) {
   const reducedMotion = useReducedMotion() ?? false;
   const isOwner = item.created_by === currentUserId;
@@ -160,6 +171,15 @@ export function FeedItemCard({
           )}
         </header>
 
+        {item.location_name && (
+          <div className="inline-flex items-center gap-1 rounded-full border border-[#E7D9CD] bg-[#FAF7F4] px-2 py-0.5">
+            <MapPin className="h-3 w-3 text-[#9C8778]" />
+            <Text variant="caption" color="subtle" className="leading-none">
+              {item.location_name}
+            </Text>
+          </div>
+        )}
+
         {item.type === "text" &&
           (editing ? (
             <EditCaption
@@ -239,7 +259,7 @@ export function FeedItemCard({
           ) : (
             item.caption && (
               <Text variant="body" color="label" className="leading-relaxed">
-                {item.caption}
+                {renderMentionText(item.caption)}
               </Text>
             )
           ))}
@@ -264,6 +284,16 @@ export function FeedItemCard({
           disabled={reacting || deleting}
           onToggle={(emoji) => onToggleReaction(item.id, emoji)}
         />
+
+        {!item.optimistic && (
+          <ReplyThread
+            feedItemId={item.id}
+            currentUser={currentUserProfile}
+            replyCount={item.reply_count}
+            members={members}
+            onReplyCountChange={onReplyCountChange}
+          />
+        )}
       </div>
     </motion.article>
   );

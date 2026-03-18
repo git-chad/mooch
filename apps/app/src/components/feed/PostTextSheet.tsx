@@ -5,6 +5,9 @@ import { MessageSquareText } from "lucide-react";
 // biome-ignore lint/style/noRestrictedImports: useEffect needed for open-reset cleanup and autofocus timing — not mount-only.
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LinkSelectors } from "./LinkSelectors";
+import { LocationInput } from "./LocationInput";
+import type { MentionMember } from "./MentionInput";
+import { MentionSuggestions, useMentionInput } from "./MentionInput";
 import type { FeedLinkOption } from "./types";
 
 const TEXT_MAX_CHARS = 500;
@@ -16,10 +19,12 @@ type Props = {
   groupId: string;
   pollOptions: FeedLinkOption[];
   expenseOptions: FeedLinkOption[];
+  members: MentionMember[];
   onSubmit: (data: {
     caption: string;
     linked_expense_id: string | null;
     linked_poll_id: string | null;
+    location_name: string | null;
   }) => Promise<boolean>;
 };
 
@@ -30,20 +35,28 @@ export function PostTextSheet({
   groupId,
   pollOptions,
   expenseOptions,
+  members,
   onSubmit,
 }: Props) {
   const [text, setText] = useState("");
   const [linkedPoll, setLinkedPoll] = useState<string>("");
   const [linkedExpense, setLinkedExpense] = useState<string>("");
+  const [locationName, setLocationName] = useState("");
+  const [showLocation, setShowLocation] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const mention = useMentionInput(text, setText, members);
 
   useEffect(() => {
     if (!open) {
       setText("");
       setLinkedPoll("");
       setLinkedExpense("");
+      setLocationName("");
+      setShowLocation(false);
+      mention.reset();
     }
-  }, [open]);
+  }, [open, mention.reset]);
 
   // Autofocus textarea when sheet opens
   useEffect(() => {
@@ -63,9 +76,10 @@ export function PostTextSheet({
     if (disabled) return;
 
     await onSubmit({
-      caption: trimmed,
+      caption: mention.encode(trimmed),
       linked_expense_id: linkedExpense || null,
       linked_poll_id: linkedPoll || null,
+      location_name: locationName.trim() || null,
     });
   }
 
@@ -86,16 +100,24 @@ export function PostTextSheet({
             </Text>
           </div>
 
-          <textarea
-            ref={textareaRef}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            maxLength={TEXT_MAX_CHARS}
-            rows={5}
-            placeholder="Say it exactly how it happened..."
-            disabled={posting}
-            className="w-full rounded-xl border border-[#DECFC2] bg-[#FFFEFD] px-3 py-2.5 text-[14px] leading-relaxed text-ink outline-none transition-colors placeholder:text-[#AF9F93] focus:border-[#93BB6D]"
-          />
+          <div className="relative">
+            <MentionSuggestions
+              suggestions={mention.suggestions}
+              highlightIndex={mention.highlightIndex}
+              onSelect={mention.selectMention}
+            />
+            <textarea
+              ref={textareaRef}
+              value={text}
+              onChange={(e) => mention.handleChange(e.target.value)}
+              onKeyDown={mention.handleKeyDown}
+              maxLength={TEXT_MAX_CHARS}
+              rows={5}
+              placeholder="Say it exactly how it happened... (@ to mention)"
+              disabled={posting}
+              className="w-full rounded-xl border border-[#DECFC2] bg-[#FFFEFD] px-3 py-2.5 text-[14px] leading-relaxed text-ink outline-none transition-colors placeholder:text-[#AF9F93] focus:border-[#93BB6D]"
+            />
+          </div>
 
           <div className="mt-2 flex justify-end">
             <Text
@@ -107,6 +129,18 @@ export function PostTextSheet({
             </Text>
           </div>
         </div>
+
+        {/* Location */}
+        <LocationInput
+          show={showLocation}
+          value={locationName}
+          onChange={setLocationName}
+          onToggle={() => {
+            if (showLocation) setLocationName("");
+            setShowLocation(!showLocation);
+          }}
+          disabled={posting}
+        />
 
         {/* Link selectors */}
         <div className={posting ? "pointer-events-none opacity-75" : undefined}>

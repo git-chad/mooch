@@ -9,6 +9,9 @@ import { toast } from "sonner";
 import { useWebHaptics } from "web-haptics/react";
 import { getSurfaceTransition, motionDuration } from "@/lib/motion";
 import { LinkSelectors } from "./LinkSelectors";
+import { LocationInput } from "./LocationInput";
+import type { MentionMember } from "./MentionInput";
+import { MentionSuggestions, useMentionInput } from "./MentionInput";
 import type { FeedLinkOption } from "./types";
 
 const MAX_SECONDS = 60;
@@ -26,12 +29,14 @@ type Props = {
   groupId: string;
   pollOptions: FeedLinkOption[];
   expenseOptions: FeedLinkOption[];
+  members: MentionMember[];
   onSubmit: (data: {
     blob: Blob;
     caption: string;
     duration_seconds: number;
     linked_expense_id: string | null;
     linked_poll_id: string | null;
+    location_name: string | null;
   }) => Promise<boolean>;
 };
 
@@ -42,6 +47,7 @@ export function RecordVoiceSheet({
   groupId,
   pollOptions,
   expenseOptions,
+  members,
   onSubmit,
 }: Props) {
   const reducedMotion = useReducedMotion() ?? false;
@@ -53,8 +59,11 @@ export function RecordVoiceSheet({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewDuration, setPreviewDuration] = useState(0);
   const [caption, setCaption] = useState("");
+  const mention = useMentionInput(caption, setCaption, members);
   const [linkedPoll, setLinkedPoll] = useState("");
   const [linkedExpense, setLinkedExpense] = useState("");
+  const [locationName, setLocationName] = useState("");
+  const [showLocation, setShowLocation] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [playProgress, setPlayProgress] = useState(0);
   const [peaks, setPeaks] = useState<number[]>([]);
@@ -105,11 +114,14 @@ export function RecordVoiceSheet({
     setCaption("");
     setLinkedPoll("");
     setLinkedExpense("");
+    setLocationName("");
+    setShowLocation(false);
     setPlaying(false);
     setPlayProgress(0);
     setPeaks([]);
     ringBufferRef.current = new Array(RING_BUFFER_SIZE).fill(0);
     ringIndexRef.current = 0;
+    mention.reset();
   }
 
   function teardownRecorder() {
@@ -481,10 +493,11 @@ export function RecordVoiceSheet({
 
     const success = await onSubmit({
       blob: previewBlob,
-      caption: caption.trim(),
+      caption: mention.encode(caption.trim()),
       duration_seconds: previewDuration,
       linked_expense_id: linkedExpense || null,
       linked_poll_id: linkedPoll || null,
+      location_name: locationName.trim() || null,
     });
 
     if (success) resetState();
@@ -605,7 +618,10 @@ export function RecordVoiceSheet({
                         animate={
                           reducedMotion
                             ? { opacity: 0.35 }
-                            : { opacity: [0.25, 0.5, 0.25], scale: [0.9, 1.1, 0.9] }
+                            : {
+                                opacity: [0.25, 0.5, 0.25],
+                                scale: [0.9, 1.1, 0.9],
+                              }
                         }
                         transition={
                           reducedMotion
@@ -658,15 +674,35 @@ export function RecordVoiceSheet({
               {caption.length}/{CAPTION_MAX}
             </Text>
           </div>
-          <textarea
-            value={caption}
-            onChange={(e) => setCaption(e.target.value)}
-            maxLength={CAPTION_MAX}
-            rows={3}
-            placeholder="Optional caption..."
-            className="w-full rounded-xl border border-[#DECFC2] bg-[#FFFEFD] px-3 py-2.5 text-[14px] leading-relaxed text-ink outline-none transition-colors placeholder:text-[#AF9F93] focus:border-[#93BB6D]"
-          />
+          <div className="relative">
+            <MentionSuggestions
+              suggestions={mention.suggestions}
+              highlightIndex={mention.highlightIndex}
+              onSelect={mention.selectMention}
+            />
+            <textarea
+              value={caption}
+              onChange={(e) => mention.handleChange(e.target.value)}
+              onKeyDown={mention.handleKeyDown}
+              maxLength={CAPTION_MAX}
+              rows={3}
+              placeholder="Optional caption... (@ to mention)"
+              className="w-full rounded-xl border border-[#DECFC2] bg-[#FFFEFD] px-3 py-2.5 text-[14px] leading-relaxed text-ink outline-none transition-colors placeholder:text-[#AF9F93] focus:border-[#93BB6D]"
+            />
+          </div>
         </div>
+
+        {/* Location */}
+        <LocationInput
+          show={showLocation}
+          value={locationName}
+          onChange={setLocationName}
+          onToggle={() => {
+            if (showLocation) setLocationName("");
+            setShowLocation(!showLocation);
+          }}
+          disabled={posting}
+        />
 
         {/* Link selectors */}
         <LinkSelectors
