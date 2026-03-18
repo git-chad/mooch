@@ -5,6 +5,7 @@ import { Avatar, LucideIconByName, Text } from "@mooch/ui";
 import { ImageIcon } from "lucide-react";
 import { motion, type Transition, useReducedMotion } from "motion/react";
 import { TransitionLink } from "@/components/TransitionLink";
+import { usePrefetch } from "@/hooks/usePrefetch";
 import { CATEGORY_CONFIG, formatCurrency, relativeTime } from "@/lib/expenses";
 import { getSurfaceTransition, motionDuration } from "@/lib/motion";
 import { getExpenseTransitionNames } from "@/lib/view-transition";
@@ -45,15 +46,18 @@ export function ExpenseCard({
       ? CATEGORY_CONFIG[expense.category]
       : { emoji: "📦", label: "Other" };
   const transitionNames = getExpenseTransitionNames(expense.id);
+  const href = `/${groupId}/expenses/${tabId}/${expense.id}`;
+  const prefetchRef = usePrefetch<HTMLDivElement>(href);
 
   return (
     <motion.div
+      ref={prefetchRef}
       layout="position"
       transition={layoutTransition}
       whileTap={reducedMotion ? undefined : { scale: 0.988 }}
     >
       <TransitionLink
-        href={`/${groupId}/expenses/${tabId}/${expense.id}`}
+        href={href}
         className="group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors hover:bg-[#F7F2ED]/60"
       >
         {/* Category icon */}
@@ -92,10 +96,12 @@ export function ExpenseCard({
           <Text variant="label" color="default" className="truncate block">
             {expense.description}
           </Text>
-          <Text variant="caption" color="subtle" className="flex items-center gap-1">
-            {isCurrentUserPayer
-              ? "You"
-              : payer?.display_name ?? "someone"}
+          <Text
+            variant="caption"
+            color="subtle"
+            className="flex items-center gap-1"
+          >
+            {isCurrentUserPayer ? "You" : (payer?.display_name ?? "someone")}
             {" · "}
             <span className="text-ink-dim">
               {relativeTime(expense.created_at)}
