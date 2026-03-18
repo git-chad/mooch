@@ -72,6 +72,8 @@ export async function addFeedItem(
   const caption = normalizeCaption(data.caption);
   const media_path = data.media_path?.trim() || null;
   const duration_seconds = data.duration_seconds ?? null;
+  const linked_expense_id = data.linked_expense_id?.trim() || null;
+  const linked_poll_id = data.linked_poll_id?.trim() || null;
 
   if (data.type === "text") {
     if (!caption) return { error: "Text posts cannot be empty" };
@@ -99,6 +101,43 @@ export async function addFeedItem(
   }
 
   const admin = createAdminClient();
+
+  if (linked_expense_id) {
+    const { data: expense, error: expenseError } = await admin
+      .from("expenses")
+      .select("id, group_id")
+      .eq("id", linked_expense_id)
+      .maybeSingle();
+
+    if (expenseError) {
+      return { error: expenseError.message };
+    }
+    if (!expense) {
+      return { error: "Linked expense not found." };
+    }
+    if (expense.group_id !== groupId) {
+      return { error: "Linked expense must belong to this group." };
+    }
+  }
+
+  if (linked_poll_id) {
+    const { data: poll, error: pollError } = await admin
+      .from("polls")
+      .select("id, group_id")
+      .eq("id", linked_poll_id)
+      .maybeSingle();
+
+    if (pollError) {
+      return { error: pollError.message };
+    }
+    if (!poll) {
+      return { error: "Linked poll not found." };
+    }
+    if (poll.group_id !== groupId) {
+      return { error: "Linked poll must belong to this group." };
+    }
+  }
+
   const { data: item, error } = await admin
     .from("feed_items")
     .insert({
@@ -107,9 +146,9 @@ export async function addFeedItem(
       media_path,
       caption,
       duration_seconds,
-      linked_expense_id: data.linked_expense_id ?? null,
+      linked_expense_id,
       linked_event_id: null,
-      linked_poll_id: data.linked_poll_id ?? null,
+      linked_poll_id,
       created_by: userId,
     })
     .select("*")

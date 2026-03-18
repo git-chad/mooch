@@ -2,6 +2,7 @@
 
 import { Avatar, Text } from "@mooch/ui";
 import {
+  ArrowUpRight,
   BarChart3,
   Loader2,
   Mic,
@@ -11,6 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { relativeTime } from "@/lib/expenses";
 import { getSurfaceTransition, motionDuration } from "@/lib/motion";
@@ -18,6 +20,7 @@ import { ReactionBar } from "./ReactionBar";
 import type { FeedItemUI } from "./types";
 
 type Props = {
+  groupId: string;
   item: FeedItemUI;
   currentUserId: string;
   deleting?: boolean;
@@ -28,6 +31,7 @@ type Props = {
 };
 
 export function FeedItemCard({
+  groupId,
   item,
   currentUserId,
   deleting = false,
@@ -44,9 +48,17 @@ export function FeedItemCard({
   );
 
   const contextBadge = item.linked_poll_id
-    ? { icon: BarChart3, label: "Linked poll" }
+    ? {
+        icon: BarChart3,
+        label: "Linked poll",
+        href: `/${groupId}/polls#${item.linked_poll_id}`,
+      }
     : item.linked_expense_id
-      ? { icon: ReceiptText, label: "Linked expense" }
+      ? {
+          icon: ReceiptText,
+          label: "Linked expense",
+          href: `/${groupId}/expenses`,
+        }
       : null;
 
   return (
@@ -134,12 +146,17 @@ export function FeedItemCard({
         )}
 
         {contextBadge && (
-          <div className="inline-flex items-center gap-1.5 rounded-full border px-2 py-1">
+          <Link
+            href={contextBadge.href}
+            className="inline-flex items-center gap-1.5 rounded-full border px-2 py-1 transition-colors hover:bg-[#F5EFE8]"
+            style={{ borderColor: "#DCCBC0" }}
+          >
             <contextBadge.icon className="h-3.5 w-3.5 text-[#6B7E90]" />
             <Text variant="caption" color="info">
               {contextBadge.label}
             </Text>
-          </div>
+            <ArrowUpRight className="h-3 w-3 text-[#6B7E90]" />
+          </Link>
         )}
 
         <ReactionBar

@@ -38,6 +38,7 @@ import { RecordVoiceSheet } from "./RecordVoiceSheet";
 import type { FeedItemUI, FeedLinkOption } from "./types";
 
 const PAGE_SIZE = 20;
+const CREATE_ITEM_TIMEOUT_MS = 20_000;
 const revealedGroups = new Set<string>();
 
 type Props = {
@@ -81,6 +82,26 @@ function uniqueById(items: FeedItemUI[]): FeedItemUI[] {
     }
   }
   return sortByNewest([...seen.values()]);
+}
+
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  message: string,
+): Promise<T> {
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  const timeoutPromise = new Promise<T>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      reject(new Error(message));
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([promise, timeoutPromise]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
 }
 
 function toCountsMap(item: FeedItemUI): Map<string, number> {
@@ -448,47 +469,67 @@ export function FeedListClient({
       });
 
       setItems((prev) => uniqueById([optimistic, ...prev]));
+      try {
+        const result = await withTimeout(
+          addFeedItem(groupId, {
+            type: payload.type,
+            caption: payload.caption ?? null,
+            media_path: payload.media_path ?? null,
+            duration_seconds: payload.duration_seconds ?? null,
+            linked_expense_id: payload.linked_expense_id ?? null,
+            linked_poll_id: payload.linked_poll_id ?? null,
+          }),
+          CREATE_ITEM_TIMEOUT_MS,
+          "Post request timed out.",
+        );
 
-      const result = await addFeedItem(groupId, {
-        type: payload.type,
-        caption: payload.caption ?? null,
-        media_path: payload.media_path ?? null,
-        duration_seconds: payload.duration_seconds ?? null,
-        linked_expense_id: payload.linked_expense_id ?? null,
-        linked_poll_id: payload.linked_poll_id ?? null,
-      });
+        if ("error" in result) {
+          if (payload.local_object_url) {
+            URL.revokeObjectURL(payload.local_object_url);
+          }
 
-      if ("error" in result) {
-        if (payload.local_object_url) {
+          setItems((prev) => prev.filter((item) => item.id !== tempId));
+          toast.error(result.error);
+          return false;
+        }
+
+        const signedMedia = result.item.media_path
+          ? await withTimeout(
+              getSignedFeedMediaUrl(supabase, result.item.media_path),
+              CREATE_ITEM_TIMEOUT_MS,
+              "Media signing timed out.",
+            )
+          : null;
+
+        const fresh = await withTimeout(
+          fetchHydratedItemById(result.item.id),
+          CREATE_ITEM_TIMEOUT_MS,
+          "Post hydration timed out.",
+        );
+        const next =
+          fresh ??
+          buildFallbackCreatedItem({
+            created: result.item,
+            profile: currentUserProfile,
+            mediaUrl: signedMedia ?? payload.local_object_url ?? null,
+          });
+
+        if (payload.local_object_url && signedMedia) {
           URL.revokeObjectURL(payload.local_object_url);
         }
 
+        setItems((prev) =>
+          uniqueById([next, ...prev.filter((item) => item.id !== tempId)]),
+        );
+        return true;
+      } catch {
+        if (payload.local_object_url) {
+          URL.revokeObjectURL(payload.local_object_url);
+        }
         setItems((prev) => prev.filter((item) => item.id !== tempId));
-        toast.error(result.error);
+        toast.error("Could not finish posting. Please try again.");
         return false;
       }
-
-      const signedMedia = result.item.media_path
-        ? await getSignedFeedMediaUrl(supabase, result.item.media_path)
-        : null;
-
-      const fresh = await fetchHydratedItemById(result.item.id);
-      const next =
-        fresh ??
-        buildFallbackCreatedItem({
-          created: result.item,
-          profile: currentUserProfile,
-          mediaUrl: signedMedia ?? payload.local_object_url ?? null,
-        });
-
-      if (payload.local_object_url && signedMedia) {
-        URL.revokeObjectURL(payload.local_object_url);
-      }
-
-      setItems((prev) =>
-        uniqueById([next, ...prev.filter((item) => item.id !== tempId)]),
-      );
-      return true;
     },
     [groupId, currentUserProfile, supabase, fetchHydratedItemById],
   );
@@ -563,8 +604,9 @@ export function FeedListClient({
       linked_poll_id: string | null;
     }): Promise<boolean> => {
       setPosting(true);
+      let localUrl: string | null = null;
       try {
-        const localUrl = URL.createObjectURL(data.blob);
+        localUrl = URL.createObjectURL(data.blob);
         const media_path = await uploadFeedVoice(supabase, groupId, data.blob);
 
         const success = await createItem({
@@ -582,6 +624,7 @@ export function FeedListClient({
         }
         return success;
       } catch {
+        if (localUrl) URL.revokeObjectURL(localUrl);
         toast.error("Could not upload voice note.");
         return false;
       } finally {
@@ -773,6 +816,7 @@ export function FeedListClient({
                       transition={itemTransition}
                     >
                       <FeedItemCard
+                        groupId={groupId}
                         item={item}
                         currentUserId={currentUserProfile.id}
                         deleting={deletingItemId === item.id}
