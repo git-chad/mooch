@@ -446,8 +446,11 @@ export function FeedListClient({
       });
 
       setItems((prev) => uniqueById([optimistic, ...prev]));
+
+      // Step 1: persist — if this fails, revert the optimistic item
+      let result: Awaited<ReturnType<typeof addFeedItem>>;
       try {
-        const result = await withTimeout(
+        result = await withTimeout(
           addFeedItem(groupId, {
             type: payload.type,
             caption: payload.caption ?? null,
@@ -464,12 +467,22 @@ export function FeedListClient({
           if (payload.local_object_url) {
             URL.revokeObjectURL(payload.local_object_url);
           }
-
           setItems((prev) => prev.filter((item) => item.id !== tempId));
           toast.error(result.error);
           return false;
         }
+      } catch {
+        if (payload.local_object_url) {
+          URL.revokeObjectURL(payload.local_object_url);
+        }
+        setItems((prev) => prev.filter((item) => item.id !== tempId));
+        toast.error("Could not finish posting. Please try again.");
+        return false;
+      }
 
+      // Step 2: hydrate — post is already saved, so don't revert on failure.
+      // Realtime will reconcile eventually.
+      try {
         const signedMedia = result.item.media_path
           ? await withTimeout(
               getSignedFeedMediaUrl(supabase, result.item.media_path),
@@ -498,15 +511,10 @@ export function FeedListClient({
         setItems((prev) =>
           uniqueById([next, ...prev.filter((item) => item.id !== tempId)]),
         );
-        return true;
       } catch {
-        if (payload.local_object_url) {
-          URL.revokeObjectURL(payload.local_object_url);
-        }
-        setItems((prev) => prev.filter((item) => item.id !== tempId));
-        toast.error("Could not finish posting. Please try again.");
-        return false;
+        // Post is persisted — leave optimistic item in place, realtime will replace it
       }
+      return true;
     },
     [groupId, currentUserProfile, supabase, fetchHydratedItemById],
   );

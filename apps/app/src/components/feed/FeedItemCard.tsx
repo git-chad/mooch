@@ -112,23 +112,30 @@ export function FeedItemCard({
         </header>
 
         {item.type === "text" && item.caption && (
-          <Text variant="body" className="text-[15px] leading-[1.55]">
-            {item.caption}
-          </Text>
+          <TextPostBody text={item.caption} />
         )}
 
         {item.type === "photo" && item.media_url && (
           <div
-            className="block w-full overflow-hidden rounded-xl border text-left"
+            className="group/photo block w-full overflow-hidden rounded-xl border text-left transition-shadow duration-200 hover:shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
             style={{ borderColor: "#E7D8CC" }}
           >
-            <div className="relative bg-[#F7F1EA]">
+            <div className="relative aspect-[4/5] w-full overflow-hidden bg-[#F5F0EA]">
+              {/* Blurred placeholder — visible until image loads */}
               {!photoLoaded && !photoError && (
-                <div className="h-[220px] w-full animate-pulse bg-[linear-gradient(120deg,#F5EEE7_20%,#FBF7F3_38%,#F5EEE7_58%)]" />
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #EDE5DC 0%, #F5EEE7 40%, #EDE5DC 100%)",
+                    filter: "blur(20px)",
+                    transform: "scale(1.1)",
+                  }}
+                />
               )}
 
               {photoError ? (
-                <div className="grid h-[220px] w-full place-items-center gap-1 text-center">
+                <div className="absolute inset-0 grid place-items-center gap-1 text-center">
                   <ImageOff className="h-6 w-6 text-[#9C8778]" />
                   <Text variant="caption" color="subtle">
                     Couldn&apos;t load image
@@ -144,7 +151,7 @@ export function FeedItemCard({
                     setPhotoLoaded(false);
                     setPhotoError(true);
                   }}
-                  className="h-auto max-h-[520px] w-full object-cover transition-opacity duration-200"
+                  className="absolute inset-0 h-full w-full object-cover transition-all duration-300 group-hover/photo:scale-[1.005]"
                   style={{ opacity: photoLoaded ? 1 : 0 }}
                 />
               )}
@@ -187,6 +194,43 @@ export function FeedItemCard({
         />
       </div>
     </motion.article>
+  );
+}
+
+const SHORT_TEXT_THRESHOLD = 40;
+const LONG_TEXT_THRESHOLD = 80;
+
+function TextPostBody({ text }: { text: string }) {
+  const len = text.length;
+
+  // Short punchy text — large Geist Pixel
+  if (len <= SHORT_TEXT_THRESHOLD) {
+    return (
+      <Text variant="web-section" color="default">
+        {text}
+      </Text>
+    );
+  }
+
+  // Longer text — blockquote-style left accent bar
+  if (len > LONG_TEXT_THRESHOLD) {
+    return (
+      <div
+        className="rounded-r-lg border-l-[3px] pl-3"
+        style={{ borderColor: "#C4B5A6" }}
+      >
+        <Text variant="body" className="text-[15px] leading-[1.55]">
+          {text}
+        </Text>
+      </div>
+    );
+  }
+
+  // Medium text — standard body
+  return (
+    <Text variant="body" className="text-[15px] leading-[1.55]">
+      {text}
+    </Text>
   );
 }
 
