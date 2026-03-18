@@ -57,7 +57,7 @@ Zustand stores that need to be built alongside components.
 - [x] **`Tooltip`** — Warm white glass surface; Base UI Tooltip; `TooltipProvider` in root layout; 120ms fade
 - [x] **`Badge`** — Role (admin/member), status (settled, closed, past), role-color per design system; fully custom `color` prop (tinted bg + border derived from hex); `emoji?` prefix; `sm`/`md` sizes
 - [ ] **`Chip`** — Pill label: tags, categories, emoji+name group chips; press state
-- [ ] **`EmptyState`** — SVG illustration + heading + body + CTA button; every section has its own copy/illustration
+- [x] **`EmptyState`** — Shared empty-state primitive in `apps/app/src/components/EmptyState.tsx`; supports either `emoji` or `iconSrc` + heading + body + optional children CTA. **Sizing contract:** emoji uses `text-5xl`; image/icon uses `size-48` (`192px`) by default.
 - [ ] **`Skeleton`** — Shimmer placeholder; block and list variants; matches exact layout of the content it replaces
 - [ ] **`ErrorBoundary`** — Full-section error with retry button; not a generic crash screen
 - [ ] **`NavTabs`** — Horizontal tab bar; animated lime pill indicator slides between tabs (layout animation, not opacity swap)
@@ -216,6 +216,7 @@ Zustand stores that need to be built alongside components.
 ### Architecture
 - **`packages/ui`** — app-agnostic primitives only (Button, Avatar, Badge, Chip, Input, etc.). Feature components stay in `apps/app/src/components/`.
 - All modals and sheets share the base `Modal` / `Sheet` wrappers for consistent animation and accessibility.
+- Empty states should reuse `apps/app/src/components/EmptyState.tsx` instead of ad-hoc per-page markup.
 - `VoiceRecorder` is shared between Plans and Feed — lives in `app/src/components/shared/`.
 - `ImageUploader` Canvas compression logic is needed in 3+ places — extract to `app/src/lib/image.ts` early.
 - `audioEngine` + `useAudioStore` are built once and imported wherever 🔊 is needed.
