@@ -1856,19 +1856,19 @@ Note: this Supabase Storage bucket was a working prototype to unblock feed devel
   - [x] Photo upload stores object in R2 and item in Supabase
   - [x] Voice upload stores object in R2 and item in Supabase
   - [x] Signed read URLs render correctly in feed
-  - Delete post removes the object from R2
+  - [x] Delete post removes the object from R2
   - Non-members still cannot create/read feed items because authorization remains enforced through Supabase-backed server logic
 
 ### 6.10 — Verify & Test
 
-- [ ] 6.10.1 — Post photo (file picker) → appears in feed.
+- [x] 6.10.1 — Post photo (file picker) → appears in feed.
 - [ ] 6.10.2 — Image compressed before upload (verify size < original).
-- [ ] 6.10.3 — Record voice note → preview works before posting.
-- [ ] 6.10.4 — Post voice note → play button + duration shown in feed.
+- [x] 6.10.3 — Record voice note → preview works before posting.
+- [x] 6.10.4 — Post voice note → play button + duration shown in feed.
 - [ ] 6.10.5 — Post text → appears in feed.
 - [ ] 6.10.6 — Add reaction → updates in real-time on other tab.
 - [ ] 6.10.7 — Remove reaction → count decreases.
-- [ ] 6.10.8 — Delete own item → removed. Cannot delete others'.
+- [x] 6.10.8 — Delete own item → removed. Cannot delete others'.
 - [ ] 6.10.9 — Infinite scroll loads next page at bottom.
 - [ ] 6.10.10 — Feed stays a continuous stream (no stories strip, no day separators).
 - [ ] 6.10.11 — Reactions and post/delete actions feel instant (optimistic), then reconcile via realtime without flicker.
