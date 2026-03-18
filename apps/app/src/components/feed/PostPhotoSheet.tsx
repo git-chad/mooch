@@ -1,8 +1,11 @@
 "use client";
 
 import { Button, Sheet, Text } from "@mooch/ui";
-import { Camera, ImagePlus, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Camera, ImagePlus, Loader2, X } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import * as React from "react";
+import { useMemo, useRef, useState } from "react";
+import { getSurfaceTransition, motionDuration } from "@/lib/motion";
 import { LinkSelectors } from "./LinkSelectors";
 import type { FeedLinkOption } from "./types";
 
@@ -33,13 +36,15 @@ export function PostPhotoSheet({
   expenseOptions,
   onSubmit,
 }: Props) {
+  const reducedMotion = useReducedMotion() ?? false;
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [caption, setCaption] = useState("");
   const [linkedPoll, setLinkedPoll] = useState("");
   const [linkedExpense, setLinkedExpense] = useState("");
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (!open) {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       setFile(null);
@@ -54,6 +59,23 @@ export function PostPhotoSheet({
     () => !posting && !!file && !!previewUrl,
     [posting, file, previewUrl],
   );
+  const sheetState = posting ? "posting" : previewUrl ? "selected" : "empty";
+  const filenameLabel = useMemo(() => {
+    if (!file?.name) return "Selected image";
+    if (file.name.length <= 36) return file.name;
+    const dot = file.name.lastIndexOf(".");
+    if (dot <= 0) return `${file.name.slice(0, 33)}...`;
+    const ext = file.name.slice(dot);
+    return `${file.name.slice(0, 29)}...${ext}`;
+  }, [file]);
+  const surfaceTransition = useMemo(
+    () => getSurfaceTransition(reducedMotion, motionDuration.standard),
+    [reducedMotion],
+  );
+
+  function openPicker() {
+    fileInputRef.current?.click();
+  }
 
   function onFileChange(nextFile: File | null) {
     if (previewUrl) {
@@ -98,60 +120,122 @@ export function PostPhotoSheet({
       description="Pick a shot, add context, and send it to the feed."
     >
       <div className="space-y-4">
-        <label className="block rounded-xl border border-dashed border-[#D8C8BC] bg-[#FDF9F4] p-4">
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/heic"
-            capture="environment"
-            className="sr-only"
-            onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
-          />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/heic"
+          capture="environment"
+          className="sr-only"
+          onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
+        />
 
-          {!previewUrl ? (
-            <div className="grid place-items-center gap-2 py-6 text-center">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#DCCBC0] bg-[#F8F2EC] text-[#7C6758]">
-                <ImagePlus className="h-4 w-4" />
-              </span>
-              <div>
-                <Text variant="label" className="block">
-                  Choose a photo
-                </Text>
-                <Text variant="caption" color="subtle" className="mt-1 block">
-                  We&apos;re too lazy to add a camera input or some shit
-                </Text>
+        <AnimatePresence mode="wait" initial={false}>
+          {sheetState === "empty" ? (
+            <motion.button
+              key="photo-empty"
+              type="button"
+              onClick={openPicker}
+              className="block w-full rounded-xl border border-dashed border-[#D8C8BC] bg-[#FDF9F4] p-4 text-left transition-colors hover:border-[#CDB9A8]"
+              initial={
+                reducedMotion
+                  ? { opacity: 0 }
+                  : { opacity: 0, y: 6, scale: 0.995 }
+              }
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={
+                reducedMotion
+                  ? { opacity: 0 }
+                  : { opacity: 0, y: -4, scale: 0.995 }
+              }
+              transition={surfaceTransition}
+            >
+              <div className="grid place-items-center gap-2 py-6 text-center">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#DCCBC0] bg-[#F8F2EC] text-[#7C6758]">
+                  <ImagePlus className="h-4 w-4" />
+                </span>
+                <div>
+                  <Text variant="label" className="block">
+                    Choose a photo
+                  </Text>
+                  <Text variant="caption" color="subtle" className="mt-1 block">
+                    Drop a clean shot and post it in one tap.
+                  </Text>
+                </div>
               </div>
-            </div>
+            </motion.button>
           ) : (
-            <div className="space-y-2">
+            <motion.div
+              key={sheetState}
+              initial={
+                reducedMotion
+                  ? { opacity: 0 }
+                  : { opacity: 0, y: 6, scale: 0.995 }
+              }
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={
+                reducedMotion
+                  ? { opacity: 0 }
+                  : { opacity: 0, y: -4, scale: 0.995 }
+              }
+              transition={surfaceTransition}
+              className="space-y-2"
+            >
               <div className="relative overflow-hidden rounded-xl border border-[#E6D8CD] bg-[#fff]">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
+                {/* biome-ignore lint/performance/noImgElement: local object URLs are only available at runtime for pre-upload preview. */}
                 <img
-                  src={previewUrl}
+                  src={previewUrl ?? ""}
                   alt="Preview"
                   className="max-h-[320px] w-full object-cover"
                 />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onFileChange(null);
-                  }}
-                  className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#DCCBC0] bg-[#F9F2EB]/95 text-[#7B6656]"
-                  aria-label="Remove photo"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
+                {sheetState === "posting" ? (
+                  <div className="absolute inset-0 flex items-center justify-center bg-[#2A211A]/24">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#EEDBCB] bg-[#FFF7EF] px-3 py-1 text-[12px] font-medium text-[#725D4D]">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Uploading photo...
+                    </span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onFileChange(null)}
+                    className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#DCCBC0] bg-[#F9F2EB]/95 text-[#7B6656]"
+                    aria-label="Remove photo"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
               </div>
 
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-[#DCCBC0] bg-[#F8F2EC] px-2.5 py-1">
-                <Camera className="h-3.5 w-3.5 text-[#7C6758]" />
-                <Text variant="caption" className="font-medium text-[#7C6758]">
-                  {file?.name ?? "Selected image"}
-                </Text>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="inline-flex items-center gap-1.5 rounded-full border border-[#DCCBC0] bg-[#F8F2EC] px-2.5 py-1">
+                  <Camera className="h-3.5 w-3.5 text-[#7C6758]" />
+                  <Text
+                    variant="caption"
+                    className="font-medium text-[#7C6758]"
+                  >
+                    {filenameLabel}
+                  </Text>
+                </div>
+                <button
+                  type="button"
+                  onClick={openPicker}
+                  disabled={posting}
+                  className="inline-flex items-center gap-1 rounded-full border border-[#D9C9BD] bg-[#FFF8F1] px-2.5 py-1 text-[12px] font-medium text-[#7C6858] disabled:opacity-50"
+                >
+                  Change
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onFileChange(null)}
+                  disabled={posting}
+                  className="inline-flex items-center gap-1 rounded-full border border-[#D9C9BD] bg-[#FFF8F1] px-2.5 py-1 text-[12px] font-medium text-[#7C6858] disabled:opacity-50"
+                >
+                  Remove
+                </button>
               </div>
-            </div>
+            </motion.div>
           )}
-        </label>
+        </AnimatePresence>
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
@@ -173,19 +257,22 @@ export function PostPhotoSheet({
             maxLength={CAPTION_MAX}
             rows={3}
             placeholder="Optional caption..."
+            disabled={posting}
             className="w-full rounded-xl border border-[#DECFC2] bg-[#FFFEFD] px-3 py-2.5 text-[14px] leading-relaxed text-ink outline-none transition-colors placeholder:text-[#AF9F93] focus:border-[#93BB6D]"
           />
         </div>
 
-        <LinkSelectors
-          groupId={groupId}
-          linkedExpense={linkedExpense}
-          linkedPoll={linkedPoll}
-          setLinkedExpense={setLinkedExpense}
-          setLinkedPoll={setLinkedPoll}
-          expenseOptions={expenseOptions}
-          pollOptions={pollOptions}
-        />
+        <div className={posting ? "pointer-events-none opacity-75" : undefined}>
+          <LinkSelectors
+            groupId={groupId}
+            linkedExpense={linkedExpense}
+            linkedPoll={linkedPoll}
+            setLinkedExpense={setLinkedExpense}
+            setLinkedPoll={setLinkedPoll}
+            expenseOptions={expenseOptions}
+            pollOptions={pollOptions}
+          />
+        </div>
 
         <Button
           type="button"
@@ -195,7 +282,7 @@ export function PostPhotoSheet({
           disabled={!canPost}
           onClick={handlePost}
         >
-          {posting ? "Posting…" : "Post photo"}
+          {posting ? "Posting..." : "Post photo"}
         </Button>
       </div>
     </Sheet>

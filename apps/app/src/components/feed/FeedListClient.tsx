@@ -31,7 +31,6 @@ import { TransitionSlot } from "@/components/TransitionSlot";
 import { getSurfaceTransition, motionDuration, motionEase } from "@/lib/motion";
 import { ComposerDock, type ComposerDockItem } from "./ComposerDock";
 import { FeedItemCard } from "./FeedItemCard";
-import { ImageLightbox } from "./ImageLightbox";
 import { PostPhotoSheet } from "./PostPhotoSheet";
 import { PostTextSheet } from "./PostTextSheet";
 import { RecordVoiceSheet } from "./RecordVoiceSheet";
@@ -39,6 +38,7 @@ import type { FeedItemUI, FeedLinkOption } from "./types";
 
 const PAGE_SIZE = 20;
 const CREATE_ITEM_TIMEOUT_MS = 20_000;
+const MEDIA_UPLOAD_TIMEOUT_MS = 20_000;
 const revealedGroups = new Set<string>();
 
 type Props = {
@@ -57,14 +57,6 @@ type CreatePayload = {
   duration_seconds?: number | null;
   linked_expense_id?: string | null;
   linked_poll_id?: string | null;
-};
-
-type LightboxPhoto = {
-  id: string;
-  url: string;
-  caption: string | null;
-  author: string;
-  createdAt: string;
 };
 
 function sortByNewest(items: FeedItemUI[]): FeedItemUI[] {
@@ -223,14 +215,13 @@ export function FeedListClient({
   const [posting, setPosting] = useState(false);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [reactionBusy, setReactionBusy] = useState<Record<string, boolean>>({});
-  const [lightboxItemId, setLightboxItemId] = useState<string | null>(null);
 
   const itemsRef = useRef(items);
   const prevGroupIdRef = useRef(groupId);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const loadingMoreRef = useRef(false);
   const shouldAnimateIn = !revealedGroups.has(groupId);
-  const overlayOpen = textOpen || photoOpen || voiceOpen || !!lightboxItemId;
+  const overlayOpen = textOpen || photoOpen || voiceOpen;
 
   useEffect(() => {
     itemsRef.current = items;
@@ -285,20 +276,6 @@ export function FeedListClient({
   const itemTransition = useMemo(
     () => getSurfaceTransition(reducedMotion, motionDuration.fast),
     [reducedMotion],
-  );
-
-  const photoItems = useMemo<LightboxPhoto[]>(
-    () =>
-      items
-        .filter((item) => item.type === "photo" && !!item.media_url)
-        .map((item) => ({
-          id: item.id,
-          url: item.media_url as string,
-          caption: item.caption,
-          author: item.created_by_profile.display_name || "Unknown",
-          createdAt: item.created_at,
-        })),
-    [items],
   );
 
   const hydrateItem = useCallback(
@@ -569,7 +546,11 @@ export function FeedListClient({
     }): Promise<boolean> => {
       setPosting(true);
       try {
-        const media_path = await uploadFeedPhoto(supabase, groupId, data.file);
+        const media_path = await withTimeout(
+          uploadFeedPhoto(supabase, groupId, data.file),
+          MEDIA_UPLOAD_TIMEOUT_MS,
+          "Something went wrong, please try again.",
+        );
 
         const success = await createItem({
           type: "photo",
@@ -584,9 +565,13 @@ export function FeedListClient({
           setPhotoOpen(false);
         }
         return success;
-      } catch {
+      } catch (error) {
         URL.revokeObjectURL(data.preview_url);
-        toast.error("Could not upload photo.");
+        const message =
+          error instanceof Error && error.message
+            ? error.message
+            : "Could not upload photo.";
+        toast.error(message);
         return false;
       } finally {
         setPosting(false);
@@ -607,7 +592,11 @@ export function FeedListClient({
       let localUrl: string | null = null;
       try {
         localUrl = URL.createObjectURL(data.blob);
-        const media_path = await uploadFeedVoice(supabase, groupId, data.blob);
+        const media_path = await withTimeout(
+          uploadFeedVoice(supabase, groupId, data.blob),
+          MEDIA_UPLOAD_TIMEOUT_MS,
+          "Voice upload timed out.",
+        );
 
         const success = await createItem({
           type: "voice",
@@ -623,9 +612,13 @@ export function FeedListClient({
           setVoiceOpen(false);
         }
         return success;
-      } catch {
+      } catch (error) {
         if (localUrl) URL.revokeObjectURL(localUrl);
-        toast.error("Could not upload voice note.");
+        const message =
+          error instanceof Error && error.message
+            ? error.message
+            : "Could not upload voice note.";
+        toast.error(message);
         return false;
       } finally {
         setPosting(false);
@@ -823,7 +816,6 @@ export function FeedListClient({
                         reacting={reactionBusy[item.id] ?? false}
                         onDelete={handleDelete}
                         onToggleReaction={handleReactionToggle}
-                        onOpenPhoto={setLightboxItemId}
                       />
                     </motion.div>
                   ))}
@@ -927,21 +919,6 @@ export function FeedListClient({
         pollOptions={pollOptions}
         expenseOptions={expenseOptions}
         onSubmit={handleVoiceSubmit}
-      />
-
-      <ImageLightbox
-        open={!!lightboxItemId}
-        onOpenChange={(open) => {
-          if (!open) {
-            setLightboxItemId(null);
-          } else {
-            setTextOpen(false);
-            setPhotoOpen(false);
-            setVoiceOpen(false);
-          }
-        }}
-        photos={photoItems}
-        initialItemId={lightboxItemId}
       />
     </Container>
   );

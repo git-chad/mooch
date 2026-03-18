@@ -4,6 +4,7 @@ import { Avatar, Text } from "@mooch/ui";
 import {
   ArrowUpRight,
   BarChart3,
+  ImageOff,
   Loader2,
   Mic,
   Pause,
@@ -13,7 +14,8 @@ import {
 } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import * as React from "react";
+import { useMemo, useRef, useState } from "react";
 import { relativeTime } from "@/lib/expenses";
 import { getSurfaceTransition, motionDuration } from "@/lib/motion";
 import { ReactionBar } from "./ReactionBar";
@@ -27,7 +29,6 @@ type Props = {
   reacting?: boolean;
   onToggleReaction: (itemId: string, emoji: string) => void;
   onDelete: (itemId: string) => void;
-  onOpenPhoto: (itemId: string) => void;
 };
 
 export function FeedItemCard({
@@ -38,7 +39,6 @@ export function FeedItemCard({
   reacting = false,
   onToggleReaction,
   onDelete,
-  onOpenPhoto,
 }: Props) {
   const reducedMotion = useReducedMotion() ?? false;
   const canDelete = item.created_by === currentUserId;
@@ -46,6 +46,8 @@ export function FeedItemCard({
     () => getSurfaceTransition(reducedMotion, motionDuration.fast),
     [reducedMotion],
   );
+  const [photoLoaded, setPhotoLoaded] = useState(false);
+  const [photoError, setPhotoError] = useState(false);
 
   const contextBadge = item.linked_poll_id
     ? {
@@ -116,20 +118,38 @@ export function FeedItemCard({
         )}
 
         {item.type === "photo" && item.media_url && (
-          <button
-            type="button"
-            className="block w-full overflow-hidden rounded-xl border"
+          <div
+            className="block w-full overflow-hidden rounded-xl border text-left"
             style={{ borderColor: "#E7D8CC" }}
-            onClick={() => onOpenPhoto(item.id)}
-            aria-label="Open photo"
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={item.media_url}
-              alt={item.caption || "Feed photo"}
-              className="h-auto max-h-[520px] w-full object-cover"
-            />
-          </button>
+            <div className="relative bg-[#F7F1EA]">
+              {!photoLoaded && !photoError && (
+                <div className="h-[220px] w-full animate-pulse bg-[linear-gradient(120deg,#F5EEE7_20%,#FBF7F3_38%,#F5EEE7_58%)]" />
+              )}
+
+              {photoError ? (
+                <div className="grid h-[220px] w-full place-items-center gap-1 text-center">
+                  <ImageOff className="h-6 w-6 text-[#9C8778]" />
+                  <Text variant="caption" color="subtle">
+                    Couldn&apos;t load image
+                  </Text>
+                </div>
+              ) : (
+                // biome-ignore lint/performance/noImgElement: user-uploaded/feed-media URLs vary by environment and rely on signed URLs.
+                <img
+                  src={item.media_url}
+                  alt={item.caption || "Feed photo"}
+                  onLoad={() => setPhotoLoaded(true)}
+                  onError={() => {
+                    setPhotoLoaded(false);
+                    setPhotoError(true);
+                  }}
+                  className="h-auto max-h-[520px] w-full object-cover transition-opacity duration-200"
+                  style={{ opacity: photoLoaded ? 1 : 0 }}
+                />
+              )}
+            </div>
+          </div>
         )}
 
         {item.type === "voice" && item.media_url && (
@@ -189,7 +209,7 @@ function VoicePlayer({
   const [hasExtractedPeaks, setHasExtractedPeaks] = useState(false);
 
   // Extract real peaks from audio on mount
-  useEffect(() => {
+  React.useEffect(() => {
     let cancelled = false;
 
     async function extract() {
@@ -233,7 +253,7 @@ function VoicePlayer({
     };
   }, [src]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
 
@@ -375,7 +395,9 @@ function VoicePlayer({
                     height: h,
                     backgroundColor: played ? "#5A9629" : "#C0B0A4",
                     transitionProperty: "height, background-color",
-                    transitionDuration: hasExtractedPeaks ? "240ms, 100ms" : "100ms",
+                    transitionDuration: hasExtractedPeaks
+                      ? "240ms, 100ms"
+                      : "100ms",
                     transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
                     transitionDelay: hasExtractedPeaks ? `${idx * 6}ms` : "0ms",
                   }}
