@@ -138,6 +138,7 @@ export type FeedItem = {
   linked_poll_id: string | null;
   created_by: string;
   created_at: string;
+  edited_at: string | null;
 };
 
 export type FeedReaction = {

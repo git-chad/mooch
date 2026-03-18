@@ -1777,21 +1777,92 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
   - Arrow navigation between consecutive photos in feed
   - Pinch-to-zoom on mobile (touch events)
 
-### 6.5 — Verify & Test
+### 6.5 — Post Editing
 
-- [ ] 6.5.1 — Post photo (file picker) → appears in feed.
-- [ ] 6.5.2 — Image compressed before upload (verify size < original).
-- [ ] 6.5.3 — Record voice note → preview works before posting.
-- [ ] 6.5.4 — Post voice note → play button + duration shown in feed.
-- [ ] 6.5.5 — Post text → appears in feed.
-- [ ] 6.5.6 — Add reaction → updates in real-time on other tab.
-- [ ] 6.5.7 — Remove reaction → count decreases.
-- [ ] 6.5.8 — Lightbox opens, closes on Escape, navigates between photos.
-- [ ] 6.5.9 — Delete own item → removed. Cannot delete others'.
-- [ ] 6.5.10 — Infinite scroll loads next page at bottom.
-- [ ] 6.5.11 — Feed stays a continuous stream (no stories strip, no day separators).
-- [ ] 6.5.12 — Reactions and post/delete actions feel instant (optimistic), then reconcile via realtime without flicker.
-- [ ] 6.5.13 — Private media access works only for group members via signed URLs.
+- [x] 6.5.1 — Migration: add `edited_at` (timestamptz, nullable) column to `feed_items`.
+- [x] 6.5.2 — Server action `editFeedItem(itemId, { caption })`:
+  - Only the creator can edit
+  - Text posts: full caption edit (1-500 chars)
+  - Photo/voice posts: caption-only edit (0-200 chars)
+  - Sets `edited_at = now()` on every edit
+  - Returns updated item
+- [x] 6.5.3 — `FeedItemCard`: show "(edited)" label next to timestamp when `edited_at` is set.
+- [x] 6.5.4 — Edit UI: inline edit mode on `FeedItemCard` — tap edit icon → textarea replaces caption → save/cancel buttons. No sheet/modal.
+- [x] 6.5.5 — Optimistic edit: update caption locally, revert on server error.
+
+### 6.6 — Reply Threads
+
+- [ ] 6.6.1 — Migration: create `feed_replies` table:
+  - `id` (UUID PK), `feed_item_id` (FK → feed_items ON DELETE CASCADE), `user_id` (FK → profiles), `content` (text, max 500 chars), `created_at` (timestamptz)
+  - RLS: group members can SELECT/INSERT/DELETE (own replies only for delete)
+- [ ] 6.6.2 — Types: add `FeedReply` to `packages/types`.
+- [ ] 6.6.3 — Queries: `getReplies(supabase, feedItemId)` — returns replies with creator profile, ordered by `created_at` asc.
+- [ ] 6.6.4 — Server actions: `addReply(feedItemId, content)`, `deleteReply(replyId)`.
+- [ ] 6.6.5 — `FeedItemCard`: show reply count badge. Tap to expand inline reply thread below the card.
+- [ ] 6.6.6 — Reply input: compact text input at bottom of expanded thread, with send button.
+- [ ] 6.6.7 — Realtime: subscribe to `feed_replies` inserts/deletes for visible threads.
+- [ ] 6.6.8 — Optimistic replies: instant local insert, reconcile via realtime.
+
+### 6.7 — Mentions
+
+- [ ] 6.7.1 — Mention detection: parse `@displayName` from caption/reply content at save time.
+- [ ] 6.7.2 — Migration: create `feed_mentions` table:
+  - `id` (UUID PK), `feed_item_id` (FK → feed_items, nullable), `feed_reply_id` (FK → feed_replies, nullable), `mentioned_user_id` (FK → profiles), `created_at` (timestamptz)
+  - CHECK: exactly one of `feed_item_id` or `feed_reply_id` must be non-null
+  - RLS: group members can SELECT; insert handled by server action
+- [ ] 6.7.3 — Mention autocomplete: in text/caption/reply inputs, typing `@` opens a member dropdown filtered by typed characters.
+- [ ] 6.7.4 — Mention rendering: `@Name` rendered as a styled inline pill/highlight in captions and replies.
+- [ ] 6.7.5 — Server-side: extract mentions from content in `addFeedItem`, `editFeedItem`, `addReply` — upsert into `feed_mentions`.
+- [ ] 6.7.6 — (Notification hook: defer to Phase 9 — for now, just store mentions for future notification system.)
+
+### 6.8 — Location Tags
+
+- [ ] 6.8.1 — Migration: add `location_name` (text, nullable, max 100 chars) and `location_coords` (point, nullable) to `feed_items`.
+- [ ] 6.8.2 — Update `addFeedItem` and `editFeedItem` to accept optional `location_name` and `location_coords`.
+- [ ] 6.8.3 — Update `FeedItem` type with new fields.
+- [ ] 6.8.4 — Composer UI: optional "Add location" button in all three composer sheets. Opens a text input for place name (free text, no geocoding API in v1).
+- [ ] 6.8.5 — `FeedItemCard`: show location pill below the header when `location_name` is set (MapPin icon + name).
+
+### 6.9 — Cloudflare R2 Migration
+
+- [ ] 6.9.1 — Set up Cloudflare R2 bucket (`mooch-feed-media`), generate S3-compatible API credentials.
+- [ ] 6.9.2 — Create `packages/db/src/storage/r2.ts`:
+  - R2 client using `@aws-sdk/client-s3` with Cloudflare endpoint
+  - `uploadToR2(key, body, contentType)` — PutObject
+  - `getSignedR2Url(key, expiresIn)` — GetObject presigned URL
+  - `deleteFromR2(key)` — DeleteObject
+- [ ] 6.9.3 — Update `uploadFeedPhoto` and `uploadFeedVoice` to upload to R2 instead of Supabase Storage. Keep same path structure (`{groupId}/photos/...`, `{groupId}/voice/...`).
+- [ ] 6.9.4 — Update `getSignedFeedMediaUrl` to generate R2 presigned URLs.
+- [ ] 6.9.5 — Update `deleteFeedMedia` to delete from R2.
+- [ ] 6.9.6 — Add R2 env vars to Vercel: `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`.
+- [ ] 6.9.7 — Optional: set R2 lifecycle rule to auto-delete objects older than 180 days.
+- [ ] 6.9.8 — Remove `feed-media` Supabase bucket and migration (or keep as fallback).
+- [ ] 6.9.9 — Verify: upload photo, upload voice, signed URLs work, delete works.
+
+### 6.10 — Verify & Test
+
+- [ ] 6.10.1 — Post photo (file picker) → appears in feed.
+- [ ] 6.10.2 — Image compressed before upload (verify size < original).
+- [ ] 6.10.3 — Record voice note → preview works before posting.
+- [ ] 6.10.4 — Post voice note → play button + duration shown in feed.
+- [ ] 6.10.5 — Post text → appears in feed.
+- [ ] 6.10.6 — Add reaction → updates in real-time on other tab.
+- [ ] 6.10.7 — Remove reaction → count decreases.
+- [ ] 6.10.8 — Delete own item → removed. Cannot delete others'.
+- [ ] 6.10.9 — Infinite scroll loads next page at bottom.
+- [ ] 6.10.10 — Feed stays a continuous stream (no stories strip, no day separators).
+- [ ] 6.10.11 — Reactions and post/delete actions feel instant (optimistic), then reconcile via realtime without flicker.
+- [ ] 6.10.12 — Private media access works only for group members via signed URLs.
+- [ ] 6.10.13 — Edit text post → caption updates, "(edited)" shown.
+- [ ] 6.10.14 — Edit photo/voice caption → updates correctly.
+- [ ] 6.10.15 — Reply to a post → reply appears in thread, count increments.
+- [ ] 6.10.16 — Delete own reply → removed. Cannot delete others'.
+- [ ] 6.10.17 — Type `@` in text/caption/reply → member autocomplete appears.
+- [ ] 6.10.18 — Mention renders as styled pill in feed.
+- [ ] 6.10.19 — Add location to post → location pill shown on card.
+- [ ] 6.10.20 — R2: photo upload → signed URL loads correctly.
+- [ ] 6.10.21 — R2: voice upload → signed URL plays correctly.
+- [ ] 6.10.22 — R2: delete media → object removed from bucket.
 
 ---
 
@@ -1803,10 +1874,15 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 - [ ] Reactions work in real-time
 - [ ] Post/delete/reaction flows are optimistic and reconcile cleanly via realtime
 - [ ] Infinite scroll pagination works
-- [ ] Lightbox works (open, close, navigation)
 - [ ] Delete: own items only
 - [ ] No stories strip in v1 and continuous stream layout is preserved
-- [ ] Feed media bucket remains private; media renders through signed URLs only for members
+- [ ] Edit: text posts fully editable, photo/voice caption-only
+- [ ] Edit: "(edited)" label shown after edit
+- [ ] Replies: add/delete/realtime sync
+- [ ] Mentions: autocomplete, styled rendering, stored in DB
+- [ ] Location: optional free-text tag, shown on card
+- [ ] R2: all media uploads/reads/deletes go through Cloudflare R2
+- [ ] R2: signed URLs work for private media access
 
 **Phase 6 Status: ⬜ — Awaiting approval**
 

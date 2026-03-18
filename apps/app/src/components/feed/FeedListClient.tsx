@@ -1,15 +1,7 @@
 "use client";
 
-import {
-  createBrowserClient,
-  getFeedItemById,
-  getFeedItems,
-  getSignedFeedMediaUrl,
-  uploadFeedPhoto,
-  uploadFeedVoice,
-} from "@mooch/db";
-import type { FeedItemWithMeta } from "@mooch/db";
-import type { FeedItem, FeedItemType, Profile } from "@mooch/types";
+import { createBrowserClient, getFeedItems } from "@mooch/db";
+import type { Profile } from "@mooch/types";
 import { Container, Text } from "@mooch/ui";
 import {
   Camera,
@@ -21,24 +13,19 @@ import {
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import {
-  addFeedItem,
-  deleteFeedItem,
-  toggleReaction,
-} from "@/app/actions/feed";
 import { EmptyState } from "@/components/EmptyState";
 import { TransitionSlot } from "@/components/TransitionSlot";
 import { getSurfaceTransition, motionDuration, motionEase } from "@/lib/motion";
 import { ComposerDock, type ComposerDockItem } from "./ComposerDock";
 import { FeedItemCard } from "./FeedItemCard";
+import { uniqueById } from "./feed-utils";
 import { PostPhotoSheet } from "./PostPhotoSheet";
 import { PostTextSheet } from "./PostTextSheet";
 import { RecordVoiceSheet } from "./RecordVoiceSheet";
 import type { FeedItemUI, FeedLinkOption } from "./types";
+import { useFeedActions } from "./useFeedActions";
 
 const PAGE_SIZE = 20;
-const CREATE_ITEM_TIMEOUT_MS = 20_000;
-const MEDIA_UPLOAD_TIMEOUT_MS = 20_000;
 const revealedGroups = new Set<string>();
 
 type Props = {
@@ -48,151 +35,6 @@ type Props = {
   pollOptions: FeedLinkOption[];
   expenseOptions: FeedLinkOption[];
 };
-
-type CreatePayload = {
-  type: FeedItemType;
-  caption?: string | null;
-  media_path?: string | null;
-  local_object_url?: string | null;
-  duration_seconds?: number | null;
-  linked_expense_id?: string | null;
-  linked_poll_id?: string | null;
-};
-
-function sortByNewest(items: FeedItemUI[]): FeedItemUI[] {
-  return [...items].sort(
-    (a, b) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-  );
-}
-
-function uniqueById(items: FeedItemUI[]): FeedItemUI[] {
-  const seen = new Map<string, FeedItemUI>();
-  for (const item of items) {
-    if (!seen.has(item.id)) {
-      seen.set(item.id, item);
-    }
-  }
-  return sortByNewest([...seen.values()]);
-}
-
-async function withTimeout<T>(
-  promise: Promise<T>,
-  timeoutMs: number,
-  message: string,
-): Promise<T> {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-
-  const timeoutPromise = new Promise<T>((_, reject) => {
-    timeoutId = setTimeout(() => {
-      reject(new Error(message));
-    }, timeoutMs);
-  });
-
-  try {
-    return await Promise.race([promise, timeoutPromise]);
-  } finally {
-    if (timeoutId) clearTimeout(timeoutId);
-  }
-}
-
-function toCountsMap(item: FeedItemUI): Map<string, number> {
-  const map = new Map<string, number>();
-  for (const entry of item.reaction_counts) {
-    map.set(entry.emoji, entry.count);
-  }
-  return map;
-}
-
-function toggleReactionLocal(item: FeedItemUI, emoji: string): FeedItemUI {
-  const prevEmoji = item.current_user_reaction;
-  const nextEmoji = prevEmoji === emoji ? null : emoji;
-  const counts = toCountsMap(item);
-
-  if (prevEmoji) {
-    const next = (counts.get(prevEmoji) ?? 0) - 1;
-    if (next <= 0) counts.delete(prevEmoji);
-    else counts.set(prevEmoji, next);
-  }
-
-  if (nextEmoji) {
-    counts.set(nextEmoji, (counts.get(nextEmoji) ?? 0) + 1);
-  }
-
-  const reaction_counts = [...counts.entries()]
-    .map(([k, v]) => ({ emoji: k, count: v }))
-    .sort((a, b) => b.count - a.count);
-
-  const total_reactions = reaction_counts.reduce(
-    (sum, entry) => sum + entry.count,
-    0,
-  );
-
-  return {
-    ...item,
-    reaction_counts,
-    current_user_reaction: nextEmoji,
-    total_reactions,
-  };
-}
-
-function buildOptimisticItem({
-  tempId,
-  groupId,
-  profile,
-  payload,
-}: {
-  tempId: string;
-  groupId: string;
-  profile: Profile;
-  payload: CreatePayload;
-}): FeedItemUI {
-  const now = new Date().toISOString();
-
-  return {
-    id: tempId,
-    group_id: groupId,
-    type: payload.type,
-    media_path: payload.media_path ?? null,
-    media_url: payload.local_object_url ?? null,
-    local_object_url: payload.local_object_url ?? null,
-    caption: payload.caption?.trim() || null,
-    duration_seconds: payload.duration_seconds ?? null,
-    linked_expense_id: payload.linked_expense_id ?? null,
-    linked_event_id: null,
-    linked_poll_id: payload.linked_poll_id ?? null,
-    created_by: profile.id,
-    created_at: now,
-    created_by_profile: profile,
-    reactions: [],
-    reaction_counts: [],
-    current_user_reaction: null,
-    total_reactions: 0,
-    optimistic: true,
-  };
-}
-
-function buildFallbackCreatedItem({
-  created,
-  profile,
-  mediaUrl,
-}: {
-  created: FeedItem;
-  profile: Profile;
-  mediaUrl: string | null;
-}): FeedItemUI {
-  return {
-    ...created,
-    created_by_profile: profile,
-    reactions: [],
-    reaction_counts: [],
-    current_user_reaction: null,
-    total_reactions: 0,
-    media_url: mediaUrl,
-    local_object_url: null,
-    optimistic: false,
-  };
-}
 
 export function FeedListClient({
   groupId,
@@ -216,16 +58,39 @@ export function FeedListClient({
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [reactionBusy, setReactionBusy] = useState<Record<string, boolean>>({});
 
-  const itemsRef = useRef(items);
   const prevGroupIdRef = useRef(groupId);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const loadingMoreRef = useRef(false);
   const shouldAnimateIn = !revealedGroups.has(groupId);
   const overlayOpen = textOpen || photoOpen || voiceOpen;
 
+  const {
+    itemsRef,
+    syncItemsRef,
+    hydrateItem,
+    refreshItemById,
+    handleTextSubmit,
+    handlePhotoSubmit,
+    handleVoiceSubmit,
+    handleDelete,
+    handleEdit,
+    handleReactionToggle,
+  } = useFeedActions({
+    groupId,
+    currentUserProfile,
+    supabase,
+    setItems,
+    setPosting,
+    setTextOpen,
+    setPhotoOpen,
+    setVoiceOpen,
+    setDeletingItemId,
+    setReactionBusy,
+  });
+
   useEffect(() => {
-    itemsRef.current = items;
-  }, [items]);
+    syncItemsRef(items);
+  }, [items, syncItemsRef]);
 
   useEffect(() => {
     // On group switch, replace with the server snapshot.
@@ -278,50 +143,6 @@ export function FeedListClient({
     [reducedMotion],
   );
 
-  const hydrateItem = useCallback(
-    async (item: FeedItemWithMeta): Promise<FeedItemUI> => {
-      const media_url = item.media_path
-        ? await getSignedFeedMediaUrl(supabase, item.media_path)
-        : null;
-
-      return {
-        ...item,
-        media_url,
-        local_object_url: null,
-        optimistic: false,
-      };
-    },
-    [supabase],
-  );
-
-  const fetchHydratedItemById = useCallback(
-    async (itemId: string): Promise<FeedItemUI | null> => {
-      const fresh = await getFeedItemById(
-        supabase,
-        itemId,
-        currentUserProfile.id,
-      );
-      if (!fresh) return null;
-      return hydrateItem(fresh);
-    },
-    [supabase, currentUserProfile.id, hydrateItem],
-  );
-
-  const refreshItemById = useCallback(
-    async (itemId: string) => {
-      const fresh = await fetchHydratedItemById(itemId);
-      if (!fresh) {
-        setItems((prev) => prev.filter((item) => item.id !== itemId));
-        return;
-      }
-
-      setItems((prev) =>
-        uniqueById([fresh, ...prev.filter((item) => item.id !== itemId)]),
-      );
-    },
-    [fetchHydratedItemById],
-  );
-
   const loadMore = useCallback(async () => {
     if (loadingMoreRef.current || !hasMore) return;
 
@@ -359,7 +180,14 @@ export function FeedListClient({
       loadingMoreRef.current = false;
       setLoadingMore(false);
     }
-  }, [groupId, hasMore, supabase, currentUserProfile.id, hydrateItem]);
+  }, [
+    groupId,
+    hasMore,
+    supabase,
+    currentUserProfile.id,
+    hydrateItem,
+    itemsRef,
+  ]);
 
   useEffect(() => {
     const node = sentinelRef.current;
@@ -433,252 +261,7 @@ export function FeedListClient({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, groupId, refreshItemById]);
-
-  const createItem = useCallback(
-    async (payload: CreatePayload): Promise<boolean> => {
-      const tempId = `optimistic-${crypto.randomUUID()}`;
-      const optimistic = buildOptimisticItem({
-        tempId,
-        groupId,
-        profile: currentUserProfile,
-        payload,
-      });
-
-      setItems((prev) => uniqueById([optimistic, ...prev]));
-
-      // Step 1: persist — if this fails, revert the optimistic item
-      let result: Awaited<ReturnType<typeof addFeedItem>>;
-      try {
-        result = await withTimeout(
-          addFeedItem(groupId, {
-            type: payload.type,
-            caption: payload.caption ?? null,
-            media_path: payload.media_path ?? null,
-            duration_seconds: payload.duration_seconds ?? null,
-            linked_expense_id: payload.linked_expense_id ?? null,
-            linked_poll_id: payload.linked_poll_id ?? null,
-          }),
-          CREATE_ITEM_TIMEOUT_MS,
-          "Post request timed out.",
-        );
-
-        if ("error" in result) {
-          if (payload.local_object_url) {
-            URL.revokeObjectURL(payload.local_object_url);
-          }
-          setItems((prev) => prev.filter((item) => item.id !== tempId));
-          toast.error(result.error);
-          return false;
-        }
-      } catch {
-        if (payload.local_object_url) {
-          URL.revokeObjectURL(payload.local_object_url);
-        }
-        setItems((prev) => prev.filter((item) => item.id !== tempId));
-        toast.error("Could not finish posting. Please try again.");
-        return false;
-      }
-
-      // Step 2: hydrate — post is already saved, so don't revert on failure.
-      // Realtime will reconcile eventually.
-      try {
-        const signedMedia = result.item.media_path
-          ? await withTimeout(
-              getSignedFeedMediaUrl(supabase, result.item.media_path),
-              CREATE_ITEM_TIMEOUT_MS,
-              "Media signing timed out.",
-            )
-          : null;
-
-        const fresh = await withTimeout(
-          fetchHydratedItemById(result.item.id),
-          CREATE_ITEM_TIMEOUT_MS,
-          "Post hydration timed out.",
-        );
-        const next =
-          fresh ??
-          buildFallbackCreatedItem({
-            created: result.item,
-            profile: currentUserProfile,
-            mediaUrl: signedMedia ?? payload.local_object_url ?? null,
-          });
-
-        if (payload.local_object_url && signedMedia) {
-          URL.revokeObjectURL(payload.local_object_url);
-        }
-
-        setItems((prev) =>
-          uniqueById([next, ...prev.filter((item) => item.id !== tempId)]),
-        );
-      } catch {
-        // Post is persisted — leave optimistic item in place, realtime will replace it
-      }
-      return true;
-    },
-    [groupId, currentUserProfile, supabase, fetchHydratedItemById],
-  );
-
-  const handleTextSubmit = useCallback(
-    async (data: {
-      caption: string;
-      linked_expense_id: string | null;
-      linked_poll_id: string | null;
-    }): Promise<boolean> => {
-      setPosting(true);
-      try {
-        const success = await createItem({
-          type: "text",
-          caption: data.caption,
-          linked_expense_id: data.linked_expense_id,
-          linked_poll_id: data.linked_poll_id,
-        });
-        if (success) {
-          setTextOpen(false);
-        }
-        return success;
-      } finally {
-        setPosting(false);
-      }
-    },
-    [createItem],
-  );
-
-  const handlePhotoSubmit = useCallback(
-    async (data: {
-      file: File;
-      caption: string;
-      linked_expense_id: string | null;
-      linked_poll_id: string | null;
-      preview_url: string;
-    }): Promise<boolean> => {
-      setPosting(true);
-      try {
-        const media_path = await withTimeout(
-          uploadFeedPhoto(supabase, groupId, data.file),
-          MEDIA_UPLOAD_TIMEOUT_MS,
-          "Something went wrong, please try again.",
-        );
-
-        const success = await createItem({
-          type: "photo",
-          caption: data.caption,
-          media_path,
-          local_object_url: data.preview_url,
-          linked_expense_id: data.linked_expense_id,
-          linked_poll_id: data.linked_poll_id,
-        });
-
-        if (success) {
-          setPhotoOpen(false);
-        }
-        return success;
-      } catch (error) {
-        URL.revokeObjectURL(data.preview_url);
-        const message =
-          error instanceof Error && error.message
-            ? error.message
-            : "Could not upload photo.";
-        toast.error(message);
-        return false;
-      } finally {
-        setPosting(false);
-      }
-    },
-    [supabase, groupId, createItem],
-  );
-
-  const handleVoiceSubmit = useCallback(
-    async (data: {
-      blob: Blob;
-      caption: string;
-      duration_seconds: number;
-      linked_expense_id: string | null;
-      linked_poll_id: string | null;
-    }): Promise<boolean> => {
-      setPosting(true);
-      let localUrl: string | null = null;
-      try {
-        localUrl = URL.createObjectURL(data.blob);
-        const media_path = await withTimeout(
-          uploadFeedVoice(supabase, groupId, data.blob),
-          MEDIA_UPLOAD_TIMEOUT_MS,
-          "Voice upload timed out.",
-        );
-
-        const success = await createItem({
-          type: "voice",
-          caption: data.caption,
-          media_path,
-          local_object_url: localUrl,
-          duration_seconds: data.duration_seconds,
-          linked_expense_id: data.linked_expense_id,
-          linked_poll_id: data.linked_poll_id,
-        });
-
-        if (success) {
-          setVoiceOpen(false);
-        }
-        return success;
-      } catch (error) {
-        if (localUrl) URL.revokeObjectURL(localUrl);
-        const message =
-          error instanceof Error && error.message
-            ? error.message
-            : "Could not upload voice note.";
-        toast.error(message);
-        return false;
-      } finally {
-        setPosting(false);
-      }
-    },
-    [supabase, groupId, createItem],
-  );
-
-  const handleDelete = useCallback(async (itemId: string) => {
-    const target = itemsRef.current.find((item) => item.id === itemId);
-    if (!target) return;
-
-    const confirmed = window.confirm("Delete this post?");
-    if (!confirmed) return;
-
-    setDeletingItemId(itemId);
-    setItems((prev) => prev.filter((item) => item.id !== itemId));
-
-    const result = await deleteFeedItem(itemId);
-    setDeletingItemId(null);
-
-    if ("error" in result) {
-      setItems((prev) => uniqueById([target, ...prev]));
-      toast.error(result.error);
-    }
-  }, []);
-
-  const handleReactionToggle = useCallback(
-    async (itemId: string, emoji: string) => {
-      const before = itemsRef.current.find((item) => item.id === itemId);
-      if (!before) return;
-
-      setReactionBusy((prev) => ({ ...prev, [itemId]: true }));
-      setItems((prev) =>
-        prev.map((item) =>
-          item.id === itemId ? toggleReactionLocal(item, emoji) : item,
-        ),
-      );
-
-      const result = await toggleReaction(itemId, emoji);
-
-      setReactionBusy((prev) => ({ ...prev, [itemId]: false }));
-
-      if ("error" in result) {
-        setItems((prev) =>
-          prev.map((item) => (item.id === itemId ? before : item)),
-        );
-        toast.error(result.error);
-      }
-    },
-    [],
-  );
+  }, [supabase, groupId, refreshItemById, itemsRef]);
 
   const openTextComposer = useCallback(() => {
     setTextOpen(true);
@@ -823,6 +406,7 @@ export function FeedListClient({
                         deleting={deletingItemId === item.id}
                         reacting={reactionBusy[item.id] ?? false}
                         onDelete={handleDelete}
+                        onEdit={handleEdit}
                         onToggleReaction={handleReactionToggle}
                       />
                     </motion.div>

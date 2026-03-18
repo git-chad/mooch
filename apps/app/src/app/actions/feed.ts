@@ -1,7 +1,12 @@
 "use server";
 
 import { createClient } from "@mooch/db/server";
-import type { FeedItem, FeedItemType, FeedReaction, GroupMember } from "@mooch/types";
+import type {
+  FeedItem,
+  FeedItemType,
+  FeedReaction,
+  GroupMember,
+} from "@mooch/types";
 import { createAdminClient } from "@/lib/supabase-admin";
 
 const TEXT_MAX_CHARS = 500;
@@ -78,14 +83,20 @@ export async function addFeedItem(
   if (data.type === "text") {
     if (!caption) return { error: "Text posts cannot be empty" };
     if (caption.length > TEXT_MAX_CHARS) {
-      return { error: `Text posts must be ${TEXT_MAX_CHARS} characters or fewer` };
+      return {
+        error: `Text posts must be ${TEXT_MAX_CHARS} characters or fewer`,
+      };
     }
     if (media_path) return { error: "Text posts cannot include media" };
-    if (duration_seconds != null) return { error: "Text posts cannot include duration" };
+    if (duration_seconds != null)
+      return { error: "Text posts cannot include duration" };
   } else {
-    if (!media_path) return { error: "Media path is required for photo/voice posts" };
+    if (!media_path)
+      return { error: "Media path is required for photo/voice posts" };
     if (caption && caption.length > CAPTION_MAX_CHARS) {
-      return { error: `Caption must be ${CAPTION_MAX_CHARS} characters or fewer` };
+      return {
+        error: `Caption must be ${CAPTION_MAX_CHARS} characters or fewer`,
+      };
     }
   }
 
@@ -94,7 +105,9 @@ export async function addFeedItem(
       return { error: "Voice posts must include duration" };
     }
     if (duration_seconds <= 0 || duration_seconds > VOICE_MAX_SECONDS) {
-      return { error: `Voice notes must be between 1 and ${VOICE_MAX_SECONDS} seconds` };
+      return {
+        error: `Voice notes must be between 1 and ${VOICE_MAX_SECONDS} seconds`,
+      };
     }
   } else if (duration_seconds != null) {
     return { error: "Only voice posts can include duration" };
@@ -154,9 +167,63 @@ export async function addFeedItem(
     .select("*")
     .single();
 
-  if (error || !item) return { error: error?.message ?? "Failed to create feed item" };
+  if (error || !item)
+    return { error: error?.message ?? "Failed to create feed item" };
 
   return { item: item as FeedItem };
+}
+
+export async function editFeedItem(
+  itemId: string,
+  data: { caption: string },
+): Promise<{ item: FeedItem } | { error: string }> {
+  const userId = await getAuthenticatedUserId();
+  if (!userId) return { error: "Not authenticated" };
+
+  const admin = createAdminClient();
+  const { data: existing } = await admin
+    .from("feed_items")
+    .select("id, group_id, type, created_by")
+    .eq("id", itemId)
+    .maybeSingle();
+
+  if (!existing) return { error: "Feed item not found" };
+  if (existing.created_by !== userId) {
+    return { error: "Only the creator can edit this post" };
+  }
+
+  const role = await getMemberRole(existing.group_id, userId);
+  if (!role) return { error: "Not a member of this group" };
+
+  const caption = normalizeCaption(data.caption);
+
+  if (existing.type === "text") {
+    if (!caption) return { error: "Text posts cannot be empty" };
+    if (caption.length > TEXT_MAX_CHARS) {
+      return {
+        error: `Text posts must be ${TEXT_MAX_CHARS} characters or fewer`,
+      };
+    }
+  } else {
+    if (caption && caption.length > CAPTION_MAX_CHARS) {
+      return {
+        error: `Caption must be ${CAPTION_MAX_CHARS} characters or fewer`,
+      };
+    }
+  }
+
+  const { data: updated, error } = await admin
+    .from("feed_items")
+    .update({ caption, edited_at: new Date().toISOString() })
+    .eq("id", itemId)
+    .select("*")
+    .single();
+
+  if (error || !updated) {
+    return { error: error?.message ?? "Failed to update feed item" };
+  }
+
+  return { item: updated as FeedItem };
 }
 
 export async function deleteFeedItem(
@@ -191,8 +258,7 @@ export async function toggleReaction(
   itemId: string,
   emoji: string,
 ): Promise<
-  | { status: ToggleStatus; reaction: FeedReaction | null }
-  | { error: string }
+  { status: ToggleStatus; reaction: FeedReaction | null } | { error: string }
 > {
   const userId = await getAuthenticatedUserId();
   if (!userId) return { error: "Not authenticated" };
