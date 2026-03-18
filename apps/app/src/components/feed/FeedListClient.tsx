@@ -26,6 +26,7 @@ import {
   deleteFeedItem,
   toggleReaction,
 } from "@/app/actions/feed";
+import { EmptyState } from "@/components/EmptyState";
 import { TransitionSlot } from "@/components/TransitionSlot";
 import { getSurfaceTransition, motionDuration, motionEase } from "@/lib/motion";
 import { ComposerDock, type ComposerDockItem } from "./ComposerDock";
@@ -708,7 +709,6 @@ export function FeedListClient({
           <AnimatePresence initial={false}>
             {items.length === 0 ? (
               <motion.div
-                className="flex flex-col items-center justify-center py-20 text-center"
                 initial={
                   reducedMotion
                     ? { opacity: 0 }
@@ -721,20 +721,11 @@ export function FeedListClient({
                   ease: motionEase.out,
                 }}
               >
-                <span
-                  className="mb-4 inline-flex h-40 w-40 overflow-hidden rounded-[30px] bg-[#F8F6F1] bg-cover bg-center bg-no-repeat"
-                  style={{
-                    backgroundImage: "url('/icons/feed-empty.webp')",
-                    backgroundBlendMode: "darken",
-                  }}
-                  aria-hidden
+                <EmptyState
+                  iconSrc="/icons/feed-empty.webp"
+                  title="Dead quiet in here"
+                  description="First post sets the vibe. Make it loud."
                 />
-                <Text variant="heading" className="mb-1">
-                  Dead quiet in here
-                </Text>
-                <Text variant="body" color="subtle">
-                  First post sets the vibe. Make it loud.
-                </Text>
               </motion.div>
             ) : (
               <motion.div

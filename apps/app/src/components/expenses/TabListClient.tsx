@@ -4,6 +4,7 @@ import { useExpenseStore } from "@mooch/stores";
 import type { Group, GroupMember, Profile } from "@mooch/types";
 import { Button, Container, Text } from "@mooch/ui";
 import { useState } from "react";
+import { EmptyState } from "@/components/EmptyState";
 import { TransitionSlot } from "@/components/TransitionSlot";
 import { BalanceCard } from "./BalanceCard";
 import { CreateTabModal } from "./CreateTabModal";
@@ -112,14 +113,12 @@ export function TabListClient({
 
         {/* Empty state */}
         {tabs.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-20 text-center">
-            <p className="text-5xl mb-4">🧾</p>
-            <Text variant="heading" className="mb-1">
-              No tabs yet
-            </Text>
-            <Text variant="body" color="subtle" className="mb-4">
-              Create a tab to start tracking expenses.
-            </Text>
+          <EmptyState
+            emoji="🧾"
+            title="No tabs yet"
+            description="Create a tab to start tracking expenses."
+            descriptionClassName="mb-4"
+          >
             <Button
               type="button"
               variant="primary"
@@ -128,7 +127,7 @@ export function TabListClient({
             >
               + New tab
             </Button>
-          </div>
+          </EmptyState>
         )}
 
         <CreateTabModal

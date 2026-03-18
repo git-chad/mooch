@@ -4,6 +4,7 @@ import { usePollStore } from "@mooch/stores";
 import { Button, Container, Text } from "@mooch/ui";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
+import { EmptyState } from "@/components/EmptyState";
 import { TransitionSlot } from "@/components/TransitionSlot";
 import { getSurfaceTransition, motionDuration, motionEase } from "@/lib/motion";
 import { CreatePollModal } from "./CreatePollModal";
@@ -64,7 +65,6 @@ export function PollListClient({ groupId, currentUserId }: Props) {
         <AnimatePresence>
           {polls.length === 0 && (
             <motion.div
-              className="flex flex-col items-center justify-center py-20 text-center"
               initial={
                 reducedMotion
                   ? { opacity: 0 }
@@ -77,13 +77,11 @@ export function PollListClient({ groupId, currentUserId }: Props) {
                 ease: motionEase.out,
               }}
             >
-              <p className="text-5xl mb-4">🗳️</p>
-              <Text variant="heading" className="mb-1">
-                No polls yet
-              </Text>
-              <Text variant="body" color="subtle">
-                Start a vote — ask the squad anything!
-              </Text>
+              <EmptyState
+                emoji="🗳️"
+                title="No polls yet"
+                description="Start a vote — ask the squad anything!"
+              />
             </motion.div>
           )}
         </AnimatePresence>
