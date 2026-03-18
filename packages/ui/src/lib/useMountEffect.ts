@@ -1,3 +1,5 @@
+"use client";
+
 // biome-ignore lint/style/noRestrictedImports: This hook is the single explicit escape hatch for mount-only effects.
 import { useEffect } from "react";
 
