@@ -228,7 +228,7 @@ export function PostPhotoSheet({
                 className="space-y-3"
               >
                 {/* Preview image */}
-                <div className="relative aspect-[4/5] w-full overflow-hidden rounded-lg border border-[#E7D9CD] bg-[#F5F0EA]">
+                <div className="relative aspect-[3/2] w-full overflow-hidden rounded-lg border border-[#E7D9CD] bg-[#F5F0EA]">
                   {/* biome-ignore lint/performance/noImgElement: local object URLs are only available at runtime for pre-upload preview. */}
                   <img
                     src={previewUrl ?? ""}
