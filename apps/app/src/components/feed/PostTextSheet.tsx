@@ -1,8 +1,9 @@
 "use client";
 
-import { Button, Select, Sheet, Text } from "@mooch/ui";
+import { Button, Sheet, Text } from "@mooch/ui";
 import { MessageSquareText } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { LinkSelectors } from "./LinkSelectors";
 import type { FeedLinkOption } from "./types";
 
 const TEXT_MAX_CHARS = 500;
@@ -11,6 +12,7 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   posting: boolean;
+  groupId: string;
   pollOptions: FeedLinkOption[];
   expenseOptions: FeedLinkOption[];
   onSubmit: (data: {
@@ -24,6 +26,7 @@ export function PostTextSheet({
   open,
   onOpenChange,
   posting,
+  groupId,
   pollOptions,
   expenseOptions,
   onSubmit,
@@ -90,6 +93,7 @@ export function PostTextSheet({
         </div>
 
         <LinkSelectors
+          groupId={groupId}
           linkedExpense={linkedExpense}
           linkedPoll={linkedPoll}
           setLinkedExpense={setLinkedExpense}
@@ -110,60 +114,5 @@ export function PostTextSheet({
         </Button>
       </div>
     </Sheet>
-  );
-}
-
-function LinkSelectors({
-  linkedExpense,
-  linkedPoll,
-  setLinkedExpense,
-  setLinkedPoll,
-  expenseOptions,
-  pollOptions,
-}: {
-  linkedExpense: string;
-  linkedPoll: string;
-  setLinkedExpense: (value: string) => void;
-  setLinkedPoll: (value: string) => void;
-  expenseOptions: FeedLinkOption[];
-  pollOptions: FeedLinkOption[];
-}) {
-  const expenseSelectOptions = useMemo(
-    () => [
-      { value: "", label: "None" },
-      ...expenseOptions.map((option) => ({
-        value: option.id,
-        label: option.label,
-      })),
-    ],
-    [expenseOptions],
-  );
-
-  const pollSelectOptions = useMemo(
-    () => [
-      { value: "", label: "None" },
-      ...pollOptions.map((option) => ({
-        value: option.id,
-        label: option.label,
-      })),
-    ],
-    [pollOptions],
-  );
-
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      <Select
-        label="Link expense"
-        value={linkedExpense}
-        onValueChange={setLinkedExpense}
-        options={expenseSelectOptions}
-      />
-      <Select
-        label="Link poll"
-        value={linkedPoll}
-        onValueChange={setLinkedPoll}
-        options={pollSelectOptions}
-      />
-    </div>
   );
 }

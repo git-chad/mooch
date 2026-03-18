@@ -1,20 +1,29 @@
 "use client";
 
-import { Button, Select, Sheet, Text } from "@mooch/ui";
-import { Mic, Pause, Play, Square } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Button, Sheet, Text } from "@mooch/ui";
+import { Mic, Pause, Play, RotateCcw, Square } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+// biome-ignore lint/style/noRestrictedImports: useEffect needed for reactive cleanup on open/previewUrl changes — not mount-only.
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useWebHaptics } from "web-haptics/react";
 import { getSurfaceTransition, motionDuration } from "@/lib/motion";
+import { LinkSelectors } from "./LinkSelectors";
 import type { FeedLinkOption } from "./types";
 
 const MAX_SECONDS = 60;
 const CAPTION_MAX = 200;
+const RING_BUFFER_SIZE = 80;
+const RMS_INTERVAL_MS = 50;
+const PEAK_COUNT = 48;
+
+type RecordingPhase = "idle" | "recording" | "playback";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   posting: boolean;
+  groupId: string;
   pollOptions: FeedLinkOption[];
   expenseOptions: FeedLinkOption[];
   onSubmit: (data: {
@@ -30,20 +39,25 @@ export function RecordVoiceSheet({
   open,
   onOpenChange,
   posting,
+  groupId,
   pollOptions,
   expenseOptions,
   onSubmit,
 }: Props) {
   const reducedMotion = useReducedMotion() ?? false;
-  const [recording, setRecording] = useState(false);
+  const haptic = useWebHaptics();
+
+  const [phase, setPhase] = useState<RecordingPhase>("idle");
   const [elapsedMs, setElapsedMs] = useState(0);
-  const [level, setLevel] = useState(0);
   const [previewBlob, setPreviewBlob] = useState<Blob | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewDuration, setPreviewDuration] = useState(0);
   const [caption, setCaption] = useState("");
   const [linkedPoll, setLinkedPoll] = useState("");
   const [linkedExpense, setLinkedExpense] = useState("");
+  const [playing, setPlaying] = useState(false);
+  const [playProgress, setPlayProgress] = useState(0);
+  const [peaks, setPeaks] = useState<number[]>([]);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -53,50 +67,49 @@ export function RecordVoiceSheet({
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const rafRef = useRef<number | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const ringBufferRef = useRef<number[]>(new Array(RING_BUFFER_SIZE).fill(0));
+  const ringIndexRef = useRef(0);
+  const rmsIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const audioElRef = useRef<HTMLAudioElement | null>(null);
+  const playRafRef = useRef<number | null>(null);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: teardownRecorder/stopPlayback/resetState only reference refs and state setters — stable across renders.
   useEffect(() => {
     if (open === false) {
       teardownRecorder();
+      stopPlayback();
       resetState();
     }
 
     return () => {
       teardownRecorder();
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
+      stopPlayback();
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
   }, [open, previewUrl]);
 
-  const canPost = useMemo(() => {
-    return posting === false && recording === false && previewBlob !== null;
-  }, [posting, recording, previewBlob]);
-
-  const bars = useMemo(() => {
-    return Array.from({ length: 22 }, (_, idx) => {
-      const modulation = 0.35 + (((idx * 17) % 9) + 1) / 14;
-      const height = Math.round(7 + level * 30 * modulation + (idx % 4) * 1.7);
-      const active = level > 0.015;
-      return { height, active };
-    });
-  }, [level]);
+  const canPost = useMemo(
+    () => !posting && phase !== "recording" && previewBlob !== null,
+    [posting, phase, previewBlob],
+  );
 
   function resetState() {
-    setRecording(false);
+    setPhase("idle");
     setElapsedMs(0);
     elapsedRef.current = 0;
-    setLevel(0);
-
-    if (previewUrl) {
-      URL.revokeObjectURL(previewUrl);
-    }
-
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
     setPreviewBlob(null);
     setPreviewUrl(null);
     setPreviewDuration(0);
     setCaption("");
     setLinkedPoll("");
     setLinkedExpense("");
+    setPlaying(false);
+    setPlayProgress(0);
+    setPeaks([]);
+    ringBufferRef.current = new Array(RING_BUFFER_SIZE).fill(0);
+    ringIndexRef.current = 0;
   }
 
   function teardownRecorder() {
@@ -104,62 +117,144 @@ export function RecordVoiceSheet({
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-
+    if (rmsIntervalRef.current) {
+      clearInterval(rmsIntervalRef.current);
+      rmsIntervalRef.current = null;
+    }
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     }
-
     if (recorderRef.current && recorderRef.current.state === "recording") {
       recorderRef.current.stop();
     }
     recorderRef.current = null;
-
     if (streamRef.current) {
-      for (const track of streamRef.current.getTracks()) {
-        track.stop();
-      }
+      for (const track of streamRef.current.getTracks()) track.stop();
       streamRef.current = null;
     }
-
     analyserRef.current = null;
-
     if (audioCtxRef.current) {
       void audioCtxRef.current.close();
       audioCtxRef.current = null;
     }
   }
 
+  function stopPlayback() {
+    if (audioElRef.current) {
+      audioElRef.current.pause();
+      audioElRef.current.src = "";
+      audioElRef.current = null;
+    }
+    if (playRafRef.current !== null) {
+      cancelAnimationFrame(playRafRef.current);
+      playRafRef.current = null;
+    }
+    setPlaying(false);
+  }
+
+  // --- Canvas waveform drawing ---
+  const drawWaveform = useCallback(
+    (canvas: HTMLCanvasElement, buffer: number[]) => {
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      ctx.scale(dpr, dpr);
+      ctx.clearRect(0, 0, w, h);
+
+      const centerY = h / 2;
+      const len = buffer.length;
+      const step = w / (len - 1);
+
+      // Draw mirrored curves
+      const gradient = ctx.createLinearGradient(0, 0, w, 0);
+      gradient.addColorStop(0, "rgba(90, 150, 41, 0.35)");
+      gradient.addColorStop(0.5, "rgba(127, 190, 68, 0.45)");
+      gradient.addColorStop(1, "rgba(90, 150, 41, 0.35)");
+
+      for (const mirror of [1, -1]) {
+        ctx.beginPath();
+        ctx.moveTo(0, centerY);
+
+        for (let i = 0; i < len; i++) {
+          const x = i * step;
+          const amplitude = buffer[(ringIndexRef.current + i) % len];
+          const y = centerY + mirror * amplitude * (centerY - 2) * 2.5;
+
+          if (i === 0) {
+            ctx.lineTo(x, y);
+          } else {
+            const prevX = (i - 1) * step;
+            const prevAmplitude = buffer[(ringIndexRef.current + i - 1) % len];
+            const prevY =
+              centerY + mirror * prevAmplitude * (centerY - 2) * 2.5;
+            const cpX = (prevX + x) / 2;
+            ctx.quadraticCurveTo(cpX, prevY, (cpX + x) / 2, (prevY + y) / 2);
+          }
+        }
+
+        ctx.lineTo(w, centerY);
+        ctx.closePath();
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        ctx.strokeStyle = `rgba(90, 150, 41, 0.7)`;
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+      }
+    },
+    [],
+  );
+
   function startLevelMeter(stream: MediaStream) {
     const audioCtx = new AudioContext();
     const analyser = audioCtx.createAnalyser();
     analyser.fftSize = 256;
-
     const source = audioCtx.createMediaStreamSource(stream);
     source.connect(analyser);
 
     const data = new Uint8Array(analyser.fftSize);
-
     audioCtxRef.current = audioCtx;
     analyserRef.current = analyser;
 
-    const tick = () => {
-      if (analyserRef.current === null) return;
-
+    // Sample RMS at fixed interval into ring buffer
+    rmsIntervalRef.current = setInterval(() => {
+      if (!analyserRef.current) return;
       analyserRef.current.getByteTimeDomainData(data);
-
       let sum = 0;
-      for (let i = 0; i < data.length; i += 1) {
+      for (let i = 0; i < data.length; i++) {
         const sample = (data[i] - 128) / 128;
         sum += sample * sample;
       }
       const rms = Math.sqrt(sum / data.length);
-      setLevel(rms);
+      const buf = ringBufferRef.current;
+      buf[ringIndexRef.current % RING_BUFFER_SIZE] = rms;
+      ringIndexRef.current = (ringIndexRef.current + 1) % RING_BUFFER_SIZE;
+    }, RMS_INTERVAL_MS);
 
-      rafRef.current = requestAnimationFrame(tick);
-    };
-
-    tick();
+    // Animate canvas
+    if (!reducedMotion) {
+      const tick = () => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        drawWaveform(canvas, ringBufferRef.current);
+        rafRef.current = requestAnimationFrame(tick);
+      };
+      tick();
+    } else {
+      // Draw a single static gentle sine for reduced motion
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const buf = new Array(RING_BUFFER_SIZE).fill(0).map((_, i) => {
+          return 0.05 + Math.sin((i / RING_BUFFER_SIZE) * Math.PI * 4) * 0.03;
+        });
+        drawWaveform(canvas, buf);
+      }
+    }
   }
 
   async function startRecording() {
@@ -169,13 +264,15 @@ export function RecordVoiceSheet({
 
       chunksRef.current = [];
       setPreviewBlob(null);
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
       setPreviewUrl(null);
       setPreviewDuration(0);
       setElapsedMs(0);
       elapsedRef.current = 0;
+      setPeaks([]);
+      setPlayProgress(0);
+      ringBufferRef.current = new Array(RING_BUFFER_SIZE).fill(0);
+      ringIndexRef.current = 0;
 
       let mimeType = "";
       if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
@@ -189,13 +286,10 @@ export function RecordVoiceSheet({
       const recorder = mimeType
         ? new MediaRecorder(stream, { mimeType })
         : new MediaRecorder(stream);
-
       recorderRef.current = recorder;
 
       recorder.ondataavailable = (event: BlobEvent) => {
-        if (event.data.size > 0) {
-          chunksRef.current.push(event.data);
-        }
+        if (event.data.size > 0) chunksRef.current.push(event.data);
       };
 
       recorder.onstop = () => {
@@ -203,16 +297,23 @@ export function RecordVoiceSheet({
           type: recorder.mimeType || "audio/webm",
         });
         const nextUrl = URL.createObjectURL(nextBlob);
+        const duration = Math.max(
+          1,
+          Math.min(MAX_SECONDS, Math.round(elapsedRef.current / 1000)),
+        );
 
         setPreviewBlob(nextBlob);
         setPreviewUrl(nextUrl);
-        setPreviewDuration(
-          Math.max(1, Math.min(MAX_SECONDS, Math.round(elapsedRef.current / 1000))),
-        );
+        setPreviewDuration(duration);
+        setPhase("playback");
+
+        // Extract peaks from recorded audio
+        void extractPeaks(nextBlob);
       };
 
       recorder.start(240);
-      setRecording(true);
+      setPhase("recording");
+      haptic.trigger("medium");
       startLevelMeter(stream);
 
       timerRef.current = setInterval(() => {
@@ -236,36 +337,147 @@ export function RecordVoiceSheet({
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-
-    setRecording(false);
-    setLevel(0);
-
+    if (rmsIntervalRef.current) {
+      clearInterval(rmsIntervalRef.current);
+      rmsIntervalRef.current = null;
+    }
     if (rafRef.current !== null) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     }
-
     if (recorderRef.current && recorderRef.current.state === "recording") {
       recorderRef.current.stop();
     }
-
     if (streamRef.current) {
-      for (const track of streamRef.current.getTracks()) {
-        track.stop();
-      }
+      for (const track of streamRef.current.getTracks()) track.stop();
       streamRef.current = null;
     }
-
     analyserRef.current = null;
-
     if (audioCtxRef.current) {
       void audioCtxRef.current.close();
       audioCtxRef.current = null;
     }
+    haptic.trigger("light");
+  }
+
+  async function extractPeaks(blob: Blob) {
+    try {
+      const arrayBuf = await blob.arrayBuffer();
+      const offlineCtx = new AudioContext();
+      const audioBuffer = await offlineCtx.decodeAudioData(arrayBuf);
+      const channelData = audioBuffer.getChannelData(0);
+      const blockSize = Math.floor(channelData.length / PEAK_COUNT);
+      const extracted: number[] = [];
+
+      for (let i = 0; i < PEAK_COUNT; i++) {
+        let max = 0;
+        const start = i * blockSize;
+        const end = Math.min(start + blockSize, channelData.length);
+        for (let j = start; j < end; j++) {
+          const abs = Math.abs(channelData[j]);
+          if (abs > max) max = abs;
+        }
+        extracted.push(max);
+      }
+
+      // Normalize
+      const peakMax = Math.max(...extracted, 0.01);
+      setPeaks(extracted.map((v) => v / peakMax));
+      void offlineCtx.close();
+    } catch {
+      // Fallback: deterministic pseudo-peaks
+      const fallback = Array.from({ length: PEAK_COUNT }, (_, i) => {
+        return 0.2 + Math.abs(Math.sin(i * 0.7)) * 0.6 + ((i * 17) % 7) / 14;
+      });
+      const max = Math.max(...fallback);
+      setPeaks(fallback.map((v) => v / max));
+    }
+  }
+
+  function togglePlayback() {
+    if (!previewUrl) return;
+
+    if (playing) {
+      audioElRef.current?.pause();
+      setPlaying(false);
+      if (playRafRef.current !== null) {
+        cancelAnimationFrame(playRafRef.current);
+        playRafRef.current = null;
+      }
+      return;
+    }
+
+    let audio = audioElRef.current;
+    if (!audio) {
+      audio = new Audio(previewUrl);
+      audioElRef.current = audio;
+    }
+
+    audio.onended = () => {
+      setPlaying(false);
+      setPlayProgress(1);
+      if (playRafRef.current !== null) {
+        cancelAnimationFrame(playRafRef.current);
+        playRafRef.current = null;
+      }
+    };
+
+    void audio.play();
+    setPlaying(true);
+
+    const duration = previewDuration; // seconds, from recording timer
+
+    const tick = () => {
+      if (audio) {
+        // Use previewDuration as fallback when audio.duration is NaN/Infinity (common with webm blobs)
+        const dur =
+          audio.duration && Number.isFinite(audio.duration)
+            ? audio.duration
+            : duration;
+        if (dur > 0) {
+          setPlayProgress(audio.currentTime / dur);
+        }
+      }
+      playRafRef.current = requestAnimationFrame(tick);
+    };
+    tick();
+  }
+
+  function seekPlayback(ratio: number) {
+    const audio = audioElRef.current;
+    if (!audio) return;
+    const dur =
+      audio.duration && Number.isFinite(audio.duration)
+        ? audio.duration
+        : previewDuration;
+    if (dur > 0) {
+      audio.currentTime = ratio * dur;
+    }
+    setPlayProgress(ratio);
+  }
+
+  function handleRecordAgain() {
+    stopPlayback();
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewBlob(null);
+    setPreviewUrl(null);
+    setPreviewDuration(0);
+    setPhase("idle");
+    setPlayProgress(0);
+    setPeaks([]);
+    ringBufferRef.current = new Array(RING_BUFFER_SIZE).fill(0);
+    ringIndexRef.current = 0;
+    // Clear the canvas
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext("2d");
+      if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
   }
 
   async function handlePost() {
-    if (canPost === false || previewBlob === null) return;
+    if (!canPost || !previewBlob) return;
+    stopPlayback();
 
     const success = await onSubmit({
       blob: previewBlob,
@@ -275,87 +487,164 @@ export function RecordVoiceSheet({
       linked_poll_id: linkedPoll || null,
     });
 
-    if (success) {
-      resetState();
-    }
+    if (success) resetState();
   }
+
+  const surfaceTransition = useMemo(
+    () => getSurfaceTransition(reducedMotion, motionDuration.standard),
+    [reducedMotion],
+  );
 
   return (
     <Sheet
       open={open}
       onOpenChange={onOpenChange}
-      title="Record voice"
-      description="Capture a quick voice note (up to 60s)."
+      title="Drop a voice bomb"
+      description="Yell into the void (60s max)"
     >
       <div className="space-y-4">
-        <div className="rounded-xl border border-[#DCCBC0] bg-[#F8F4EE] p-3">
-          <div className="mb-2 flex items-center justify-between">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-[#DCCBC0] bg-[#FDF9F5] px-2.5 py-1">
-              <Mic className="h-3.5 w-3.5 text-[#7B6656]" />
-              <Text variant="caption" className="font-medium text-[#7B6656]">
-                {recording ? "Recording" : previewBlob ? "Preview ready" : "Ready"}
-              </Text>
-            </div>
-            <Text variant="caption" color="subtle" className="tabular-nums">
-              {formatTimer(elapsedMs)} / 1:00
-            </Text>
-          </div>
-
-          <div className="flex h-12 items-end gap-[2px] rounded-lg border border-[#E7D9CD] bg-[#FFFDFB] px-2 py-1.5">
-            {bars.map((bar, idx) => (
-              <motion.span
-                // biome-ignore lint/suspicious/noArrayIndexKey: deterministic decorative bars.
-                key={idx}
-                className="block w-full rounded-sm"
-                initial={false}
-                animate={{
-                  height: bar.height,
-                  opacity: bar.active ? 0.95 : 0.35,
-                  backgroundColor: bar.active ? "#5A9629" : "#C0B0A4",
-                }}
-                transition={getSurfaceTransition(reducedMotion, motionDuration.fast)}
-              />
-            ))}
-          </div>
-
-          <div className="mt-3 flex gap-2">
-            {recording ? (
-              <Button
-                type="button"
-                variant="secondary"
-                className="w-full [&>span]:inline-flex [&>span]:items-center [&>span]:gap-1.5"
-                onClick={() => {
-                  void stopRecording();
-                }}
+        {/* Recorder area */}
+        <div className="rounded-xl border border-[#DCCBC0] bg-[#F8F4EE] p-4">
+          <AnimatePresence mode="wait" initial={false}>
+            {phase === "playback" ? (
+              <motion.div
+                key="playback"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={surfaceTransition}
+                className="space-y-3"
               >
-                <Square className="h-3.5 w-3.5" />
-                Stop recording
-              </Button>
+                {/* Playback controls row */}
+                <div className="flex items-center gap-3">
+                  <motion.button
+                    type="button"
+                    layoutId="main-action-btn"
+                    onClick={togglePlayback}
+                    className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-full btn-primary shadow-[0_4px_14px_rgba(90,150,41,0.35)]"
+                    transition={surfaceTransition}
+                  >
+                    {playing ? (
+                      <Pause className="h-5 w-5 text-white" fill="white" />
+                    ) : (
+                      <Play className="h-5 w-5 text-white" fill="white" />
+                    )}
+                  </motion.button>
+
+                  <div className="min-w-0 flex-1">
+                    <Text
+                      variant="caption"
+                      color="subtle"
+                      className="mb-1 block tabular-nums"
+                    >
+                      {formatTimer(playProgress * previewDuration * 1000)} /{" "}
+                      {formatTimer(previewDuration * 1000)}
+                    </Text>
+
+                    {/* Peak waveform bars */}
+                    <PeakBars
+                      peaks={peaks}
+                      progress={playProgress}
+                      onSeek={seekPlayback}
+                    />
+                  </div>
+                </div>
+
+                {/* Record again */}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full [&>span]:inline-flex [&>span]:items-center [&>span]:gap-1.5"
+                  onClick={handleRecordAgain}
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Record again
+                </Button>
+              </motion.div>
             ) : (
-              <Button
-                type="button"
-                variant="primary"
-                className="w-full [&>span]:inline-flex [&>span]:items-center [&>span]:gap-1.5"
-                onClick={() => {
-                  void startRecording();
-                }}
+              <motion.div
+                key="record"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={surfaceTransition}
+                className="space-y-3"
               >
-                <Mic className="h-3.5 w-3.5" />
-                {previewBlob ? "Record again" : "Start recording"}
-              </Button>
-            )}
-          </div>
+                {/* Timer + progress bar */}
+                <div className="flex items-center justify-between">
+                  <Text
+                    variant="caption"
+                    color="subtle"
+                    className="tabular-nums"
+                  >
+                    {formatTimer(elapsedMs)} / 1:00
+                  </Text>
+                  <div className="h-1 flex-1 mx-3 rounded-full bg-[#E7D9CD] overflow-hidden">
+                    <motion.div
+                      className="h-full rounded-full bg-[#5A9629]"
+                      style={{
+                        width: `${(elapsedMs / (MAX_SECONDS * 1000)) * 100}%`,
+                      }}
+                      transition={{ duration: 0.1 }}
+                    />
+                  </div>
+                </div>
 
-          {previewUrl ? (
-            <div className="mt-3 rounded-xl border border-[#E8DACC] bg-[#FFFCF9] p-2.5">
-              <audio src={previewUrl} controls className="w-full" />
-              <Text variant="caption" color="subtle" className="mt-1 block">
-                Duration: {previewDuration}s
-              </Text>
-            </div>
-          ) : null}
+                {/* Live canvas waveform */}
+                <div className="relative h-16 w-full overflow-hidden rounded-lg border border-[#E7D9CD] bg-[#FFFDFB]">
+                  <canvas ref={canvasRef} className="h-full w-full" />
+                  {phase === "idle" && <IdleSineCanvas />}
+                </div>
+
+                {/* Mic button */}
+                <div className="flex justify-center">
+                  {phase === "recording" ? (
+                    <div className="relative inline-flex items-center justify-center">
+                      <motion.span
+                        className="absolute h-[90px] w-[90px] rounded-full bg-[#b8e986] blur-xl"
+                        animate={
+                          reducedMotion
+                            ? { opacity: 0.35 }
+                            : { opacity: [0.25, 0.5, 0.25], scale: [0.9, 1.1, 0.9] }
+                        }
+                        transition={
+                          reducedMotion
+                            ? undefined
+                            : {
+                                duration: 1.6,
+                                repeat: Number.POSITIVE_INFINITY,
+                                ease: "easeInOut",
+                              }
+                        }
+                      />
+                      <motion.button
+                        type="button"
+                        layoutId="main-action-btn"
+                        onClick={() => void stopRecording()}
+                        className="relative inline-flex h-[68px] w-[68px] items-center justify-center rounded-full btn-primary shadow-[0_6px_20px_rgba(90,150,41,0.4)]"
+                        transition={surfaceTransition}
+                      >
+                        <Square className="h-6 w-6 text-white" fill="white" />
+                      </motion.button>
+                    </div>
+                  ) : (
+                    <motion.button
+                      type="button"
+                      layoutId="main-action-btn"
+                      onClick={() => void startRecording()}
+                      className="inline-flex h-[68px] w-[68px] items-center justify-center rounded-full btn-primary shadow-[0_6px_20px_rgba(90,150,41,0.4)]"
+                      transition={surfaceTransition}
+                    >
+                      <Mic className="h-7 w-7 text-white" />
+                    </motion.button>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
+        {/* Caption */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <Text variant="overline" color="subtle">
@@ -369,7 +658,6 @@ export function RecordVoiceSheet({
               {caption.length}/{CAPTION_MAX}
             </Text>
           </div>
-
           <textarea
             value={caption}
             onChange={(e) => setCaption(e.target.value)}
@@ -380,7 +668,9 @@ export function RecordVoiceSheet({
           />
         </div>
 
+        {/* Link selectors */}
         <LinkSelectors
+          groupId={groupId}
           linkedExpense={linkedExpense}
           linkedPoll={linkedPoll}
           setLinkedExpense={setLinkedExpense}
@@ -389,12 +679,13 @@ export function RecordVoiceSheet({
           pollOptions={pollOptions}
         />
 
+        {/* Post button */}
         <Button
           type="button"
           variant="primary"
           className="w-full [&>span]:inline-flex [&>span]:items-center [&>span]:gap-1.5"
           loading={posting}
-          disabled={canPost === false}
+          disabled={!canPost}
           onClick={handlePost}
         >
           {posting ? (
@@ -414,6 +705,8 @@ export function RecordVoiceSheet({
   );
 }
 
+// --- Helpers ---
+
 function formatTimer(ms: number): string {
   const total = Math.max(0, Math.min(MAX_SECONDS, Math.floor(ms / 1000)));
   const minutes = Math.floor(total / 60);
@@ -421,57 +714,99 @@ function formatTimer(ms: number): string {
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 }
 
-function LinkSelectors({
-  linkedExpense,
-  linkedPoll,
-  setLinkedExpense,
-  setLinkedPoll,
-  expenseOptions,
-  pollOptions,
-}: {
-  linkedExpense: string;
-  linkedPoll: string;
-  setLinkedExpense: (value: string) => void;
-  setLinkedPoll: (value: string) => void;
-  expenseOptions: FeedLinkOption[];
-  pollOptions: FeedLinkOption[];
-}) {
-  const expenseSelectOptions = useMemo(
-    () => [
-      { value: "", label: "None" },
-      ...expenseOptions.map((option) => ({
-        value: option.id,
-        label: option.label,
-      })),
-    ],
-    [expenseOptions],
-  );
+function IdleSineCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const pollSelectOptions = useMemo(
-    () => [
-      { value: "", label: "None" },
-      ...pollOptions.map((option) => ({
-        value: option.id,
-        label: option.label,
-      })),
-    ],
-    [pollOptions],
-  );
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    ctx.scale(dpr, dpr);
+
+    const centerY = h / 2;
+    ctx.clearRect(0, 0, w, h);
+
+    ctx.beginPath();
+    ctx.moveTo(0, centerY);
+    for (let x = 0; x <= w; x++) {
+      const y = centerY + Math.sin((x / w) * Math.PI * 6) * 3;
+      ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = "rgba(192, 176, 164, 0.5)";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }, []);
+
+  return <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />;
+}
+
+function PeakBars({
+  peaks,
+  progress,
+  onSeek,
+}: {
+  peaks: number[];
+  progress: number;
+  onSeek: (ratio: number) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const barCount = peaks.length || PEAK_COUNT;
+  const displayPeaks =
+    peaks.length > 0 ? peaks : Array.from({ length: PEAK_COUNT }, () => 0.15);
+
+  function handlePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    const container = containerRef.current;
+    if (!container) return;
+    const rect = container.getBoundingClientRect();
+    const ratio = Math.max(
+      0,
+      Math.min(1, (e.clientX - rect.left) / rect.width),
+    );
+    onSeek(ratio);
+
+    function onMove(ev: PointerEvent) {
+      const r = Math.max(0, Math.min(1, (ev.clientX - rect.left) / rect.width));
+      onSeek(r);
+    }
+    function onUp() {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    }
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  }
+
+  const playedIndex = Math.floor(progress * barCount);
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      <Select
-        label="Link expense"
-        value={linkedExpense}
-        onValueChange={setLinkedExpense}
-        options={expenseSelectOptions}
-      />
-      <Select
-        label="Link poll"
-        value={linkedPoll}
-        onValueChange={setLinkedPoll}
-        options={pollSelectOptions}
-      />
+    <div
+      ref={containerRef}
+      className="flex h-8 cursor-pointer items-end gap-[2px] rounded"
+      onPointerDown={handlePointerDown}
+    >
+      {displayPeaks.map((peak, idx) => {
+        const h = Math.max(3, peak * 28);
+        const played = idx <= playedIndex;
+        return (
+          <span
+            // biome-ignore lint/suspicious/noArrayIndexKey: deterministic peaks
+            key={idx}
+            className="block flex-1 rounded-sm transition-colors duration-100"
+            style={{
+              height: h,
+              backgroundColor: played ? "#5A9629" : "#C0B0A4",
+            }}
+          />
+        );
+      })}
     </div>
   );
 }

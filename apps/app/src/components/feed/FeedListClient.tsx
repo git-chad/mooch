@@ -11,11 +11,21 @@ import {
 import type { FeedItemWithMeta } from "@mooch/db";
 import type { FeedItem, FeedItemType, Profile } from "@mooch/types";
 import { Container, Text } from "@mooch/ui";
-import { Camera, Loader2, MessageSquareText, Mic, Sparkles } from "lucide-react";
+import {
+  Camera,
+  Loader2,
+  MessageSquareText,
+  Mic,
+  Sparkles,
+} from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { addFeedItem, deleteFeedItem, toggleReaction } from "@/app/actions/feed";
+import {
+  addFeedItem,
+  deleteFeedItem,
+  toggleReaction,
+} from "@/app/actions/feed";
 import { TransitionSlot } from "@/components/TransitionSlot";
 import { getSurfaceTransition, motionDuration, motionEase } from "@/lib/motion";
 import { ComposerDock, type ComposerDockItem } from "./ComposerDock";
@@ -99,7 +109,10 @@ function toggleReactionLocal(item: FeedItemUI, emoji: string): FeedItemUI {
     .map(([k, v]) => ({ emoji: k, count: v }))
     .sort((a, b) => b.count - a.count);
 
-  const total_reactions = reaction_counts.reduce((sum, entry) => sum + entry.count, 0);
+  const total_reactions = reaction_counts.reduce(
+    (sum, entry) => sum + entry.count,
+    0,
+  );
 
   return {
     ...item,
@@ -177,7 +190,9 @@ export function FeedListClient({
   const reducedMotion = useReducedMotion() ?? false;
   const supabase = useMemo(() => createBrowserClient(), []);
 
-  const [items, setItems] = useState<FeedItemUI[]>(() => uniqueById(initialItems));
+  const [items, setItems] = useState<FeedItemUI[]>(() =>
+    uniqueById(initialItems),
+  );
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(initialItems.length >= PAGE_SIZE);
   const [textOpen, setTextOpen] = useState(false);
@@ -236,7 +251,9 @@ export function FeedListClient({
       return uniqueById([...optimistic, ...mergedIncoming, ...localOnly]);
     });
 
-    setHasMore((currentHasMore) => currentHasMore || initialItems.length >= PAGE_SIZE);
+    setHasMore(
+      (currentHasMore) => currentHasMore || initialItems.length >= PAGE_SIZE,
+    );
   }, [groupId, initialItems]);
 
   useEffect(() => {
@@ -280,7 +297,11 @@ export function FeedListClient({
 
   const fetchHydratedItemById = useCallback(
     async (itemId: string): Promise<FeedItemUI | null> => {
-      const fresh = await getFeedItemById(supabase, itemId, currentUserProfile.id);
+      const fresh = await getFeedItemById(
+        supabase,
+        itemId,
+        currentUserProfile.id,
+      );
       if (!fresh) return null;
       return hydrateItem(fresh);
     },
@@ -295,7 +316,9 @@ export function FeedListClient({
         return;
       }
 
-      setItems((prev) => uniqueById([fresh, ...prev.filter((item) => item.id !== itemId)]));
+      setItems((prev) =>
+        uniqueById([fresh, ...prev.filter((item) => item.id !== itemId)]),
+      );
     },
     [fetchHydratedItemById],
   );
@@ -398,7 +421,9 @@ export function FeedListClient({
           const feedItemId = newRow.feed_item_id ?? oldRow.feed_item_id;
           if (!feedItemId) return;
 
-          const existsInList = itemsRef.current.some((item) => item.id === feedItemId);
+          const existsInList = itemsRef.current.some(
+            (item) => item.id === feedItemId,
+          );
           if (!existsInList) return;
 
           await refreshItemById(feedItemId);
@@ -459,15 +484,12 @@ export function FeedListClient({
         URL.revokeObjectURL(payload.local_object_url);
       }
 
-      setItems((prev) => uniqueById([next, ...prev.filter((item) => item.id !== tempId)]));
+      setItems((prev) =>
+        uniqueById([next, ...prev.filter((item) => item.id !== tempId)]),
+      );
       return true;
     },
-    [
-      groupId,
-      currentUserProfile,
-      supabase,
-      fetchHydratedItemById,
-    ],
+    [groupId, currentUserProfile, supabase, fetchHydratedItemById],
   );
 
   const handleTextSubmit = useCallback(
@@ -568,27 +590,24 @@ export function FeedListClient({
     [supabase, groupId, createItem],
   );
 
-  const handleDelete = useCallback(
-    async (itemId: string) => {
-      const target = itemsRef.current.find((item) => item.id === itemId);
-      if (!target) return;
+  const handleDelete = useCallback(async (itemId: string) => {
+    const target = itemsRef.current.find((item) => item.id === itemId);
+    if (!target) return;
 
-      const confirmed = window.confirm("Delete this post?");
-      if (!confirmed) return;
+    const confirmed = window.confirm("Delete this post?");
+    if (!confirmed) return;
 
-      setDeletingItemId(itemId);
-      setItems((prev) => prev.filter((item) => item.id !== itemId));
+    setDeletingItemId(itemId);
+    setItems((prev) => prev.filter((item) => item.id !== itemId));
 
-      const result = await deleteFeedItem(itemId);
-      setDeletingItemId(null);
+    const result = await deleteFeedItem(itemId);
+    setDeletingItemId(null);
 
-      if ("error" in result) {
-        setItems((prev) => uniqueById([target, ...prev]));
-        toast.error(result.error);
-      }
-    },
-    [],
-  );
+    if ("error" in result) {
+      setItems((prev) => uniqueById([target, ...prev]));
+      toast.error(result.error);
+    }
+  }, []);
 
   const handleReactionToggle = useCallback(
     async (itemId: string, emoji: string) => {
@@ -597,7 +616,9 @@ export function FeedListClient({
 
       setReactionBusy((prev) => ({ ...prev, [itemId]: true }));
       setItems((prev) =>
-        prev.map((item) => (item.id === itemId ? toggleReactionLocal(item, emoji) : item)),
+        prev.map((item) =>
+          item.id === itemId ? toggleReactionLocal(item, emoji) : item,
+        ),
       );
 
       const result = await toggleReaction(itemId, emoji);
@@ -605,7 +626,9 @@ export function FeedListClient({
       setReactionBusy((prev) => ({ ...prev, [itemId]: false }));
 
       if ("error" in result) {
-        setItems((prev) => prev.map((item) => (item.id === itemId ? before : item)));
+        setItems((prev) =>
+          prev.map((item) => (item.id === itemId ? before : item)),
+        );
         toast.error(result.error);
       }
     },
@@ -685,7 +708,7 @@ export function FeedListClient({
           <AnimatePresence initial={false}>
             {items.length === 0 ? (
               <motion.div
-                className="rounded-2xl border border-dashed border-[#DCCBC0] bg-[#FDFBF8] px-6 py-12 text-center shadow-[var(--shadow-elevated)]"
+                className="flex flex-col items-center justify-center py-20 text-center"
                 initial={
                   reducedMotion
                     ? { opacity: 0 }
@@ -698,13 +721,18 @@ export function FeedListClient({
                   ease: motionEase.out,
                 }}
               >
-                <span className="grid place-items-center">
-                  <Camera className="h-9 w-9 text-[#7E695A]" />
-                </span>
-                <Text variant="heading" className="mt-3">
+                <span
+                  className="mb-4 inline-flex h-40 w-40 overflow-hidden rounded-[30px] bg-[#F8F6F1] bg-cover bg-center bg-no-repeat"
+                  style={{
+                    backgroundImage: "url('/icons/feed-empty.webp')",
+                    backgroundBlendMode: "darken",
+                  }}
+                  aria-hidden
+                />
+                <Text variant="heading" className="mb-1">
                   Dead quiet in here
                 </Text>
-                <Text variant="body" color="subtle" className="mt-1">
+                <Text variant="body" color="subtle">
                   First post sets the vibe. Make it loud.
                 </Text>
               </motion.div>
@@ -744,7 +772,12 @@ export function FeedListClient({
                       exit={
                         reducedMotion
                           ? { opacity: 0 }
-                          : { opacity: 0, y: -10, filter: "blur(4px)", scale: 0.985 }
+                          : {
+                              opacity: 0,
+                              y: -10,
+                              filter: "blur(4px)",
+                              scale: 0.985,
+                            }
                       }
                       transition={itemTransition}
                     >
@@ -773,7 +806,10 @@ export function FeedListClient({
                 initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                transition={getSurfaceTransition(reducedMotion, motionDuration.fast)}
+                transition={getSurfaceTransition(
+                  reducedMotion,
+                  motionDuration.fast,
+                )}
               >
                 <span className="inline-flex items-center gap-2 rounded-full border border-[#DCCBC0] bg-[#F8F3EE] px-3 py-1 text-[12px] text-[#7E695A]">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -789,10 +825,19 @@ export function FeedListClient({
         {!overlayOpen && (
           <motion.div
             className="pointer-events-none fixed inset-x-0 bottom-[4.75rem] z-10 px-2 md:bottom-4 md:pl-60"
-            initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 14, scale: 0.985 }}
+            initial={
+              reducedMotion
+                ? { opacity: 0 }
+                : { opacity: 0, y: 14, scale: 0.985 }
+            }
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.98 }}
-            transition={getSurfaceTransition(reducedMotion, motionDuration.fast)}
+            exit={
+              reducedMotion ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.98 }
+            }
+            transition={getSurfaceTransition(
+              reducedMotion,
+              motionDuration.fast,
+            )}
           >
             <div className="mx-auto flex w-full max-w-2xl justify-center">
               <ComposerDock items={dockItems} />
@@ -811,6 +856,7 @@ export function FeedListClient({
           }
         }}
         posting={posting}
+        groupId={groupId}
         pollOptions={pollOptions}
         expenseOptions={expenseOptions}
         onSubmit={handleTextSubmit}
@@ -826,6 +872,7 @@ export function FeedListClient({
           }
         }}
         posting={posting}
+        groupId={groupId}
         pollOptions={pollOptions}
         expenseOptions={expenseOptions}
         onSubmit={handlePhotoSubmit}
@@ -841,6 +888,7 @@ export function FeedListClient({
           }
         }}
         posting={posting}
+        groupId={groupId}
         pollOptions={pollOptions}
         expenseOptions={expenseOptions}
         onSubmit={handleVoiceSubmit}

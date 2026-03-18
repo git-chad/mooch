@@ -40,7 +40,7 @@ export default async function FeedPage({ params }: Props) {
       .limit(20),
     admin
       .from("expenses")
-      .select("id, description, created_at")
+      .select("id, description, created_at, tab_id")
       .eq("group_id", groupId)
       .order("created_at", { ascending: false })
       .limit(20),
@@ -65,6 +65,7 @@ export default async function FeedPage({ params }: Props) {
     (expensesRaw.data ?? []).map((row) => ({
       id: row.id as string,
       label: row.description as string,
+      tabId: (row.tab_id as string) ?? undefined,
     })) ?? [];
 
   const fallbackProfile: Profile = {

@@ -9,4 +9,5 @@ export type FeedItemUI = FeedItemWithMeta & {
 export type FeedLinkOption = {
   id: string;
   label: string;
+  tabId?: string;
 };

@@ -1,8 +1,9 @@
 "use client";
 
-import { Button, Select, Sheet, Text } from "@mooch/ui";
+import { Button, Sheet, Text } from "@mooch/ui";
 import { Camera, ImagePlus, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { LinkSelectors } from "./LinkSelectors";
 import type { FeedLinkOption } from "./types";
 
 const CAPTION_MAX = 200;
@@ -11,6 +12,7 @@ type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   posting: boolean;
+  groupId: string;
   pollOptions: FeedLinkOption[];
   expenseOptions: FeedLinkOption[];
   onSubmit: (data: {
@@ -26,6 +28,7 @@ export function PostPhotoSheet({
   open,
   onOpenChange,
   posting,
+  groupId,
   pollOptions,
   expenseOptions,
   onSubmit,
@@ -47,7 +50,10 @@ export function PostPhotoSheet({
     }
   }, [open, previewUrl]);
 
-  const canPost = useMemo(() => !posting && !!file && !!previewUrl, [posting, file, previewUrl]);
+  const canPost = useMemo(
+    () => !posting && !!file && !!previewUrl,
+    [posting, file, previewUrl],
+  );
 
   function onFileChange(nextFile: File | null) {
     if (previewUrl) {
@@ -111,7 +117,7 @@ export function PostPhotoSheet({
                   Choose a photo
                 </Text>
                 <Text variant="caption" color="subtle" className="mt-1 block">
-                  Camera on mobile, gallery on desktop
+                  We&apos;re too lazy to add a camera input or some shit
                 </Text>
               </div>
             </div>
@@ -172,6 +178,7 @@ export function PostPhotoSheet({
         </div>
 
         <LinkSelectors
+          groupId={groupId}
           linkedExpense={linkedExpense}
           linkedPoll={linkedPoll}
           setLinkedExpense={setLinkedExpense}
@@ -192,60 +199,5 @@ export function PostPhotoSheet({
         </Button>
       </div>
     </Sheet>
-  );
-}
-
-function LinkSelectors({
-  linkedExpense,
-  linkedPoll,
-  setLinkedExpense,
-  setLinkedPoll,
-  expenseOptions,
-  pollOptions,
-}: {
-  linkedExpense: string;
-  linkedPoll: string;
-  setLinkedExpense: (value: string) => void;
-  setLinkedPoll: (value: string) => void;
-  expenseOptions: FeedLinkOption[];
-  pollOptions: FeedLinkOption[];
-}) {
-  const expenseSelectOptions = useMemo(
-    () => [
-      { value: "", label: "None" },
-      ...expenseOptions.map((option) => ({
-        value: option.id,
-        label: option.label,
-      })),
-    ],
-    [expenseOptions],
-  );
-
-  const pollSelectOptions = useMemo(
-    () => [
-      { value: "", label: "None" },
-      ...pollOptions.map((option) => ({
-        value: option.id,
-        label: option.label,
-      })),
-    ],
-    [pollOptions],
-  );
-
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      <Select
-        label="Link expense"
-        value={linkedExpense}
-        onValueChange={setLinkedExpense}
-        options={expenseSelectOptions}
-      />
-      <Select
-        label="Link poll"
-        value={linkedPoll}
-        onValueChange={setLinkedPoll}
-        options={pollSelectOptions}
-      />
-    </div>
   );
 }
