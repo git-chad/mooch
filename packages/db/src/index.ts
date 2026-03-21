@@ -26,3 +26,8 @@ export {
   getPollTokenActions,
 } from "./queries/polls";
 export type { PollWithOptions, PollOptionWithVotes, PollTokenActionWithProfile } from "./queries/polls";
+export {
+  getPlans,
+  getPlanById,
+} from "./queries/plans";
+export type { PlanWithDetails } from "./queries/plans";
