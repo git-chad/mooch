@@ -17,6 +17,14 @@ type Props = {
   onPlanClick: (plan: PlanWithDetails) => void;
 };
 
+/** Convert "#RRGGBB" to an rgba() string at the given alpha. */
+function hexToRgba(hex: string, alpha: number): string {
+  const r = Number.parseInt(hex.slice(1, 3), 16);
+  const g = Number.parseInt(hex.slice(3, 5), 16);
+  const b = Number.parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 export function KanbanColumn({
   groupId,
   status,
@@ -27,19 +35,22 @@ export function KanbanColumn({
 }: Props) {
   const config = PLAN_STATUS_MAP[status];
   const Icon = config.icon;
+  const color = config.color;
 
   return (
     <section className="flex min-h-[460px] flex-col gap-4">
-      <div className="flex items-center justify-between gap-3 border-b border-[var(--color-edge-subtle)] pb-3">
+      <div
+        className="flex items-center justify-between gap-3 pb-3"
+        style={{ borderBottom: `1px solid ${hexToRgba(color, 0.2)}` }}
+      >
         <div className="flex min-w-0 items-center gap-2.5">
           <div
-            className="rounded-[10px] border p-1.5 text-[var(--color-ink-sub)]"
+            className="rounded-[10px] border p-1.5"
             style={{
-              background:
-                "linear-gradient(165deg, rgba(255,255,255,0.9) 0%, rgba(247,242,237,0.8) 100%)",
-              borderColor: "var(--color-edge)",
-              boxShadow:
-                "inset 0 1px 0 rgba(255,255,255,0.62), inset 0 -1px 2px rgba(0,0,0,0.04), 0 1px 0 rgba(200,180,160,0.15)",
+              color,
+              background: `linear-gradient(165deg, ${hexToRgba(color, 0.08)} 0%, ${hexToRgba(color, 0.15)} 100%)`,
+              borderColor: hexToRgba(color, 0.2),
+              boxShadow: `inset 0 1px 0 rgba(255,255,255,0.62), inset 0 -1px 2px rgba(0,0,0,0.04), 0 1px 0 ${hexToRgba(color, 0.12)}`,
             }}
           >
             <Icon className="h-3.5 w-3.5" />
@@ -51,6 +62,11 @@ export function KanbanColumn({
           >
             {title}
           </Text>
+          {plans.length > 0 && (
+            <Text variant="caption" color="muted">
+              {plans.length}
+            </Text>
+          )}
         </div>
 
         <button
@@ -71,13 +87,21 @@ export function KanbanColumn({
             className="flex flex-1 flex-col rounded-[14px] p-1 transition-[background-color,box-shadow] duration-150"
             style={{
               background: snapshot.isDraggingOver
-                ? "linear-gradient(180deg, rgba(249, 236, 213, 0.25) 0%, rgba(249, 236, 213, 0.06) 100%)"
+                ? `linear-gradient(180deg, ${hexToRgba(color, 0.12)} 0%, ${hexToRgba(color, 0.03)} 100%)`
                 : "transparent",
               boxShadow: snapshot.isDraggingOver
-                ? "inset 0 0 0 1px rgba(216, 200, 188, 0.4)"
+                ? `inset 0 0 0 1px ${hexToRgba(color, 0.22)}`
                 : "none",
             }}
           >
+            {plans.length === 0 && !snapshot.isDraggingOver && (
+              <div className="flex flex-1 items-center justify-center py-12">
+                <Text variant="caption" color="muted">
+                  {config.emptyLabel}
+                </Text>
+              </div>
+            )}
+
             {plans.map((plan, index) => (
               <Draggable
                 key={plan.id}

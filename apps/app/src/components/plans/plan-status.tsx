@@ -7,6 +7,10 @@ export type PlanStatusConfig = {
   title: string;
   shortTitle: string;
   icon: LucideIcon;
+  /** Hex accent color for subtle column tinting */
+  color: string;
+  /** Placeholder text when column is empty */
+  emptyLabel: string;
 };
 
 export const PLAN_STATUS_CONFIG: PlanStatusConfig[] = [
@@ -15,24 +19,32 @@ export const PLAN_STATUS_CONFIG: PlanStatusConfig[] = [
     title: "Ideas",
     shortTitle: "Ideas",
     icon: Lightbulb,
+    color: "#D4A853",
+    emptyLabel: "No ideas yet",
   },
   {
     id: "to_plan",
     title: "To Plan",
     shortTitle: "To Plan",
     icon: ClipboardList,
+    color: "#8B7355",
+    emptyLabel: "Nothing to plan",
   },
   {
     id: "upcoming",
     title: "Upcoming",
     shortTitle: "Upcoming",
     icon: TimerReset,
+    color: "#5B8C5A",
+    emptyLabel: "All clear",
   },
   {
     id: "done",
-    title: "Done",
-    shortTitle: "Done",
+    title: "Completed",
+    shortTitle: "Completed",
     icon: CheckCheck,
+    color: "#9A8F85",
+    emptyLabel: "No plans done",
   },
 ];
 

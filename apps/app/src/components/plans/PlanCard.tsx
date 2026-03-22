@@ -4,6 +4,7 @@ import type { PlanWithDetails } from "@mooch/stores";
 import { Avatar, Badge, Text } from "@mooch/ui";
 import { Calendar, ExternalLink } from "lucide-react";
 import { useRef } from "react";
+import { relativeTime } from "@/lib/expenses";
 
 type Props = {
   groupId: string;
@@ -15,6 +16,7 @@ type Props = {
 export function PlanCard({ groupId, plan, onClick, isDragging }: Props) {
   const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
   const isDone = plan.status === "done";
+  const isUpcoming = plan.status === "upcoming";
 
   const formattedDate = plan.date
     ? new Date(plan.date).toLocaleDateString("en-US", {
@@ -22,11 +24,11 @@ export function PlanCard({ groupId, plan, onClick, isDragging }: Props) {
         day: "numeric",
       })
     : null;
-  const createEventHref = isDone
+  const createEventHref = isUpcoming
     ? `/${groupId}/events/new?from_plan=${plan.id}`
     : null;
 
-  const hasMetadata = formattedDate || plan.organizer;
+  const createdAgo = relativeTime(plan.created_at);
 
   return (
     <div
@@ -64,26 +66,6 @@ export function PlanCard({ groupId, plan, onClick, isDragging }: Props) {
         aria-label={`Open ${plan.title}`}
       />
 
-      {createEventHref && (
-        <a
-          href={createEventHref}
-          onPointerDown={(event) => {
-            event.stopPropagation();
-          }}
-          onClick={(event) => {
-            event.stopPropagation();
-          }}
-          className="absolute bottom-3 right-3 z-20 opacity-0 transition-opacity group-hover/card:opacity-100 group-focus-within/card:opacity-100"
-        >
-          <Badge
-            label="Create event"
-            icon={<ExternalLink className="h-3 w-3" />}
-            variant="admin"
-            size="sm"
-          />
-        </a>
-      )}
-
       <div className="pointer-events-none relative z-10 min-w-0 p-3.5">
         <Text
           variant="body"
@@ -103,28 +85,57 @@ export function PlanCard({ groupId, plan, onClick, isDragging }: Props) {
           </Text>
         )}
 
-        {hasMetadata && (
-          <div className="mt-3 flex items-center gap-2">
-            {formattedDate && (
+        <div className="mt-3 flex items-center gap-2">
+          <Avatar
+            src={plan.created_by_profile.photo_url}
+            name={plan.created_by_profile.display_name}
+            size="sm"
+          />
+          <Text variant="caption" color="muted" className="truncate">
+            {plan.created_by_profile.display_name}
+            <span className="mx-1 opacity-40">·</span>
+            {createdAgo}
+          </Text>
+
+          <span className="flex-1" />
+
+          {createEventHref && (
+            <a
+              href={createEventHref}
+              onPointerDown={(event) => {
+                event.stopPropagation();
+              }}
+              onClick={(event) => {
+                event.stopPropagation();
+              }}
+              className="pointer-events-auto opacity-0 transition-opacity group-hover/card:opacity-100 group-focus-within/card:opacity-100"
+            >
               <Badge
-                label={formattedDate}
-                icon={<Calendar className="h-3 w-3" />}
-                variant="member"
+                label="Create event"
+                icon={<ExternalLink className="h-3 w-3" />}
+                variant="admin"
                 size="sm"
               />
-            )}
+            </a>
+          )}
 
-            <span className="flex-1" />
+          {formattedDate && (
+            <Badge
+              label={formattedDate}
+              icon={<Calendar className="h-3 w-3" />}
+              variant="member"
+              size="sm"
+            />
+          )}
 
-            {plan.organizer && (
-              <Avatar
-                src={plan.organizer.photo_url}
-                name={plan.organizer.display_name}
-                size="sm"
-              />
-            )}
-          </div>
-        )}
+          {plan.organizer && (
+            <Avatar
+              src={plan.organizer.photo_url}
+              name={plan.organizer.display_name}
+              size="sm"
+            />
+          )}
+        </div>
       </div>
     </div>
   );

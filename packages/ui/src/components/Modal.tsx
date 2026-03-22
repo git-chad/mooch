@@ -42,10 +42,10 @@ export function Modal({
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         {/* Backdrop — dark overlay, no blur */}
-        <Dialog.Backdrop className="modal-backdrop fixed inset-0 bg-black/40" />
+        <Dialog.Backdrop className="modal-backdrop fixed inset-0 z-50 bg-black/40" />
 
         {/* Viewport — always centered on all screen sizes */}
-        <Dialog.Viewport className="fixed inset-0 overflow-y-auto flex items-center justify-center p-4">
+        <Dialog.Viewport className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
           <Dialog.Popup
             className={cn(
               "modal-popup",

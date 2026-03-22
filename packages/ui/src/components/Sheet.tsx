@@ -79,8 +79,8 @@ function DefaultSheet({ open, onOpenChange, title, hideTitle, description, class
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Backdrop className="modal-backdrop fixed inset-0 bg-black/40" />
-        <Dialog.Viewport className="fixed inset-0 flex items-end justify-center">
+        <Dialog.Backdrop className="modal-backdrop fixed inset-0 z-50 bg-black/40" />
+        <Dialog.Viewport className="fixed inset-0 z-50 flex items-end justify-center">
           <Dialog.Popup
             ref={popupRef}
             className={cn(
@@ -153,8 +153,8 @@ function ReceiptSheet({ open, onOpenChange, title, description, className, child
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Backdrop className="modal-backdrop fixed inset-0 bg-black/40" />
-        <Dialog.Viewport className="fixed inset-0 flex items-end justify-center pb-4 px-4">
+        <Dialog.Backdrop className="modal-backdrop fixed inset-0 z-50 bg-black/40" />
+        <Dialog.Viewport className="fixed inset-0 z-50 flex items-end justify-center pb-4 px-4">
           <Dialog.Popup
             ref={popupRef}
             className={cn(
