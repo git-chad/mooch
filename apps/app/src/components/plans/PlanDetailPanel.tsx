@@ -194,7 +194,7 @@ export function PlanDetailPanel({
                   value={editDescription}
                   onChange={(event) => setEditDescription(event.target.value)}
                   rows={4}
-                  className="w-full resize-none rounded-2xl border border-[var(--color-edge)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,170,105,0.35)]"
+                  className="w-full resize-none rounded-[14px] border border-edge bg-surface px-3.5 py-2.5 text-sm font-sans text-ink placeholder:text-ink-placeholder outline-none shadow-[inset_0_2px_0_rgba(132,100,79,0.07)] focus:border-accent focus:ring-2 focus:ring-accent/15 focus:ring-offset-0 focus:-translate-y-px transition-[border-color,box-shadow,transform] duration-120"
                 />
               </div>
 
@@ -230,7 +230,7 @@ export function PlanDetailPanel({
                 <Text variant="label" className="mb-2 block">
                   Status
                 </Text>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-2 gap-1.5 rounded-[14px] border border-edge bg-[#F7F2ED] p-1.5">
                   {PLAN_STATUS_CONFIG.map((option) => {
                     const Icon = option.icon;
                     const isActive = plan.status === option.id;
@@ -241,21 +241,21 @@ export function PlanDetailPanel({
                         type="button"
                         onClick={() => handleStatusChange(option.id)}
                         disabled={isPending}
-                        className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition-colors"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-[10px] px-3 py-2 text-xs font-medium transition-all"
                         style={{
                           background: isActive
-                            ? "rgba(214, 170, 105, 0.18)"
-                            : "var(--color-surface-secondary)",
-                          borderColor: isActive
-                            ? "rgba(214, 170, 105, 0.45)"
-                            : "var(--color-edge)",
+                            ? "rgba(255,255,255,0.92)"
+                            : "transparent",
+                          boxShadow: isActive
+                            ? "0 1px 3px rgba(132,102,79,0.12), 0 1px 0 rgba(255,255,255,0.7) inset"
+                            : "none",
                           color: isActive
-                            ? "var(--color-text)"
-                            : "var(--color-text-muted)",
+                            ? "var(--color-ink)"
+                            : "var(--color-ink-sub)",
                         }}
                       >
-                        <Icon className="h-4 w-4" />
-                        {option.title}
+                        <Icon className="h-3.5 w-3.5" />
+                        {option.shortTitle}
                       </button>
                     );
                   })}
@@ -271,7 +271,7 @@ export function PlanDetailPanel({
 
               {plan.organizer && (
                 <div
-                  className="rounded-2xl border p-3"
+                  className="rounded-[14px] border p-3"
                   style={{
                     background: "var(--color-surface-secondary)",
                     borderColor: "var(--color-edge)",
@@ -300,7 +300,7 @@ export function PlanDetailPanel({
                     {photoAttachments.map((attachment) => (
                       <div
                         key={attachment.id}
-                        className="group relative overflow-hidden rounded-2xl border"
+                        className="group relative overflow-hidden rounded-[14px] border"
                         style={{
                           background: "var(--color-surface-secondary)",
                           borderColor: "var(--color-edge)",
@@ -334,7 +334,7 @@ export function PlanDetailPanel({
                     {voiceAttachments.map((attachment) => (
                       <div
                         key={attachment.id}
-                        className="relative rounded-2xl border p-3"
+                        className="relative rounded-[14px] border p-3"
                         style={{
                           background: "var(--color-surface-secondary)",
                           borderColor: "var(--color-edge)",
@@ -408,7 +408,7 @@ export function PlanDetailPanel({
 
                 <a
                   href={`/${groupId}/events/new?from_plan=${plan.id}`}
-                  className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[var(--color-edge)] bg-[var(--color-surface-secondary)] px-3 py-2 text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-tertiary)]"
+                  className="ml-auto inline-flex items-center gap-1.5 rounded-[10px] border border-[var(--color-edge)] bg-[var(--color-surface-secondary)] px-3 py-2 text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-tertiary)]"
                 >
                   <ExternalLink className="h-4 w-4" />
                   Create event

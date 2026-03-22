@@ -190,7 +190,7 @@ export function KanbanBoard({ groupId, currentUserId }: Props) {
                 ease: motionEase.out,
               }}
             >
-              <div className="mb-4 rounded-full border border-[var(--color-edge)] bg-[var(--color-surface)] p-4 text-[var(--color-text-muted)]">
+              <div className="mb-4 rounded-[16px] border border-[var(--color-edge)] bg-[var(--color-surface)] p-4 text-[var(--color-text-muted)]">
                 <LayoutList className="h-7 w-7" />
               </div>
               <Text variant="heading" className="mb-1">
@@ -221,6 +221,7 @@ export function KanbanBoard({ groupId, currentUserId }: Props) {
               {PLAN_STATUS_CONFIG.map((column) => (
                 <KanbanColumn
                   key={column.id}
+                  groupId={groupId}
                   status={column.id}
                   title={column.title}
                   plans={columnPlans[column.id]}
