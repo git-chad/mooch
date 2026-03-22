@@ -1,4 +1,4 @@
-export { type PlanId, type PlanLimits, PLAN_LIMITS } from "./plans";
+export { PLAN_LIMITS, type PlanId, type PlanLimits } from "./plans";
 
 export type User = {
   id: string;
@@ -119,6 +119,50 @@ export type SettlementPayment = {
   rate_fetched_at: string | null;
   notes: string | null;
   created_by: string;
+  created_at: string;
+};
+
+// --- Feed ---
+
+export type FeedItemType = "photo" | "voice" | "text";
+
+export type FeedItem = {
+  id: string;
+  group_id: string;
+  type: FeedItemType;
+  media_path: string | null;
+  caption: string | null;
+  duration_seconds: number | null;
+  linked_expense_id: string | null;
+  linked_event_id: string | null;
+  linked_poll_id: string | null;
+  created_by: string;
+  location_name: string | null;
+  location_coords: { x: number; y: number } | null;
+  created_at: string;
+  edited_at: string | null;
+};
+
+export type FeedReaction = {
+  feed_item_id: string;
+  user_id: string;
+  emoji: string;
+  created_at: string;
+};
+
+export type FeedReply = {
+  id: string;
+  feed_item_id: string;
+  user_id: string;
+  content: string;
+  created_at: string;
+};
+
+export type FeedMention = {
+  id: string;
+  feed_item_id: string | null;
+  feed_reply_id: string | null;
+  mentioned_user_id: string;
   created_at: string;
 };
 

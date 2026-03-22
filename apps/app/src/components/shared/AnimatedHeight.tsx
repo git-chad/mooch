@@ -6,6 +6,7 @@ import { useCallback, useRef, useState } from "react";
 type Props = {
   children: React.ReactNode;
   className?: string;
+  overflow?: "hidden" | "visible";
 };
 
 /**
@@ -13,7 +14,11 @@ type Props = {
  * Uses ResizeObserver to measure content, then spring-animates
  * a fixed height value. No `layout` prop — no skew bugs.
  */
-export function AnimatedHeight({ children, className }: Props) {
+export function AnimatedHeight({
+  children,
+  className,
+  overflow = "hidden",
+}: Props) {
   const reducedMotion = useReducedMotion() ?? false;
   const [height, setHeight] = useState<number | "auto">("auto");
   const prevHeight = useRef<number>(0);
@@ -52,7 +57,7 @@ export function AnimatedHeight({ children, className }: Props) {
   return (
     <motion.div
       className={className}
-      style={{ overflow: "hidden" }}
+      style={{ overflow }}
       animate={{ height }}
       transition={
         reducedMotion

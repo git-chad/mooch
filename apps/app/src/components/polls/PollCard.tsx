@@ -3,7 +3,7 @@
 import type { PollOptionWithVotes, PollWithOptions } from "@mooch/stores";
 import { usePollStore } from "@mooch/stores";
 import { Badge, Text } from "@mooch/ui";
-import { BarChart3, Pin } from "lucide-react";
+import { Ban, BarChart3, Crown, EyeOff, Flame, ListChecks, Pin } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -131,13 +131,33 @@ export function PollCard({ poll, currentUserId, groupId }: Props) {
     displayTotal >= 5;
 
   // Derive badges
-  const badges: { label: string; emoji: string; color?: string }[] = [];
-  if (poll.is_anonymous) badges.push({ label: "Anonymous", emoji: "🕶️" });
-  if (poll.is_multi_choice) badges.push({ label: "Multi-choice", emoji: "☑️" });
+  const badges: { label: string; icon: React.ReactNode; color?: string }[] = [];
+  if (poll.is_anonymous) {
+    badges.push({
+      label: "Anonymous",
+      icon: <EyeOff className="h-3 w-3" />,
+      color: "#546B7E",
+    });
+  }
+  if (poll.is_multi_choice) {
+    badges.push({
+      label: "Multi-choice",
+      icon: <ListChecks className="h-3 w-3" />,
+      color: "#7A6A5A",
+    });
+  }
   if (coupAction)
-    badges.push({ label: "Coup'd", emoji: "👑", color: "#b24a3a" });
+    badges.push({
+      label: "Coup'd",
+      icon: <Crown className="h-3 w-3" />,
+      color: "#B24A3A",
+    });
   if (hailMaryActive)
-    badges.push({ label: "Moochers blocked", emoji: "🙏", color: "#8b6914" });
+    badges.push({
+      label: "Moochers blocked",
+      icon: <Ban className="h-3 w-3" />,
+      color: "#8B6914",
+    });
 
   const handleVote = useCallback(
     (optionId: string) => {
@@ -323,7 +343,7 @@ export function PollCard({ poll, currentUserId, groupId }: Props) {
                   {isHot && (
                     <Badge
                       label="Hot"
-                      emoji="🔥"
+                      icon={<Flame className="h-3 w-3" />}
                       size="sm"
                       color="#FF6B35"
                     />
@@ -332,7 +352,7 @@ export function PollCard({ poll, currentUserId, groupId }: Props) {
                     <Badge
                       key={b.label}
                       label={b.label}
-                      emoji={b.emoji}
+                      icon={b.icon}
                       size="sm"
                       color={b.color}
                     />

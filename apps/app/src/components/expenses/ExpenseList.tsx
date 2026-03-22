@@ -3,9 +3,9 @@
 import { createBrowserClient, getExpenses } from "@mooch/db";
 import { useExpenseStore } from "@mooch/stores";
 import type { GroupMember, Profile } from "@mooch/types";
-import { Text } from "@mooch/ui";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useMemo, useState } from "react";
+import { EmptyState } from "@/components/EmptyState";
 import {
   getLayoutTransition,
   getSurfaceTransition,
@@ -97,15 +97,11 @@ export function ExpenseList({
 
   if (feedItems.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <p className="text-5xl mb-4">🍕</p>
-        <Text variant="heading" className="mb-1">
-          No expenses yet
-        </Text>
-        <Text variant="body" color="subtle">
-          Split your first one and keep it fair.
-        </Text>
-      </div>
+      <EmptyState
+        emoji="🍕"
+        title="No expenses yet"
+        description="Split your first one and keep it fair."
+      />
     );
   }
 

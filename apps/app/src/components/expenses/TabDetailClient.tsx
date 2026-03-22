@@ -249,6 +249,7 @@ export function TabDetailClient({
         </div>
 
         <AddExpenseModal
+          key={`add-expense-${tabId}-${addOpen ? "open" : "closed"}`}
           open={addOpen}
           onOpenChange={setAddOpen}
           groupId={groupId}
@@ -268,6 +269,7 @@ export function TabDetailClient({
           locale={group.locale}
         />
         <CreateTabModal
+          key={`edit-tab-${tab.id}-${editOpen ? "open" : "closed"}`}
           open={editOpen}
           onOpenChange={setEditOpen}
           groupId={groupId}

@@ -27,7 +27,12 @@
       "Bash(find /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync -type f -name *poll*)",
       "Bash(find /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync/apps/app/src/components -type f -name *oll* -o -name *oll*)",
       "Bash(npx turbo:*)",
-      "Bash(git fetch:*)"
+      "Bash(find /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync -name web-haptics* -o -name *haptic* -type f)",
+      "Bash(cat \"/Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync/apps/app/src/app/\\(shell\\)/[groupId]/expenses/[tabId]/page.tsx\")",
+      "Bash(find /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync/node_modules/geist -name *pixel* -o -name *Pixel*)",
+      "Bash(bun remove:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }

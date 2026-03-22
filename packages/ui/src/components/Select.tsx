@@ -136,10 +136,18 @@ export function Select(props: SelectProps) {
                         return (
                           <span
                             key={v}
-                            className="inline-flex items-center gap-1 text-xs bg-accent-bg text-accent-fg border border-accent-edge rounded-full px-2 py-0.5 font-medium leading-none"
+                            className="inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[11px] font-semibold leading-none ring-1 ring-inset ring-white/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.42),inset_0_-1px_2px_rgba(0,0,0,0.16),0_1px_0_rgba(67,121,29,0.9),0_4px_8px_rgba(72,121,33,0.22)]"
+                            style={{
+                              borderColor: "#80C34E",
+                              background:
+                                "linear-gradient(165deg,#ABDF69 0%,#5EAE34 100%)",
+                              color: "#F7FBFF",
+                            }}
                           >
-                            {opt?.icon && <span>{opt.icon}</span>}
-                            {opt?.label ?? v}
+                            {opt?.icon && (
+                              <span className="leading-none text-white/95">{opt.icon}</span>
+                            )}
+                            <span className="tracking-[0.01em]">{opt?.label ?? v}</span>
                           </span>
                         );
                       })}

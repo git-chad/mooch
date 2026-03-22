@@ -3,7 +3,7 @@
 import { useExpenseStore } from "@mooch/stores";
 import type { Tab } from "@mooch/types";
 import { Button, IconPicker, Input, Modal, Text } from "@mooch/ui";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { TextMorph } from "torph/react";
 import { createTab, updateTab } from "@/app/actions/tabs";
 import {
@@ -24,6 +24,30 @@ type Props = {
   onToggleStatus?: () => void;
 };
 
+function getInitialTabDraft({
+  isEdit,
+  tab,
+  groupCurrency,
+}: {
+  isEdit: boolean;
+  tab?: Tab;
+  groupCurrency: string;
+}) {
+  if (isEdit && tab) {
+    return {
+      name: tab.name,
+      icon: decodeGroupIcon(tab.emoji).value,
+      currency: tab.currency,
+    };
+  }
+
+  return {
+    name: "",
+    icon: "Receipt",
+    currency: groupCurrency,
+  };
+}
+
 export function CreateTabModal({
   open,
   onOpenChange,
@@ -36,10 +60,11 @@ export function CreateTabModal({
 }: Props) {
   const upsertTab = useExpenseStore((s) => s.upsertTab);
   const isEdit = mode === "edit";
+  const initialDraft = getInitialTabDraft({ isEdit, tab, groupCurrency });
 
-  const [name, setName] = useState("");
-  const [icon, setIcon] = useState("Receipt");
-  const [currency, setCurrency] = useState(groupCurrency);
+  const [name, setName] = useState(initialDraft.name);
+  const [icon, setIcon] = useState(initialDraft.icon);
+  const [currency, setCurrency] = useState(initialDraft.currency);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   function resetState() {
@@ -55,11 +80,6 @@ export function CreateTabModal({
     setLoading(false);
     setError(null);
   }
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: reset when modal opens or tab changes
-  useEffect(() => {
-    if (open) resetState();
-  }, [open, tab, mode]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

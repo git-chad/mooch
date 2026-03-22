@@ -10,7 +10,7 @@ import type {
 } from "@mooch/types";
 import { Avatar, Button, IconPicker, Modal, Text } from "@mooch/ui";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { TextMorph } from "torph/react";
 import {
   addExpense,
@@ -237,13 +237,6 @@ export function AddExpenseModal({
     setLoading(false);
     setError(null);
   }
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: resetting from incoming props is intentional here
-  useEffect(() => {
-    if (open) {
-      resetState();
-    }
-  }, [open, mode, initialExpense, members, currentUserId, groupCurrency]);
 
   function goNext() {
     setDirection(1);

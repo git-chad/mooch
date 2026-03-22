@@ -5,6 +5,7 @@ import { Text } from "@mooch/ui";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { GroupIcon } from "@/components/groups/group-icon";
+import { usePrefetch } from "@/hooks/usePrefetch";
 import { formatCurrency } from "@/lib/expenses";
 
 type Props = {
@@ -16,10 +17,13 @@ type Props = {
 
 export function TabCard({ tab, groupId, currency, locale }: Props) {
   const isClosed = tab.status === "closed";
+  const href = `/${groupId}/expenses/${tab.id}`;
+  const prefetchRef = usePrefetch<HTMLAnchorElement>(href);
 
   return (
     <Link
-      href={`/${groupId}/expenses/${tab.id}`}
+      ref={prefetchRef}
+      href={href}
       className="group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors hover:bg-[#F7F2ED]/60"
       style={{ opacity: isClosed ? 0.65 : 1 }}
     >

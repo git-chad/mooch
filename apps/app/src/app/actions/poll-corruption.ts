@@ -67,6 +67,16 @@ async function getPollOrThrow(admin: ReturnType<typeof createAdminClient>, pollI
     .eq("id", pollId)
     .single();
   if (!data) throw new Error("Poll not found");
+
+  if (!data.is_closed && data.closes_at && new Date(data.closes_at).getTime() <= Date.now()) {
+    await admin
+      .from("polls")
+      .update({ is_closed: true, updated_at: new Date().toISOString() })
+      .eq("id", pollId)
+      .eq("is_closed", false);
+    return { ...data, is_closed: true };
+  }
+
   return data;
 }
 
