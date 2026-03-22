@@ -5,6 +5,7 @@ import { Button, Input, Select, Sheet } from "@mooch/ui";
 import type { SelectOption } from "@mooch/ui";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { createPlan } from "@/app/actions/plans";
+import { DateTimePicker } from "@/components/shared/DateTimePicker";
 import { PLAN_STATUS_CONFIG } from "./plan-status";
 
 type Props = {
@@ -22,7 +23,7 @@ export function CreatePlanSheet({
 }: Props) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [date, setDate] = useState("");
+  const [date, setDate] = useState<Date | null>(null);
   const [status, setStatus] = useState<PlanStatus>(initialStatus);
   const [isPending, startTransition] = useTransition();
 
@@ -40,7 +41,7 @@ export function CreatePlanSheet({
   const resetForm = () => {
     setTitle("");
     setDescription("");
-    setDate("");
+    setDate(null);
     setStatus(initialStatus);
   };
 
@@ -52,7 +53,7 @@ export function CreatePlanSheet({
       const result = await createPlan(groupId, {
         title: title.trim(),
         description: description.trim() || undefined,
-        date: date || null,
+        date: date ? date.toISOString() : null,
         status,
       });
 
@@ -105,21 +106,13 @@ export function CreatePlanSheet({
           />
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="plan-date"
-            className="text-xs font-medium text-ink-label font-sans select-none"
-          >
-            Date
-          </label>
-          <input
-            id="plan-date"
-            type="datetime-local"
-            value={date}
-            onChange={(event) => setDate(event.target.value)}
-            className="w-full rounded-[14px] border border-edge bg-surface px-3.5 py-2.5 text-sm font-sans text-ink outline-none shadow-[inset_0_2px_0_rgba(132,100,79,0.07)] focus:border-accent focus:ring-2 focus:ring-accent/15 focus:ring-offset-0 focus:-translate-y-px transition-[border-color,box-shadow,transform] duration-120"
-          />
-        </div>
+        <DateTimePicker
+          label="Date"
+          value={date}
+          onChange={setDate}
+          placeholder="Pick a date & time"
+          minDate={new Date()}
+        />
 
         <Select
           label="Status"

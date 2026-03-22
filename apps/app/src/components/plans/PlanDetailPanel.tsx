@@ -211,7 +211,7 @@ export function PlanDetailPanel({
                 />
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex items-center gap-3 pt-1">
                 <Button
                   type="button"
                   variant="primary"
@@ -219,16 +219,15 @@ export function PlanDetailPanel({
                   onClick={handleSaveEdit}
                   disabled={!editTitle.trim() || isPending}
                 >
-                  {isPending ? "Saving..." : "Save"}
+                  {isPending ? "Saving..." : "Save changes"}
                 </Button>
-                <Button
+                <button
                   type="button"
-                  variant="ghost"
-                  size="sm"
                   onClick={() => setIsEditing(false)}
+                  className="text-xs font-medium text-[var(--color-ink-sub)] transition-colors hover:text-[var(--color-ink)]"
                 >
                   Cancel
-                </Button>
+                </button>
               </div>
             </>
           ) : (
@@ -354,7 +353,7 @@ export function PlanDetailPanel({
                 </div>
               )}
 
-              <div className="flex items-center gap-2 border-t border-[var(--color-edge)] pt-3">
+              <div className="flex items-center gap-2 border-t border-[var(--color-edge)] pt-4">
                 <Avatar
                   src={plan.created_by_profile.photo_url}
                   name={plan.created_by_profile.display_name}
@@ -363,17 +362,17 @@ export function PlanDetailPanel({
                 <Text variant="caption" color="subtle">
                   Created by {plan.created_by_profile.display_name}
                 </Text>
-              </div>
 
-              <div className="flex flex-wrap gap-2 pt-1">
+                <span className="flex-1" />
+
                 {canEdit && (
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="inline"
                     size="sm"
                     onClick={handleEdit}
                   >
-                    <Pencil className="mr-1.5 h-4 w-4" />
+                    <Pencil className="h-3.5 w-3.5" />
                     Edit
                   </Button>
                 )}
@@ -381,23 +380,14 @@ export function PlanDetailPanel({
                 {canDelete && (
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="inline-danger"
                     size="sm"
                     onClick={() => setConfirmDelete(true)}
-                    className="text-red-500 hover:text-red-600"
                   >
-                    <Trash2 className="mr-1.5 h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                     Delete
                   </Button>
                 )}
-
-                <a
-                  href={`/${groupId}/events/new?from_plan=${plan.id}`}
-                  className="ml-auto inline-flex items-center gap-1.5 rounded-[10px] border border-[var(--color-edge)] bg-[var(--color-surface-secondary)] px-3 py-2 text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-tertiary)]"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  Create event
-                </a>
               </div>
             </>
           )}

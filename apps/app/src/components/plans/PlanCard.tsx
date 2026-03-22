@@ -1,7 +1,7 @@
 "use client";
 
 import type { PlanWithDetails } from "@mooch/stores";
-import { Avatar, Text } from "@mooch/ui";
+import { Avatar, Badge, Text } from "@mooch/ui";
 import { Calendar, ExternalLink } from "lucide-react";
 import { useRef } from "react";
 
@@ -22,28 +22,26 @@ export function PlanCard({ groupId, plan, onClick, isDragging }: Props) {
         day: "numeric",
       })
     : null;
-  const createEventHref =
-    plan.status === "done"
-      ? `/${groupId}/events/new?from_plan=${plan.id}`
-      : null;
+  const createEventHref = isDone
+    ? `/${groupId}/events/new?from_plan=${plan.id}`
+    : null;
 
   const hasMetadata = formattedDate || plan.organizer;
 
   return (
     <div
-      className={`group/card relative w-full rounded-[14px] border text-left transition-[border-color,box-shadow,opacity,transform] duration-150 ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
+      className={`group/card relative w-full rounded-[14px] border text-left transition-[border-color,box-shadow,transform] duration-150 ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
       style={{
         background: isDone
-          ? "linear-gradient(180deg, rgba(150, 145, 138, 0.06) 0%, rgba(253, 252, 251, 0.92) 100%)"
-          : "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, var(--color-surface) 100%)",
+          ? "linear-gradient(165deg, rgba(240, 236, 232, 0.6) 0%, rgba(248, 245, 242, 0.85) 100%)"
+          : "linear-gradient(165deg, rgba(255,255,255,0.96) 0%, var(--color-surface) 100%)",
         borderColor: isDragging
           ? "rgba(214, 170, 105, 0.48)"
           : "var(--color-edge)",
         boxShadow: isDragging
-          ? "0 18px 38px rgba(46, 35, 24, 0.14)"
-          : "0 1px 0 rgba(255, 255, 255, 0.72) inset, 0 10px 22px rgba(132, 102, 79, 0.08)",
-        opacity: isDone ? 0.72 : 1,
-        transform: "none",
+          ? "inset 0 1px 0 rgba(255,255,255,0.6), 0 18px 38px rgba(46, 35, 24, 0.16), 0 2px 0 rgba(200,180,160,0.2)"
+          : "inset 0 1px 0 rgba(255,255,255,0.62), inset 0 -1px 2px rgba(0,0,0,0.03), 0 1px 0 rgba(200,180,160,0.18), 0 2px 5px rgba(132, 102, 79, 0.06)",
+        opacity: isDone ? 0.65 : 1,
       }}
     >
       <button
@@ -62,7 +60,7 @@ export function PlanCard({ groupId, plan, onClick, isDragging }: Props) {
           }
           onClick();
         }}
-        className="absolute inset-0 rounded-[14px]"
+        className="absolute inset-0 rounded-[14px] transition-shadow duration-150 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.62),inset_0_-1px_2px_rgba(0,0,0,0.03),0_1px_0_rgba(200,180,160,0.18),0_4px_10px_rgba(132,102,79,0.1)]"
         aria-label={`Open ${plan.title}`}
       />
 
@@ -75,10 +73,14 @@ export function PlanCard({ groupId, plan, onClick, isDragging }: Props) {
           onClick={(event) => {
             event.stopPropagation();
           }}
-          className="absolute bottom-3 right-3 z-20 inline-flex items-center gap-1.5 rounded-[10px] border border-[var(--color-edge)] bg-[rgba(255,255,255,0.94)] px-2.5 py-1.5 text-xs font-medium text-[var(--color-ink-label)] opacity-0 shadow-[0_1px_0_rgba(255,255,255,0.7)_inset,0_4px_8px_rgba(132,102,79,0.1)] transition-opacity hover:bg-white group-hover/card:opacity-100 group-focus-within/card:opacity-100"
+          className="absolute bottom-3 right-3 z-20 opacity-0 transition-opacity group-hover/card:opacity-100 group-focus-within/card:opacity-100"
         >
-          <ExternalLink className="h-3 w-3" />
-          Create event
+          <Badge
+            label="Create event"
+            icon={<ExternalLink className="h-3 w-3" />}
+            variant="admin"
+            size="sm"
+          />
         </a>
       )}
 
@@ -104,10 +106,12 @@ export function PlanCard({ groupId, plan, onClick, isDragging }: Props) {
         {hasMetadata && (
           <div className="mt-3 flex items-center gap-2">
             {formattedDate && (
-              <span className="inline-flex items-center gap-1 rounded-[8px] border border-[var(--color-edge)] bg-[rgba(255,255,255,0.7)] px-2 py-0.5 text-[11px] text-[var(--color-ink-sub)]">
-                <Calendar className="h-3 w-3" />
-                {formattedDate}
-              </span>
+              <Badge
+                label={formattedDate}
+                icon={<Calendar className="h-3 w-3" />}
+                variant="member"
+                size="sm"
+              />
             )}
 
             <span className="flex-1" />

@@ -5,10 +5,10 @@ import type { PlanWithDetails } from "@mooch/stores";
 import { usePlansBoardStore } from "@mooch/stores";
 import type { PlanStatus } from "@mooch/types";
 import { Button, Container, Text } from "@mooch/ui";
-import { LayoutList } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { movePlan as movePlanAction, reorderPlans } from "@/app/actions/plans";
+import { EmptyState } from "@/components/EmptyState";
 import { motionDuration, motionEase } from "@/lib/motion";
 import { CreatePlanSheet } from "./CreatePlanSheet";
 import { KanbanColumn } from "./KanbanColumn";
@@ -20,6 +20,8 @@ type Props = {
   currentUserId: string;
 };
 
+const revealedGroups = new Set<string>();
+
 export function KanbanBoard({ groupId, currentUserId }: Props) {
   const plans = usePlansBoardStore((s) => s.plans);
   const storeMovePlan = usePlansBoardStore((s) => s.movePlan);
@@ -30,6 +32,11 @@ export function KanbanBoard({ groupId, currentUserId }: Props) {
     null,
   );
   const reducedMotion = useReducedMotion() ?? false;
+  const shouldAnimateIn = !revealedGroups.has(groupId);
+
+  useEffect(() => {
+    revealedGroups.add(groupId);
+  }, [groupId]);
 
   const columnPlans = useMemo(() => {
     const nextColumns = {
@@ -177,7 +184,6 @@ export function KanbanBoard({ groupId, currentUserId }: Props) {
         <AnimatePresence>
           {plans.length === 0 && (
             <motion.div
-              className="flex flex-col items-center justify-center py-20 text-center"
               initial={
                 reducedMotion
                   ? { opacity: 0 }
@@ -190,27 +196,24 @@ export function KanbanBoard({ groupId, currentUserId }: Props) {
                 ease: motionEase.out,
               }}
             >
-              <div className="mb-4 rounded-[16px] border border-[var(--color-edge)] bg-[var(--color-surface)] p-4 text-[var(--color-text-muted)]">
-                <LayoutList className="h-7 w-7" />
-              </div>
-              <Text variant="heading" className="mb-1">
-                No plans yet
-              </Text>
-              <Text variant="body" color="subtle" className="mb-4 max-w-md">
-                Start mapping ideas, move them across states, and keep the squad
-                aligned without leaving the board.
-              </Text>
-              <Button
-                type="button"
-                variant="primary"
-                size="sm"
-                onClick={() => {
-                  setCreateColumn("ideas");
-                  setCreateOpen(true);
-                }}
+              <EmptyState
+                emoji="📋"
+                title="No plans yet"
+                description="Start mapping ideas, move them across columns, and keep the squad aligned."
               >
-                + New plan
-              </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  className="mt-4"
+                  onClick={() => {
+                    setCreateColumn("ideas");
+                    setCreateOpen(true);
+                  }}
+                >
+                  + New plan
+                </Button>
+              </EmptyState>
             </motion.div>
           )}
         </AnimatePresence>

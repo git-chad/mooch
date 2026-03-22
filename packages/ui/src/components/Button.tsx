@@ -5,7 +5,7 @@ import { useWebHaptics } from "web-haptics/react";
 import { cn } from "../lib/cn";
 import { Text } from "./Text";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "inline" | "inline-danger";
 export type ButtonSize = "sm" | "md" | "lg";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -38,6 +38,16 @@ const variantClasses: Record<ButtonVariant, string> = {
   secondary: cn("btn-secondary", "border border-edge", "text-btn-secondary-fg"),
   ghost: cn("btn-ghost", "text-btn-ghost-fg"),
   danger: cn("btn-danger", "border border-danger", "text-white font-medium"),
+  inline: cn(
+    "text-ink-sub font-medium",
+    "transition-colors duration-100",
+    "hover:bg-hover-bg hover:text-ink",
+  ),
+  "inline-danger": cn(
+    "text-ink-sub font-medium",
+    "transition-colors duration-100",
+    "hover:bg-[rgba(192,57,43,0.08)] hover:text-danger",
+  ),
 };
 
 const hapticMap: Record<ButtonVariant, string> = {
@@ -45,6 +55,8 @@ const hapticMap: Record<ButtonVariant, string> = {
   secondary: "light",
   ghost: "light",
   danger: "warning",
+  inline: "light",
+  "inline-danger": "light",
 };
 
 export function Button({
