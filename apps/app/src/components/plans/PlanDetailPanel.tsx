@@ -2,8 +2,10 @@
 
 import { createBrowserClient, getSignedPlanAttachmentUrl } from "@mooch/db";
 import type { PlanWithDetails } from "@mooch/stores";
+import { usePlansBoardStore } from "@mooch/stores";
 import type { PlanStatus } from "@mooch/types";
-import { Avatar, Button, ConfirmDialog, Input, Sheet, Text } from "@mooch/ui";
+import { Avatar, Button, ConfirmDialog, Input, Select, Sheet, Text } from "@mooch/ui";
+import type { SelectOption } from "@mooch/ui";
 import {
   Calendar,
   Camera,
@@ -33,12 +35,18 @@ export function PlanDetailPanel({
   groupId,
   currentUserId,
 }: Props) {
+  const upsertPlan = usePlansBoardStore((s) => s.upsertPlan);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+
+  const statusOptions: SelectOption[] = PLAN_STATUS_CONFIG.map((s) => ({
+    value: s.id,
+    label: s.title,
+  }));
 
   useEffect(() => {
     if (!plan) {
@@ -151,9 +159,14 @@ export function PlanDetailPanel({
   };
 
   const handleStatusChange = (newStatus: PlanStatus) => {
+    // Optimistically update the store
+    upsertPlan({ ...plan, status: newStatus });
+
     startTransition(async () => {
       const result = await updatePlan(plan.id, { status: newStatus });
       if ("error" in result) {
+        // Revert on failure
+        upsertPlan(plan);
         console.error("Failed to update plan status:", result.error);
       }
     });
@@ -226,41 +239,13 @@ export function PlanDetailPanel({
                 </Text>
               )}
 
-              <div>
-                <Text variant="label" className="mb-2 block">
-                  Status
-                </Text>
-                <div className="grid grid-cols-2 gap-1.5 rounded-[14px] border border-edge bg-[#F7F2ED] p-1.5">
-                  {PLAN_STATUS_CONFIG.map((option) => {
-                    const Icon = option.icon;
-                    const isActive = plan.status === option.id;
-
-                    return (
-                      <button
-                        key={option.id}
-                        type="button"
-                        onClick={() => handleStatusChange(option.id)}
-                        disabled={isPending}
-                        className="inline-flex items-center justify-center gap-1.5 rounded-[10px] px-3 py-2 text-xs font-medium transition-all"
-                        style={{
-                          background: isActive
-                            ? "rgba(255,255,255,0.92)"
-                            : "transparent",
-                          boxShadow: isActive
-                            ? "0 1px 3px rgba(132,102,79,0.12), 0 1px 0 rgba(255,255,255,0.7) inset"
-                            : "none",
-                          color: isActive
-                            ? "var(--color-ink)"
-                            : "var(--color-ink-sub)",
-                        }}
-                      >
-                        <Icon className="h-3.5 w-3.5" />
-                        {option.shortTitle}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <Select
+                label="Status"
+                options={statusOptions}
+                value={plan.status}
+                onValueChange={(v) => handleStatusChange(v as PlanStatus)}
+                disabled={isPending}
+              />
 
               {formattedDate && (
                 <div className="flex items-center gap-2 text-[var(--color-text-muted)]">

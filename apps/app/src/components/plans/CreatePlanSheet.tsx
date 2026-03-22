@@ -1,8 +1,9 @@
 "use client";
 
 import type { PlanStatus } from "@mooch/types";
-import { Button, Input, Sheet, Text } from "@mooch/ui";
-import { useEffect, useState, useTransition } from "react";
+import { Button, Input, Select, Sheet } from "@mooch/ui";
+import type { SelectOption } from "@mooch/ui";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { createPlan } from "@/app/actions/plans";
 import { PLAN_STATUS_CONFIG } from "./plan-status";
 
@@ -24,6 +25,11 @@ export function CreatePlanSheet({
   const [date, setDate] = useState("");
   const [status, setStatus] = useState<PlanStatus>(initialStatus);
   const [isPending, startTransition] = useTransition();
+
+  const statusOptions: SelectOption[] = useMemo(
+    () => PLAN_STATUS_CONFIG.map((s) => ({ value: s.id, label: s.title })),
+    [],
+  );
 
   useEffect(() => {
     if (open) {
@@ -115,38 +121,12 @@ export function CreatePlanSheet({
           />
         </div>
 
-        <div className="flex flex-col gap-2">
-          <Text variant="label">Status</Text>
-          <div className="grid grid-cols-2 gap-1.5 rounded-[14px] border border-edge bg-[#F7F2ED] p-1.5">
-            {PLAN_STATUS_CONFIG.map((option) => {
-              const Icon = option.icon;
-              const isActive = status === option.id;
-
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => setStatus(option.id)}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-[10px] px-3 py-2 text-xs font-medium transition-all"
-                  style={{
-                    background: isActive
-                      ? "rgba(255,255,255,0.92)"
-                      : "transparent",
-                    boxShadow: isActive
-                      ? "0 1px 3px rgba(132,102,79,0.12), 0 1px 0 rgba(255,255,255,0.7) inset"
-                      : "none",
-                    color: isActive
-                      ? "var(--color-ink)"
-                      : "var(--color-ink-sub)",
-                  }}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  {option.shortTitle}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <Select
+          label="Status"
+          options={statusOptions}
+          value={status}
+          onValueChange={(v) => setStatus(v as PlanStatus)}
+        />
 
         <Button
           type="submit"

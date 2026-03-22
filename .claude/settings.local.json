@@ -26,7 +26,8 @@
       "Bash(npx skills:*)",
       "Bash(find /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync -type f -name *poll*)",
       "Bash(find /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync/apps/app/src/components -type f -name *oll* -o -name *oll*)",
-      "Bash(npx turbo:*)"
+      "Bash(npx turbo:*)",
+      "Bash(git fetch:*)"
     ]
   }
 }

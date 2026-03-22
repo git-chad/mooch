@@ -59,7 +59,7 @@ export function KanbanColumn({
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className="flex flex-1 flex-col gap-3 rounded-[16px] p-1 transition-[background-color,box-shadow] duration-150"
+            className="flex flex-1 flex-col rounded-[16px] p-1 transition-[background-color,box-shadow] duration-150"
             style={{
               background: snapshot.isDraggingOver
                 ? "linear-gradient(180deg, rgba(249, 236, 213, 0.28) 0%, rgba(249, 236, 213, 0.08) 100%)"
@@ -82,7 +82,7 @@ export function KanbanColumn({
                     {...dragProvided.draggableProps}
                     {...dragProvided.dragHandleProps}
                     style={dragProvided.draggableProps.style}
-                    className="select-none"
+                    className="mb-3 last:mb-0 select-none"
                   >
                     <PlanCard
                       groupId={groupId}

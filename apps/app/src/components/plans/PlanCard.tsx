@@ -43,7 +43,7 @@ export function PlanCard({ groupId, plan, onClick, isDragging }: Props) {
           ? "0 18px 38px rgba(46, 35, 24, 0.14)"
           : "0 1px 0 rgba(255, 255, 255, 0.72) inset, 0 10px 22px rgba(132, 102, 79, 0.08)",
         opacity: isDone ? 0.72 : 1,
-        transform: isDragging ? "rotate(1deg)" : undefined,
+        transform: "none",
       }}
     >
       <button
