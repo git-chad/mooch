@@ -28,7 +28,7 @@ export function KanbanColumn({
 
   return (
     <div
-      className="flex min-h-[420px] flex-col rounded-2xl border p-3"
+      className="group flex min-h-[460px] flex-col rounded-2xl border p-3"
       style={{
         background: "var(--color-surface)",
         borderColor: "var(--color-edge)",
@@ -52,7 +52,7 @@ export function KanbanColumn({
         <button
           type="button"
           onClick={onAddClick}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--color-edge)] bg-[var(--color-surface-secondary)] text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-surface-tertiary)] hover:text-[var(--color-text)]"
+          className="pointer-events-none inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--color-text-muted)] opacity-0 transition-all hover:text-[var(--color-text)] group-hover:pointer-events-auto group-hover:opacity-100"
           aria-label={`Add plan to ${title}`}
         >
           <Plus className="h-4 w-4" />
@@ -82,11 +82,7 @@ export function KanbanColumn({
                     {...dragProvided.draggableProps}
                     {...dragProvided.dragHandleProps}
                     style={dragProvided.draggableProps.style}
-                    className={
-                      dragSnapshot.isDragging
-                        ? "rotate-[1deg] scale-[1.01] transition-transform"
-                        : "transition-transform"
-                    }
+                    className="transition-transform"
                   >
                     <PlanCard
                       plan={plan}

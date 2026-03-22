@@ -5,10 +5,7 @@ import type { PlanWithDetails } from "@mooch/stores";
 import type { PlanStatus } from "@mooch/types";
 import { Button, Container, Text } from "@mooch/ui";
 import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
-import {
-  LayoutList,
-  MoveRight,
-} from "lucide-react";
+import { LayoutList } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useCallback, useMemo, useState } from "react";
 import { movePlan as movePlanAction, reorderPlans } from "@/app/actions/plans";
@@ -226,44 +223,29 @@ export function KanbanBoard({ groupId, currentUserId }: Props) {
         </AnimatePresence>
 
         {plans.length > 0 && (
-          <>
-            <div
-              className="flex items-center gap-2 rounded-2xl border px-4 py-3"
-              style={{
-                background: "var(--color-surface)",
-                borderColor: "var(--color-edge)",
-              }}
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <motion.div
+              layout
+              className="grid gap-3 md:grid-cols-2 xl:grid-cols-4"
+              transition={itemTransition}
             >
-              <MoveRight className="h-4 w-4 text-[var(--color-text-muted)]" />
-              <Text variant="caption" color="subtle">
-                Drag any card between columns to update its status instantly.
-              </Text>
-            </div>
-
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <motion.div
-                layout
-                className="grid gap-3 md:grid-cols-2 xl:grid-cols-4"
-                transition={itemTransition}
-              >
-                {PLAN_STATUS_CONFIG.map((column) => (
-                  <motion.div
-                    key={column.id}
-                    layout="position"
-                    transition={itemTransition}
-                  >
-                    <KanbanColumn
-                      status={column.id}
-                      title={column.title}
-                      plans={columnPlans[column.id]}
-                      onAddClick={() => handleAddClick(column.id)}
-                      onPlanClick={setSelectedPlan}
-                    />
-                  </motion.div>
-                ))}
-              </motion.div>
-            </DragDropContext>
-          </>
+              {PLAN_STATUS_CONFIG.map((column) => (
+                <motion.div
+                  key={column.id}
+                  layout="position"
+                  transition={itemTransition}
+                >
+                  <KanbanColumn
+                    status={column.id}
+                    title={column.title}
+                    plans={columnPlans[column.id]}
+                    onAddClick={() => handleAddClick(column.id)}
+                    onPlanClick={setSelectedPlan}
+                  />
+                </motion.div>
+              ))}
+            </motion.div>
+          </DragDropContext>
         )}
 
         <CreatePlanSheet
