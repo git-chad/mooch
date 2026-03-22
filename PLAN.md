@@ -1671,7 +1671,7 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 
 ### 6.1 — Database Migrations: Feed
 
-- [ ] 6.1.1 — Create `supabase/migrations/0013_feed.sql`:
+- [x] 6.1.1 — Create `supabase/migrations/0013_feed.sql`:
 
   ```sql
   create type feed_item_type as enum ('photo', 'voice', 'text');
@@ -1712,38 +1712,40 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
     ));
   ```
 
-- [ ] 6.1.2 — Add `FeedItem`, `FeedReaction` types to `packages/types`.
+- [x] 6.1.2 — Add `FeedItem`, `FeedReaction` types to `packages/types`.
 
 ### 6.2 — Feed Queries & Server Actions
 
-- [ ] 6.2.1 — `packages/db/src/queries/feed.ts`:
+- [x] 6.2.1 — `packages/db/src/queries/feed.ts`:
   - `getFeedItems(supabase, groupId, cursor?)` — paginated 20/page, desc by `created_at`, continuous stream (no day grouping), with creator profile + reaction counts + current user reaction
   - `getFeedItemById(supabase, itemId)` — full detail
   - `getSignedFeedMediaUrl(supabase, mediaPath)` — signed URL for private media rendering
-- [ ] 6.2.2 — `apps/app/src/app/actions/feed.ts` (Server Actions):
+- [x] 6.2.2 — `apps/app/src/app/actions/feed.ts` (Server Actions):
   - `addFeedItem(groupId, data)`
   - `deleteFeedItem(itemId)` — creator/admin only
   - `toggleReaction(itemId, emoji)` — upsert/delete (one reaction per user; switching replaces previous)
   - All actions apply optimistic local state first; realtime reconciles final truth
 
-### 6.3 — Supabase Storage: Media
+### 6.3 — Feed Media Storage (Initial Prototype)
 
-- [ ] 6.3.1 — Create **private** `feed-media` bucket (authenticated uploads, 10MB photo / 5MB voice limits).
-- [ ] 6.3.2 — Storage RLS: group members can upload + read.
-- [ ] 6.3.3 — `packages/db/src/storage/feed.ts`:
+- [x] 6.3.1 — Create **private** `feed-media` bucket (authenticated uploads, 10MB photo / 5MB voice limits) via `supabase/migrations/0014_feed_media_bucket.sql`.
+- [x] 6.3.2 — Storage RLS: group members can upload + read.
+- [x] 6.3.3 — `packages/db/src/storage/feed.ts`:
   - `uploadFeedPhoto(supabase, groupId, file)` — compress to 1080px max width (Canvas API) → upload → return storage path
   - `uploadFeedVoice(supabase, groupId, blob)` — upload audio blob → return storage path
   - `deleteFeedMedia(supabase, mediaPath)`
 
+Note: this Supabase Storage bucket was a working prototype to unblock feed development. Supabase remains the backend for auth, DB, RLS, and feed metadata, but the long-term plan for large media objects is Cloudflare R2.
+
 ### 6.4 — Feed UI
 
-- [ ] 6.4.1 — `apps/app/src/app/(shell)/[groupId]/feed/page.tsx`:
+- [x] 6.4.1 — `apps/app/src/app/(shell)/[groupId]/feed/page.tsx`:
   - Single-column continuous stream (Instagram-like), infinite scroll (intersection observer), **no day separators**
   - **No stories strip in v1**
   - Docked quick composer bar (Text / Photo / Voice) that stays accessible while scrolling
   - Medium-playful visual direction (homepage spirit through card/composer styling and motion), with **no decorative sticker/background layer in v1**
   - Empty state copy uses edgy homepage tone
-- [ ] 6.4.2 — `apps/app/src/components/feed/FeedItemCard.tsx`:
+- [x] 6.4.2 — `apps/app/src/components/feed/FeedItemCard.tsx`:
   - Header: avatar, name, relative timestamp
   - Comfortable (not compact) card density and spacing
   - **Photo:** full-width image + caption. Tap → lightbox.
@@ -1752,19 +1754,19 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
   - Context badge (expense / poll link in v1; event deferred to Phase 7)
   - Footer: `ReactionBar`
   - Delete button (own items only, confirm)
-- [ ] 6.4.3 — `apps/app/src/components/feed/ReactionBar.tsx`:
+- [x] 6.4.3 — `apps/app/src/components/feed/ReactionBar.tsx`:
   - Emoji chips with counts ("❤️ 3 🔥 2")
   - Tap to toggle your reaction (one reaction per user per item)
   - "+" opens preset picker: ❤️ 😂 🔥 😮 👏 💀
   - Scale bounce animation (Motion) on tap + optimistic count updates
   - Real-time: subscribe to `feed_reactions` changes via Realtime for reconciliation
-- [ ] 6.4.4 — `apps/app/src/components/feed/PostPhotoSheet.tsx`:
+- [x] 6.4.4 — `apps/app/src/components/feed/PostPhotoSheet.tsx`:
   - File input (camera on mobile, gallery on desktop)
   - Client-side preview + compression (Canvas API)
   - Caption textarea (optional, max 200 chars)
   - Optional link to expense/poll (event deferred to Phase 7)
   - "Post" → compress → upload → `addFeedItem`
-- [ ] 6.4.5 — `apps/app/src/components/feed/RecordVoiceSheet.tsx`:
+- [x] 6.4.5 — `apps/app/src/components/feed/RecordVoiceSheet.tsx`:
   - Start/stop recording via `MediaRecorder` API
   - Live audio level bar animation
   - Max 60 seconds
@@ -1772,26 +1774,115 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
   - Caption textarea
   - Optional link to expense/poll (event deferred to Phase 7)
   - "Post" → upload → `addFeedItem`
-- [ ] 6.4.6 — `apps/app/src/components/feed/ImageLightbox.tsx`:
+- [x] 6.4.6 — `apps/app/src/components/feed/ImageLightbox.tsx`:
   - Full-screen overlay, close on Escape or backdrop click
   - Arrow navigation between consecutive photos in feed
   - Pinch-to-zoom on mobile (touch events)
 
-### 6.5 — Verify & Test
+### 6.5 — Post Editing
 
-- [ ] 6.5.1 — Post photo (file picker) → appears in feed.
-- [ ] 6.5.2 — Image compressed before upload (verify size < original).
-- [ ] 6.5.3 — Record voice note → preview works before posting.
-- [ ] 6.5.4 — Post voice note → play button + duration shown in feed.
-- [ ] 6.5.5 — Post text → appears in feed.
-- [ ] 6.5.6 — Add reaction → updates in real-time on other tab.
-- [ ] 6.5.7 — Remove reaction → count decreases.
-- [ ] 6.5.8 — Lightbox opens, closes on Escape, navigates between photos.
-- [ ] 6.5.9 — Delete own item → removed. Cannot delete others'.
-- [ ] 6.5.10 — Infinite scroll loads next page at bottom.
-- [ ] 6.5.11 — Feed stays a continuous stream (no stories strip, no day separators).
-- [ ] 6.5.12 — Reactions and post/delete actions feel instant (optimistic), then reconcile via realtime without flicker.
-- [ ] 6.5.13 — Private media access works only for group members via signed URLs.
+- [x] 6.5.1 — Migration: add `edited_at` (timestamptz, nullable) column to `feed_items`.
+- [x] 6.5.2 — Server action `editFeedItem(itemId, { caption })`:
+  - Only the creator can edit
+  - Text posts: full caption edit (1-500 chars)
+  - Photo/voice posts: caption-only edit (0-200 chars)
+  - Sets `edited_at = now()` on every edit
+  - Returns updated item
+- [x] 6.5.3 — `FeedItemCard`: show "(edited)" label next to timestamp when `edited_at` is set.
+- [x] 6.5.4 — Edit UI: inline edit mode on `FeedItemCard` — tap edit icon → textarea replaces caption → save/cancel buttons. No sheet/modal.
+- [x] 6.5.5 — Optimistic edit: update caption locally, revert on server error.
+
+### 6.6 — Reply Threads
+
+- [x] 6.6.1 — Migration: create `feed_replies` table:
+  - `id` (UUID PK), `feed_item_id` (FK → feed_items ON DELETE CASCADE), `user_id` (FK → profiles), `content` (text, max 500 chars), `created_at` (timestamptz)
+  - RLS: group members can SELECT/INSERT/DELETE (own replies only for delete)
+- [x] 6.6.2 — Types: add `FeedReply` to `packages/types`.
+- [x] 6.6.3 — Queries: `getReplies(supabase, feedItemId)` — returns replies with creator profile, ordered by `created_at` asc. Also `getReplyCount` and `getReplyCounts` for batch counts.
+- [x] 6.6.4 — Server actions: `addReply(feedItemId, content)`, `deleteReply(replyId)`.
+- [x] 6.6.5 — `FeedItemCard`: show reply count badge. Tap to expand inline reply thread below the card.
+- [x] 6.6.6 — Reply input: compact text input at bottom of expanded thread, with send button.
+- [x] 6.6.7 — Realtime: subscribe to `feed_replies` inserts/deletes for visible threads.
+- [x] 6.6.8 — Optimistic replies: instant local insert, reconcile via realtime.
+
+### 6.7 — Mentions
+
+- [x] 6.7.1 — Mention detection: parse `@[Display Name](userId)` from caption/reply content at save time.
+- [x] 6.7.2 — Migration: create `feed_mentions` table:
+  - `id` (UUID PK), `feed_item_id` (FK → feed_items, nullable), `feed_reply_id` (FK → feed_replies, nullable), `mentioned_user_id` (FK → profiles), `created_at` (timestamptz)
+  - CHECK: exactly one of `feed_item_id` or `feed_reply_id` must be non-null
+  - RLS: group members can SELECT; insert handled by server action via admin client
+- [x] 6.7.3 — Mention autocomplete: in text/caption/reply inputs, typing `@` opens a member dropdown filtered by typed characters. Keyboard navigation (arrows, Enter/Tab, Escape).
+- [x] 6.7.4 — Mention rendering: `@Name` rendered as a styled inline pill/highlight in captions, text posts, and replies.
+- [x] 6.7.5 — Server-side: extract mentions from content in `addFeedItem`, `editFeedItem`, `addReply` — upsert into `feed_mentions` via `syncMentions`.
+- [x] 6.7.6 — (Notification hook: defer to Phase 9 — for now, just store mentions for future notification system.)
+
+### 6.8 — Location Tags
+
+- [x] 6.8.1 — Migration: add `location_name` (text, nullable, max 100 chars) and `location_coords` (point, nullable) to `feed_items`.
+- [x] 6.8.2 — Update `addFeedItem` and `editFeedItem` to accept optional `location_name` and `location_coords`.
+- [x] 6.8.3 — Update `FeedItem` type with new fields.
+- [x] 6.8.4 — Composer UI: optional "Add location" button in all three composer sheets. Opens a text input for place name (free text, no geocoding API in v1).
+- [x] 6.8.5 — `FeedItemCard`: show location pill below the header when `location_name` is set (MapPin icon + name).
+
+### 6.9 — Cloudflare R2-Backed Feed Media
+
+**Architecture note:** Supabase stays the primary backend for auth, Postgres, RLS, server actions, and feed item metadata. Cloudflare R2 is used only for storing blob media (photos, voice, and later videos). `feed_items.media_path` continues to store the object key/path; the app resolves that key to a signed R2 URL server-side.
+
+- [x] 6.9.1 — Set up Cloudflare R2 bucket (`mooch-feed-media`) and generate S3-compatible API credentials.
+- [x] 6.9.2 — Add server-only R2 env vars for local dev and deployment:
+  - `R2_ACCOUNT_ID`
+  - `R2_ACCESS_KEY_ID`
+  - `R2_SECRET_ACCESS_KEY`
+  - `R2_BUCKET_NAME`
+  - Update `.env.example` / app env examples accordingly
+- [x] 6.9.3 — Create `packages/db/src/storage/r2.ts`:
+  - R2 client using `@aws-sdk/client-s3` with Cloudflare endpoint
+  - `uploadToR2(key, body, contentType)` — PutObject
+  - `getSignedR2Url(key, expiresIn)` — GetObject presigned URL
+  - `deleteFromR2(key)` — DeleteObject
+- [x] 6.9.4 — Move feed media uploads behind a server-controlled boundary:
+  - Do **not** expose R2 credentials in the client
+  - Either add a server action / route handler that uploads to R2, or a server-generated presigned upload URL flow
+  - Keep the existing logical path structure (`{groupId}/photos/...`, `{groupId}/voice/...`)
+- [x] 6.9.5 — Update feed media write/delete helpers so photo + voice uploads go to R2, while Supabase remains the authority for membership/authorization checks.
+- [x] 6.9.6 — Update `getSignedFeedMediaUrl` to resolve `media_path` through R2 presigned URLs server-side.
+- [x] 6.9.7 — Keep Supabase feed records unchanged apart from storing the R2 object key in `media_path`.
+- [x] 6.9.8 — Decide the treatment of the existing `feed-media` Supabase bucket prototype:
+  - Preferred: keep it temporarily for existing/dev objects while new uploads go to R2
+  - Add an explicit follow-up if a full backfill or cleanup is later desired
+- [x] 6.9.9 — Do **not** add object auto-expiry unless product explicitly wants disappearing media. Default behavior: feed media persists.
+- [ ] 6.9.10 — Verify end-to-end:
+  - [x] Photo upload stores object in R2 and item in Supabase
+  - [x] Voice upload stores object in R2 and item in Supabase
+  - [x] Signed read URLs render correctly in feed
+  - [x] Delete post removes the object from R2
+  - Non-members still cannot create/read feed items because authorization remains enforced through Supabase-backed server logic
+
+### 6.10 — Verify & Test
+
+- [x] 6.10.1 — Post photo (file picker) → appears in feed.
+- [ ] 6.10.2 — Image compressed before upload (verify size < original).
+- [x] 6.10.3 — Record voice note → preview works before posting.
+- [x] 6.10.4 — Post voice note → play button + duration shown in feed.
+- [ ] 6.10.5 — Post text → appears in feed.
+- [ ] 6.10.6 — Add reaction → updates in real-time on other tab.
+- [ ] 6.10.7 — Remove reaction → count decreases.
+- [x] 6.10.8 — Delete own item → removed. Cannot delete others'.
+- [ ] 6.10.9 — Infinite scroll loads next page at bottom.
+- [ ] 6.10.10 — Feed stays a continuous stream (no stories strip, no day separators).
+- [ ] 6.10.11 — Reactions and post/delete actions feel instant (optimistic), then reconcile via realtime without flicker.
+- [ ] 6.10.12 — Private media access works only for group members via signed URLs.
+- [ ] 6.10.13 — Edit text post → caption updates, "(edited)" shown.
+- [ ] 6.10.14 — Edit photo/voice caption → updates correctly.
+- [ ] 6.10.15 — Reply to a post → reply appears in thread, count increments.
+- [ ] 6.10.16 — Delete own reply → removed. Cannot delete others'.
+- [ ] 6.10.17 — Type `@` in text/caption/reply → member autocomplete appears.
+- [ ] 6.10.18 — Mention renders as styled pill in feed.
+- [ ] 6.10.19 — Add location to post → location pill shown on card.
+- [ ] 6.10.20 — R2: photo upload → signed URL loads correctly.
+- [ ] 6.10.21 — R2: voice upload → signed URL plays correctly.
+- [ ] 6.10.22 — R2: delete media → object removed from bucket.
 
 ---
 
@@ -1803,10 +1894,15 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 - [ ] Reactions work in real-time
 - [ ] Post/delete/reaction flows are optimistic and reconcile cleanly via realtime
 - [ ] Infinite scroll pagination works
-- [ ] Lightbox works (open, close, navigation)
 - [ ] Delete: own items only
 - [ ] No stories strip in v1 and continuous stream layout is preserved
-- [ ] Feed media bucket remains private; media renders through signed URLs only for members
+- [ ] Edit: text posts fully editable, photo/voice caption-only
+- [ ] Edit: "(edited)" label shown after edit
+- [ ] Replies: add/delete/realtime sync
+- [ ] Mentions: autocomplete, styled rendering, stored in DB
+- [ ] Location: optional free-text tag, shown on card
+- [ ] R2: all media uploads/reads/deletes go through Cloudflare R2
+- [ ] R2: signed URLs work for private media access
 
 **Phase 6 Status: ⬜ — Awaiting approval**
 
@@ -1824,7 +1920,7 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 
 ### 7.1 — Database Migrations: Events
 
-- [ ] 7.1.1 — Create `supabase/migrations/0014_events.sql`:
+- [ ] 7.1.1 — Create `supabase/migrations/0015_events.sql`:
 
   ```sql
   create type rsvp_status as enum ('yes', 'no', 'maybe');

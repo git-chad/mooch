@@ -13,6 +13,11 @@ type CreatePollInput = {
   options: string[];
 };
 
+function isExpired(closesAt: string | null | undefined): boolean {
+  if (!closesAt) return false;
+  return new Date(closesAt).getTime() <= Date.now();
+}
+
 export async function createPoll(
   groupId: string,
   data: CreatePollInput,
@@ -90,12 +95,21 @@ export async function vote(
   // Fetch poll
   const { data: poll } = await admin
     .from("polls")
-    .select("id, group_id, is_multi_choice, is_closed")
+    .select("id, group_id, is_multi_choice, is_closed, closes_at")
     .eq("id", pollId)
     .single();
 
   if (!poll) return { error: "Poll not found" };
-  if (poll.is_closed) return { error: "Poll is closed" };
+  if (poll.is_closed || isExpired(poll.closes_at)) {
+    if (!poll.is_closed && isExpired(poll.closes_at)) {
+      await admin
+        .from("polls")
+        .update({ is_closed: true, updated_at: new Date().toISOString() })
+        .eq("id", pollId)
+        .eq("is_closed", false);
+    }
+    return { error: "Poll is closed" };
+  }
 
   // Verify membership
   const { data: member } = await admin

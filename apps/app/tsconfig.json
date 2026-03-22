@@ -17,6 +17,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@mooch/db": ["../../packages/db/src/index.ts"],
+      "@mooch/db/*": ["../../packages/db/src/*"],
       "@mooch/types": ["../../packages/types/src/index.ts"],
       "@mooch/ui": ["../../packages/ui/src/index.ts"],
       "@mooch/stores": ["../../packages/stores/src/index.ts"]

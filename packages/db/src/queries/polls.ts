@@ -24,10 +24,36 @@ export type PollWithOptions = Poll & {
   total_votes: number;
 };
 
+function nowIso() {
+  return new Date().toISOString();
+}
+
+async function closeExpiredPolls(
+  supabase: SupabaseClient,
+  filter: { groupId?: string; pollId?: string },
+) {
+  let query = supabase
+    .from("polls")
+    .update({ is_closed: true, updated_at: nowIso() })
+    .eq("is_closed", false)
+    .not("closes_at", "is", null)
+    .lte("closes_at", nowIso());
+
+  if (filter.groupId) query = query.eq("group_id", filter.groupId);
+  if (filter.pollId) query = query.eq("id", filter.pollId);
+
+  const { error } = await query;
+  if (error) {
+    console.error("[polls] closeExpiredPolls failed:", error.message);
+  }
+}
+
 export async function getPolls(
   supabase: SupabaseClient,
   groupId: string,
 ): Promise<PollWithOptions[]> {
+  await closeExpiredPolls(supabase, { groupId });
+
   const { data, error } = await supabase
     .from("polls")
     .select(
@@ -79,6 +105,8 @@ export async function getPollById(
   supabase: SupabaseClient,
   pollId: string,
 ): Promise<PollWithOptions | null> {
+  await closeExpiredPolls(supabase, { pollId });
+
   const { data, error } = await supabase
     .from("polls")
     .select(

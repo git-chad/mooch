@@ -4,7 +4,17 @@ import { ACTION_COSTS } from "@mooch/db";
 import type { PollWithOptions } from "@mooch/stores";
 import type { CorruptionAction } from "@mooch/types";
 import { Sheet, Text } from "@mooch/ui";
-import { Ban, Check, Crown, Dices, Eye, EyeOff, Lock, UserX } from "lucide-react";
+import {
+  Ban,
+  Check,
+  Coins,
+  Crown,
+  Dices,
+  Eye,
+  EyeOff,
+  Lock,
+  UserX,
+} from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { AnimatedHeight } from "@/components/shared/AnimatedHeight";
 import { useState } from "react";
@@ -16,7 +26,7 @@ import {
   theCoup,
   theLeak,
 } from "@/app/actions/poll-corruption";
-import { motionDuration, motionEase } from "@/lib/motion";
+import { CorruptionIconTile, CorruptionRevealTile } from "./corruptionIconPack";
 
 type Props = {
   open: boolean;
@@ -32,8 +42,8 @@ type CardDef = {
   dramaticDescription: string;
   confirmLabel: string;
   icon: React.ReactNode;
+  iconSmall: React.ReactNode;
   color: string;
-  patternEmoji: string;
 };
 
 const CARDS: CardDef[] = [
@@ -45,8 +55,8 @@ const CARDS: CardDef[] = [
       "Fortune favors the bold. Your vote will carry twice the weight — because some opinions matter more.",
     confirmLabel: "Roll the dice",
     icon: <Dices className="w-6 h-6" />,
+    iconSmall: <Dices className="w-4 h-4" />,
     color: "#C8963E",
-    patternEmoji: "🎲",
   },
   {
     action: "the_leak",
@@ -56,8 +66,8 @@ const CARDS: CardDef[] = [
       "Rip the curtain open. Every anonymous vote will be exposed for all to see. No more hiding.",
     confirmLabel: "Leak it",
     icon: <Eye className="w-6 h-6" />,
+    iconSmall: <Eye className="w-4 h-4" />,
     color: "#1E3A5F",
-    patternEmoji: "👁️",
   },
   {
     action: "ghost_vote",
@@ -67,8 +77,8 @@ const CARDS: CardDef[] = [
       "Become a phantom. Your vote will count but nobody will ever know it was you. Silent influence.",
     confirmLabel: "Go ghost",
     icon: <EyeOff className="w-6 h-6" />,
+    iconSmall: <EyeOff className="w-4 h-4" />,
     color: "#9CA3AF",
-    patternEmoji: "👻",
   },
   {
     action: "hail_mary",
@@ -78,8 +88,8 @@ const CARDS: CardDef[] = [
       "Pay up or shut up. Anyone who owes money in this group loses their voice. Desperation move.",
     confirmLabel: "Block the debtors",
     icon: <Ban className="w-6 h-6" />,
+    iconSmall: <Ban className="w-4 h-4" />,
     color: "#166534",
-    patternEmoji: "🙏",
   },
   {
     action: "the_veto",
@@ -89,8 +99,8 @@ const CARDS: CardDef[] = [
       "Erase them from the record. One person's vote — gone, like it never happened.",
     confirmLabel: "Veto them",
     icon: <UserX className="w-6 h-6" />,
+    iconSmall: <UserX className="w-4 h-4" />,
     color: "#6B21A8",
-    patternEmoji: "💀",
   },
   {
     action: "the_coup",
@@ -100,20 +110,71 @@ const CARDS: CardDef[] = [
       "Democracy ends now. You seize control and declare the current leader the winner. Absolute power.",
     confirmLabel: "Seize power",
     icon: <Crown className="w-6 h-6" />,
+    iconSmall: <Crown className="w-4 h-4" />,
     color: "#DC2626",
-    patternEmoji: "👑",
   },
 ];
 
 /** Solid opaque backgrounds per card — no transparency */
 const SOLID_BG: Record<CorruptionAction, string> = {
   double_down: "#FDF6E8", // warm cream / gold tint
-  the_leak:    "#EBF0F7", // cool slate blue tint
-  ghost_vote:  "#F3F4F6", // soft grey
-  hail_mary:   "#EDF5ED", // sage green tint
-  the_veto:    "#F3EDF8", // soft lavender
-  the_coup:    "#FCEEED", // blush red tint
+  the_leak: "#EBF0F7", // cool slate blue tint
+  ghost_vote: "#F3F4F6", // soft grey
+  hail_mary: "#EDF5ED", // sage green tint
+  the_veto: "#F3EDF8", // soft lavender
+  the_coup: "#FCEEED", // blush red tint
 };
+
+type RGB = { r: number; g: number; b: number };
+
+function parseHexColor(value: string): RGB | null {
+  const hex = value.replace("#", "").trim();
+  if (!/^[\da-fA-F]{6}$/.test(hex)) return null;
+  return {
+    r: Number.parseInt(hex.slice(0, 2), 16),
+    g: Number.parseInt(hex.slice(2, 4), 16),
+    b: Number.parseInt(hex.slice(4, 6), 16),
+  };
+}
+
+function clamp(value: number): number {
+  return Math.max(0, Math.min(255, Math.round(value)));
+}
+
+function mixColor(source: RGB, target: RGB, amount: number): RGB {
+  return {
+    r: clamp(source.r + (target.r - source.r) * amount),
+    g: clamp(source.g + (target.g - source.g) * amount),
+    b: clamp(source.b + (target.b - source.b) * amount),
+  };
+}
+
+function rgbString(color: RGB): string {
+  return `rgb(${color.r}, ${color.g}, ${color.b})`;
+}
+
+function getActionButtonPalette(baseHex: string) {
+  const base = parseHexColor(baseHex);
+  if (!base) {
+    return {
+      start: "#EE4D4D",
+      end: "#C82323",
+      border: "#BB1E1E",
+      depth: "#911515",
+      glow: "rgba(190, 38, 38, 0.32)",
+    };
+  }
+
+  const white = { r: 255, g: 255, b: 255 };
+  const black = { r: 0, g: 0, b: 0 };
+  return {
+    start: rgbString(mixColor(base, white, 0.16)),
+    end: rgbString(mixColor(base, black, 0.09)),
+    border: rgbString(mixColor(base, black, 0.18)),
+    depth: rgbString(mixColor(base, black, 0.34)),
+    glow: `rgba(${base.r}, ${base.g}, ${base.b}, 0.28)`,
+  };
+}
 
 /** Map raw server error strings to user-friendly messages. */
 function friendlyError(raw: string, actionLabel: string): string {
@@ -128,8 +189,7 @@ function friendlyError(raw: string, actionLabel: string): string {
   if (raw.includes("Cannot use")) return raw;
   if (raw.includes("only works on anonymous"))
     return "The Leak only works on anonymous polls.";
-  if (raw.includes("Not a member"))
-    return "You're not a member of this group.";
+  if (raw.includes("Not a member")) return "You're not a member of this group.";
   if (raw.includes("coming soon")) return raw;
   return `Something went wrong using ${actionLabel}. Try again.`;
 }
@@ -144,6 +204,9 @@ export function CorruptionDeckSheet({
   const [selectedCard, setSelectedCard] = useState<CardDef | null>(null);
   const [hoveredCard, setHoveredCard] = useState<CorruptionAction | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const selectedActionPalette = selectedCard
+    ? getActionButtonPalette(selectedCard.color)
+    : null;
 
   const usedActions = new Set(
     poll.token_actions
@@ -249,267 +312,340 @@ export function CorruptionDeckSheet({
           </Text>
         </div>
 
-        <AnimatedHeight>
+        <AnimatedHeight overflow="visible">
           <AnimatePresence mode="wait">
             {selectedCard ? (
-            /* ── Selected card detail view ── */
-            <motion.div
-              key="detail"
-              initial={
-                reducedMotion
-                  ? { opacity: 0 }
-                  : { opacity: 0, scale: 0.95, y: 8 }
-              }
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={
-                reducedMotion
-                  ? { opacity: 0 }
-                  : { opacity: 0, scale: 0.97 }
-              }
-              transition={{
-                duration: 0.2,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-              className="flex flex-col items-center gap-4"
-            >
-              {/* Large card */}
-              <div
-                className="w-48 rounded-2xl p-6 flex flex-col items-center gap-3 text-center shadow-lg"
-                style={{
-                  background: SOLID_BG[selectedCard.action],
-                  border: `2px solid ${selectedCard.color}50`,
+              /* ── Selected card detail view ── */
+              <motion.div
+                key="detail"
+                initial={
+                  reducedMotion
+                    ? { opacity: 0 }
+                    : { opacity: 0, scale: 0.95, y: 8 }
+                }
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={
+                  reducedMotion ? { opacity: 0 } : { opacity: 0, scale: 0.97 }
+                }
+                transition={{
+                  duration: 0.2,
+                  ease: [0.22, 1, 0.36, 1],
                 }}
+                className="flex flex-col items-center gap-4"
               >
-                <span
-                  className="text-3xl mb-1"
-                  role="img"
-                  aria-hidden="true"
-                >
-                  {selectedCard.patternEmoji}
-                </span>
-                <span style={{ color: selectedCard.color }}>
-                  {selectedCard.icon}
-                </span>
-                <Text variant="subheading" className="font-bold">
-                  {selectedCard.label}
-                </Text>
+                {/* Large card */}
                 <div
-                  className="px-2.5 py-1 rounded-full text-[11px] font-bold"
+                  className="relative h-[300px] w-[220px] overflow-hidden rounded-[28px] text-center shadow-lg"
                   style={{
-                    background: `${selectedCard.color}20`,
-                    color: selectedCard.color,
+                    background: SOLID_BG[selectedCard.action],
+                    border: `2px solid ${selectedCard.color}50`,
                   }}
                 >
-                  {ACTION_COSTS[selectedCard.action]}{" "}
-                  {ACTION_COSTS[selectedCard.action] === 1
-                    ? "token"
-                    : "tokens"}
+                <CorruptionRevealTile
+                  key={selectedCard.action}
+                  action={selectedCard.action}
+                  reducedMotion={reducedMotion}
+                  revealDelayMs={120}
+                  tone="fullbleed"
+                  className="absolute inset-0 size-full"
+                  imageClassName="h-full w-full object-cover"
+                    fallback={
+                      <span className="inline-flex text-[#7C6758]">
+                        {selectedCard.icon}
+                      </span>
+                    }
+                  />
+                  <div
+                    className="pointer-events-none absolute inset-x-0 bottom-0 h-28"
+                    style={{
+                      background:
+                        "linear-gradient(180deg, rgba(253,249,245,0) 0%, rgba(253,249,245,0.56) 58%, rgba(253,249,245,0.9) 100%)",
+                    }}
+                  />
+                  <div className="pointer-events-none absolute inset-x-0 bottom-4 flex flex-col items-center px-4 text-center">
+                    <Text
+                      variant="subheading"
+                      className="font-bold leading-tight [text-shadow:0_2px_8px_rgba(255,255,255,0.8)]"
+                    >
+                      {selectedCard.label}
+                    </Text>
+                    <Text
+                      variant="caption"
+                      className="mt-1 inline-flex items-center gap-1.5 font-bold text-[13px] [text-shadow:0_2px_8px_rgba(255,255,255,0.82)]"
+                      style={{ color: selectedCard.color }}
+                    >
+                      <Coins className="h-3 w-3" />
+                      <span>
+                        {ACTION_COSTS[selectedCard.action]}{" "}
+                        {ACTION_COSTS[selectedCard.action] === 1
+                          ? "token"
+                          : "tokens"}
+                      </span>
+                    </Text>
+                  </div>
                 </div>
-              </div>
 
-              {/* Dramatic description */}
-              <Text
-                variant="body"
-                color="subtle"
-                className="text-center max-w-[280px] leading-relaxed"
-              >
-                {selectedCard.dramaticDescription}
-              </Text>
-
-              {/* Action buttons */}
-              <div className="flex gap-3 w-full">
-                <button
-                  type="button"
-                  onClick={() => setSelectedCard(null)}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors"
-                  style={{
-                    background: "#F7F4F0",
-                    border: "1px solid var(--color-edge)",
-                    color: "var(--color-ink-subtle)",
-                  }}
+                {/* Dramatic description */}
+                <Text
+                  variant="body"
+                  color="subtle"
+                  className="text-center max-w-[280px] leading-relaxed"
                 >
-                  Back
-                </button>
-                <button
-                  type="button"
-                  onClick={handleConfirm}
-                  disabled={isPlaying}
-                  className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white transition-all"
-                  style={{
-                    background: selectedCard.color,
-                    opacity: isPlaying ? 0.7 : 1,
-                    boxShadow: `0 4px 14px ${selectedCard.color}40`,
-                  }}
-                >
-                  {isPlaying ? "Playing..." : selectedCard.confirmLabel}
-                </button>
-              </div>
-            </motion.div>
-          ) : (
-            /* ── Card fan ── */
-            <motion.div
-              key="fan"
-              className="relative flex flex-col items-center"
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-            >
-              {/* Fan container */}
-              <div
-                className="relative flex items-end justify-center"
-                style={{ height: 220, perspective: "800px" }}
-              >
-                {CARDS.map((card, i) => {
-                  const state = getCardState(card.action);
-                  const centerIdx = (totalCards - 1) / 2;
-                  const offset = i - centerIdx;
-                  const rotation = offset * arcSpread;
-                  const xShift = offset * 48;
-                  const yShift = Math.abs(offset) * 6;
-                  const cost = ACTION_COSTS[card.action];
-                  const baseZ = totalCards - Math.abs(offset);
-                  const isDisabled = state !== "available";
+                  {selectedCard.dramaticDescription}
+                </Text>
 
-                  return (
-                    <motion.button
-                      key={card.action}
-                      type="button"
-                      disabled={isDisabled}
-                      onClick={() =>
-                        state === "available" && setSelectedCard(card)
-                      }
-                      onHoverStart={() =>
-                        !isDisabled && setHoveredCard(card.action)
-                      }
-                      onHoverEnd={() => setHoveredCard(null)}
-                      initial={
-                        reducedMotion
-                          ? { opacity: 0 }
-                          : { opacity: 0, y: 60, scale: 0.8 }
-                      }
-                      animate={{
-                        opacity: isDisabled ? 0.35 : 1,
-                        y: -yShift,
-                        scale: 1,
-                        rotate: rotation,
-                        x: xShift,
-                        zIndex: baseZ,
-                        transition: {
+                {/* Action buttons */}
+                <div className="flex gap-3 w-full">
+                  <motion.button
+                    type="button"
+                    onClick={() => setSelectedCard(null)}
+                    whileHover={
+                      reducedMotion ? undefined : { y: -1, scale: 1.008 }
+                    }
+                    whileTap={
+                      reducedMotion ? undefined : { y: 1, scale: 0.992 }
+                    }
+                    transition={{
+                      type: "spring",
+                      stiffness: 520,
+                      damping: 28,
+                      mass: 0.52,
+                    }}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-semibold border"
+                    style={{
+                      background:
+                        "linear-gradient(180deg, #FFFDF9 0%, #F4ECE4 100%)",
+                      borderColor: "var(--color-edge)",
+                      color: "var(--color-ink-label)",
+                      boxShadow:
+                        "inset 0 1px 0 rgba(255,255,255,0.72), inset 0 -1px 2px rgba(0,0,0,0.08), 0 1px 0 #C2B4A7, 0 5px 10px rgba(128,101,79,0.14)",
+                    }}
+                  >
+                    Back
+                  </motion.button>
+                  <motion.button
+                    type="button"
+                    onClick={handleConfirm}
+                    disabled={isPlaying}
+                    whileHover={
+                      !isPlaying && !reducedMotion
+                        ? { y: -1, scale: 1.008, filter: "brightness(1.04)" }
+                        : undefined
+                    }
+                    whileTap={
+                      !isPlaying && !reducedMotion
+                        ? { y: 1, scale: 0.992 }
+                        : undefined
+                    }
+                    transition={{
+                      type: "spring",
+                      stiffness: 560,
+                      damping: 28,
+                      mass: 0.5,
+                    }}
+                    className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white border disabled:cursor-not-allowed"
+                    style={{
+                      background: `linear-gradient(180deg, ${selectedActionPalette?.start ?? selectedCard.color} 0%, ${selectedActionPalette?.end ?? selectedCard.color} 100%)`,
+                      borderColor:
+                        selectedActionPalette?.border ?? selectedCard.color,
+                      opacity: isPlaying ? 0.7 : 1,
+                      boxShadow: [
+                        "inset 0 1px 0 rgba(255,255,255,0.34)",
+                        "inset 0 -2px 3px rgba(0,0,0,0.2)",
+                        `0 2px 0 ${selectedActionPalette?.depth ?? selectedCard.color}`,
+                        `0 8px 14px ${selectedActionPalette?.glow ?? "rgba(0,0,0,0.2)"}`,
+                      ].join(", "),
+                    }}
+                  >
+                    {isPlaying ? "Playing..." : selectedCard.confirmLabel}
+                  </motion.button>
+                </div>
+              </motion.div>
+            ) : (
+              /* ── Card fan ── */
+              <motion.div
+                key="fan"
+                className="relative flex flex-col items-center"
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              >
+                {/* Fan container */}
+                <div
+                  className="relative flex items-end justify-center"
+                  style={{ height: 310, perspective: "920px" }}
+                >
+                  {CARDS.map((card, i) => {
+                    const state = getCardState(card.action);
+                    const centerIdx = (totalCards - 1) / 2;
+                    const offset = i - centerIdx;
+                    const rotation = offset * arcSpread;
+                    const xShift = offset * 52;
+                    const yShift = Math.abs(offset) * 10;
+                    const cost = ACTION_COSTS[card.action];
+                    const baseZ = totalCards - Math.abs(offset);
+                    const isDisabled = state !== "available";
+
+                    return (
+                      <motion.button
+                        key={card.action}
+                        type="button"
+                        disabled={isDisabled}
+                        onClick={() =>
+                          state === "available" && setSelectedCard(card)
+                        }
+                        onHoverStart={() =>
+                          !isDisabled && setHoveredCard(card.action)
+                        }
+                        onHoverEnd={() => setHoveredCard(null)}
+                        initial={
+                          reducedMotion
+                            ? { opacity: 0 }
+                            : { opacity: 0, y: 60, scale: 0.8 }
+                        }
+                        animate={{
+                          opacity: isDisabled ? 0.35 : 1,
+                          y: -yShift,
+                          scale: 1,
+                          rotate: rotation,
+                          x: xShift,
+                          zIndex: baseZ,
+                          transition: {
+                            type: "spring",
+                            stiffness: 500,
+                            damping: 30,
+                            mass: 0.6,
+                            delay: reducedMotion ? 0 : i * 0.05,
+                          },
+                        }}
+                        whileHover={
+                          !isDisabled && !reducedMotion
+                            ? {
+                                y: -yShift - 20,
+                                scale: 1.1,
+                                zIndex: 20,
+                                transition: {
+                                  type: "spring",
+                                  stiffness: 800,
+                                  damping: 35,
+                                  mass: 0.4,
+                                },
+                              }
+                            : undefined
+                        }
+                        whileTap={
+                          !isDisabled && !reducedMotion
+                            ? {
+                                scale: 0.97,
+                                transition: {
+                                  duration: 0.1,
+                                  ease: [0.22, 1, 0.36, 1],
+                                },
+                              }
+                            : undefined
+                        }
+                        className="absolute overflow-hidden rounded-[22px] shadow-[0_12px_22px_rgba(67,45,33,0.16)] select-none"
+                        style={{
+                          width: 125,
+                          height: 178,
+                          transformOrigin: "bottom center",
+                          background:
+                            state === "used"
+                              ? "#E8E4E0"
+                              : SOLID_BG[card.action],
+                          border:
+                            state === "used"
+                              ? "1.5px solid #D4CFC8"
+                              : `1.5px solid ${card.color}40`,
+                          cursor: isDisabled ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        {/* Status overlay */}
+                        {state === "used" && (
+                          <div className="absolute inset-0 flex items-center justify-center rounded-xl">
+                            <div className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider text-[#9A8E82] bg-[#D4CFC8] -rotate-12">
+                              Used
+                            </div>
+                          </div>
+                        )}
+                        {state === "unavailable" && (
+                          <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-[#F7F4F0]/90">
+                            <Lock className="w-4 h-4 text-[#B0A296]" />
+                          </div>
+                        )}
+
+                        {/* Card content */}
+                        <CorruptionIconTile
+                          action={card.action}
+                          variant="blueprint"
+                          tone="fullbleed"
+                          className="absolute inset-0 size-full"
+                          imageClassName="h-full w-full object-cover"
+                          fallback={
+                            <span
+                              style={{
+                                color:
+                                  state === "used" ? "#B0A296" : card.color,
+                              }}
+                            >
+                              {card.iconSmall}
+                            </span>
+                          }
+                        />
+                        <div
+                          className="pointer-events-none absolute inset-x-0 bottom-0 h-20"
+                          style={{
+                            background:
+                              "linear-gradient(180deg, rgba(253,249,245,0) 0%, rgba(253,249,245,0.44) 62%, rgba(253,249,245,0.84) 100%)",
+                          }}
+                        />
+                        <div className="pointer-events-none absolute inset-x-2 bottom-2 rounded-xl px-2 py-1.5 text-center">
+                          <Text
+                            variant="caption"
+                            color={state === "used" ? "subtle" : "default"}
+                            className="font-semibold leading-tight text-[11px] [text-shadow:0_1px_2px_rgba(255,255,255,0.6)]"
+                          >
+                            {card.label}
+                          </Text>
+                        </div>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+
+                {/* Hover description — appears below the fan */}
+                <div className="h-8 flex items-center justify-center mt-2">
+                  <AnimatePresence mode="wait">
+                    {hoveredCard && (
+                      <motion.div
+                        key={hoveredCard}
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{
                           type: "spring",
                           stiffness: 500,
                           damping: 30,
-                          mass: 0.6,
-                          delay: reducedMotion ? 0 : i * 0.05,
-                        },
-                      }}
-                      whileHover={
-                        !isDisabled && !reducedMotion
-                          ? {
-                              y: -yShift - 20,
-                              scale: 1.1,
-                              zIndex: 20,
-                              transition: {
-                                type: "spring",
-                                stiffness: 800,
-                                damping: 35,
-                                mass: 0.4,
-                              },
-                            }
-                          : undefined
-                      }
-                      whileTap={
-                        !isDisabled && !reducedMotion
-                          ? {
-                              scale: 0.97,
-                              transition: { duration: 0.1, ease: [0.22, 1, 0.36, 1] },
-                            }
-                          : undefined
-                      }
-                      className="absolute flex flex-col items-center gap-1.5 rounded-xl px-3 py-3.5 shadow-md select-none"
-                      style={{
-                        width: 80,
-                        height: 110,
-                        transformOrigin: "bottom center",
-                        background:
-                          state === "used"
-                            ? "#E8E4E0"
-                            : SOLID_BG[card.action],
-                        border:
-                          state === "used"
-                            ? "1.5px solid #D4CFC8"
-                            : `1.5px solid ${card.color}40`,
-                        cursor: isDisabled ? "not-allowed" : "pointer",
-                      }}
-                    >
-                      {/* Status overlay */}
-                      {state === "used" && (
-                        <div className="absolute inset-0 flex items-center justify-center rounded-xl">
-                          <div className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider text-[#9A8E82] bg-[#D4CFC8] -rotate-12">
-                            Used
-                          </div>
-                        </div>
-                      )}
-                      {state === "unavailable" && (
-                        <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-[#F7F4F0]/90">
-                          <Lock className="w-4 h-4 text-[#B0A296]" />
-                        </div>
-                      )}
-
-                      {/* Card content */}
-                      <span
-                        style={{
-                          color:
-                            state === "used" ? "#B0A296" : card.color,
+                          mass: 0.5,
                         }}
                       >
-                        {card.icon}
-                      </span>
-                      <Text
-                        variant="caption"
-                        color={state === "used" ? "subtle" : "default"}
-                        className="font-semibold text-center leading-tight text-[10px]"
-                      >
-                        {card.label}
-                      </Text>
-                      <Text variant="caption" color="subtle" className="text-[9px]">
-                        {state === "used" ? (
-                          <Check className="w-3 h-3 inline" />
-                        ) : (
-                          `${cost}🪙`
-                        )}
-                      </Text>
-                    </motion.button>
-                  );
-                })}
-              </div>
-
-              {/* Hover description — appears below the fan */}
-              <div className="h-8 flex items-center justify-center mt-2">
-                <AnimatePresence mode="wait">
-                  {hoveredCard && (
-                    <motion.div
-                      key={hoveredCard}
-                      initial={{ opacity: 0, y: -4 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -4 }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 500,
-                        damping: 30,
-                        mass: 0.5,
-                      }}
-                    >
-                      <Text variant="caption" color="subtle" className="text-center">
-                        {CARDS.find((c) => c.action === hoveredCard)
-                          ?.description}
-                      </Text>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </motion.div>
-          )}
+                        <Text
+                          variant="caption"
+                          color="subtle"
+                          className="text-center"
+                        >
+                          {
+                            CARDS.find((c) => c.action === hoveredCard)
+                              ?.description
+                          }
+                        </Text>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
         </AnimatedHeight>
       </div>

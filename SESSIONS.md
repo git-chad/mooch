@@ -15,11 +15,73 @@ When a problem is encountered and fixed, log it here immediately:
 - **Mandatory Standard:** Reuse the shared motion system (`motion.ts`, transition provider/slot/link patterns, reduced-motion behavior) across all remaining user-facing surfaces.
 - **Immediate Next Task:** Close pending Phase 3 manual verification checklist items, then request Phase 3 approval before starting full Phase 4 implementation.
 - **Icon Standard:** Always use Lucide icons in the app UI — never emojis. Users can type emojis in their own content (poll options, messages), but any chrome/UI element must use Lucide icons.
+- **Hard User Preference (2026-03-17):** Do not introduce emojis in UI/chrome/decorative copy/options. Use Lucide icons or plain text only.
+- **React Rule (2026-03-17):** Do not import `useEffect` directly in feature code. Prefer derived state, event handlers, query/data libraries, or `useMountEffect` for mount-only external sync.
+- **Realtime/Polling Rule (2026-03-18):** Keep realtime subscriptions as primary sync. Polling remains a fallback only when needed (offline/reconnect/visibility wakeups/open timed polls), never unconditional background churn.
 - **2026-03-17 Feed Direction Lock (Phase 6):** Instagram-like single-column continuous stream, medium playful tone, docked quick composer, no stories strip v1, no decorative sticker/background layer v1, one reaction per user/item, expense+poll linking in v1 (event linking deferred), private media via signed URLs, optimistic+realtime behavior.
+- **Empty State Standard (2026-03-18):** Shared `EmptyState` component is the default pattern. Emoji empty states keep `text-5xl`; image/icon empty states use `size-48` (`192px`) with no blend-mode/background hacks unless explicitly requested.
+- **Prefetch Standard (2026-03-18):** Any scrollable card/list-item that navigates on click must use the `usePrefetch` hook (`apps/app/src/hooks/usePrefetch.ts`). Attach the returned ref to the element. This ensures RSC payloads are cached before the user taps, especially important with `TransitionLink` which navigates via `router.push`.
+
+---
+
+## Deferred Cleanup Queue
+
+### Low-priority `useEffect` follow-ups (2026-03-18)
+- `apps/app/src/components/feed/PostTextSheet.tsx` — replace open-reset effect with keyed remount pattern at caller level (same approach used for expense/tab modals).
+- `apps/app/src/components/feed/PostPhotoSheet.tsx` — same as above; keep object URL cleanup behavior intact while moving reset lifecycle to remount boundaries.
+- `apps/app/src/components/feed/FeedListClient.tsx` — `itemsRef.current = items` can be assigned during render instead of effect to reduce lifecycle bookkeeping.
+- `apps/app/src/components/groups/GroupsPageClient.tsx` — remove mount-only animation flag effect (`animateStatsIn`) by deriving animation state from motion primitives or initial props.
+- `apps/app/src/components/polls/PollListClient.tsx` — `revealedGroups.add(groupId)` can be moved out of effect into safer render-time memoized gate if entrance behavior remains equivalent.
+- `apps/app/src/components/expenses/ExpenseList.tsx` — same pattern as PollListClient for `revealedTabs`.
+- `apps/app/src/components/polls/corruptionIconPack.tsx` — source reset effect in `CorruptionIconImage` can be refactored to key-based remount by `file` to avoid prop-sync effect choreography.
+- `apps/web/src/hooks/usePointerUniform.ts` — initial-value sync effect can be folded into hook initialization/update strategy (low risk; web-only).
+- `apps/app/src/app/design/TextMorphDemo.tsx` — demo-only intervals are fine functionally, but can be migrated to shared timer utility if this surface becomes production-facing.
 
 ---
 
 ## Mistakes Log
+
+### webm blobs lack duration metadata — always provide a fallback
+- **Problem:** `audio.duration` returns `NaN` or `Infinity` for webm blobs recorded via `MediaRecorder`. Code guarded with `if (audio.duration && Number.isFinite(audio.duration))` silently skipped all progress updates, making the playback timer and seek bar appear frozen.
+- **Fix:** Capture duration from the recording timer (`elapsedRef.current`) and use it as fallback whenever `audio.duration` is not finite. Apply the same fallback in seek logic.
+- **Avoid:** Never rely solely on `audio.duration` for MediaRecorder output. Always capture elapsed time during recording and use it as the authoritative duration for playback UI.
+
+---
+
+### Reading refs during render for display values produces stale UI
+- **Problem:** Playback timer displayed `audioElRef.current.currentTime` when `playing` was true. Ref mutations don't trigger React re-renders, so the timer appeared frozen even though the rAF loop was running and updating `playProgress` state.
+- **Fix:** Use `playProgress` (state, updated every frame via rAF) as the single source of truth for both the timer text and the peak bar coloring. Never read a ref for a value that needs to appear in rendered output.
+- **Avoid:** For any value that must be visible in the UI, store it in state, not a ref. Refs are for imperative handles and values that don't affect rendering.
+
+---
+
+### `btn-primary` box-shadow extends beyond element bounds — decorative overlays must account for it
+- **Problem:** A pulsing ring animation used `absolute inset-0` on a `btn-primary` button. The button's thick `box-shadow` (3D edge effect) extends beyond the element's CSS box, so the ring appeared to start inside the visible button edge, looking off-center.
+- **Fix:** Replaced the border-based ring with a blurred background glow (`blur-xl` blob behind the button with soft scale+opacity animation). No border means no alignment issues with the shadow.
+- **Avoid:** When adding decorative overlays to elements with heavy box-shadows, test visually — `inset-0` won't align with the perceived edge. Prefer ambient effects (blurs, glows) over geometric overlays (borders, rings) on 3D-styled buttons.
+
+---
+
+### Timeout on hydration step reverted successfully persisted posts
+- **Problem:** `createItem` wrapped both the `addFeedItem` server action (persist) and the subsequent `fetchHydratedItemById` + `getSignedFeedMediaUrl` (hydration) in one try/catch. If `addFeedItem` succeeded but hydration timed out, the catch block removed the optimistic item from the feed and showed "Could not finish posting" — even though the post was already saved in the DB. Users saw an error, refreshed, and found their post was actually there.
+- **Fix:** Split `createItem` into two phases: persist (revert optimistic item on failure) and hydrate (leave optimistic item in place on failure, let realtime reconcile). Return `true` from both success paths since the post exists either way.
+- **Avoid:** When an optimistic flow has multiple steps and only the first is destructive/critical, don't lump all steps into one error handler. Only revert on actual data loss — if the data is persisted, let eventual consistency fill in the UI details.
+
+---
+
+### `useEffect` usage drift created avoidable sync and load risks
+- **Problem:** A targeted audit found three risk patterns: (1) unconditional 30s poll refetch loops despite realtime being active, (2) feed list prop re-sync replacing local state and potentially clobbering optimistic/realtime updates, and (3) modal open-reset effects that relied on dependency choreography instead of lifecycle boundaries.
+- **Fix:** Reworked poll refreshing to a guarded fallback strategy (realtime-first, refresh on visibility/online, timer only when needed), changed feed server snapshot handling to merge-with-local instead of replace, and replaced modal open-reset effects with keyed remount behavior at callsites (`AddExpenseModal`, `CreateTabModal`).
+- **Avoid:** Treat `useEffect` as external-sync only. For local UI lifecycle/reset behavior prefer keyed remounts. For server sync prefer realtime-first + explicit fallback paths, not perpetual polling.
+
+---
+
+### Reintroduced emojis in feed UI after icon standard was already documented
+- **Problem:** Added emoji icons in feed link dropdown options and decorative empty-state copy despite having a documented "Lucide icons, never emojis in UI chrome" rule.
+- **Fix:** Removed emoji option icons from feed select inputs, replaced decorative empty-state emoji with Lucide icon, and reinforced the preference as a hard user rule in Active Memory.
+- **Avoid:** Never add emoji to UI chrome, labels, helper text, placeholders, or decorative states. If visual emphasis is needed, use Lucide icons.
+
+---
 
 ### FAQ section shipped as a monolithic component
 - **Problem:** The FAQ section was implemented as one large file mixing static data, animation math, drag physics, and UI rendering in a single component. This violated basic React composition boundaries and made iteration/debugging slower than necessary.
@@ -188,6 +250,20 @@ When a problem is encountered and fixed, log it here immediately:
 
 ---
 
+### Empty-state icon styling drifted due iterative blend experiments
+- **Problem:** Feed empty-state icon styling was changed repeatedly with blend-mode and wrapper/background tricks, causing visual regressions (visible white plate, overflow artifacts, wrong scale) and breaking parity with other empty states.
+- **Fix:** Extracted shared `EmptyState` component and standardized behavior: emoji uses existing `text-5xl`, icon/image uses fixed `size-48` (`192px`), no blend-mode or special wrappers by default. Replaced matching feed/expenses/tabs/polls empty blocks with the shared component.
+- **Avoid:** For shared UI patterns, componentize first and codify visual tokens before tweaking one-off styles. Do not add blend/overlay hacks to assets unless explicitly requested and visually verified.
+
+---
+
+### Infra-flavored copy leaked into a user-facing confirm dialog
+- **Problem:** The feed delete flow first used browser-native `window.confirm`, and the replacement dialog copy then described storage internals instead of what the user actually cares about.
+- **Fix:** Replaced the native confirm with the shared `ConfirmDialog` and rewrote the copy to be user-facing, explicit about permanence, and aligned with the feed's tone.
+- **Avoid:** Product copy should describe visible user outcomes, not backend/storage mechanics. If a sentence sounds like implementation detail, it probably does not belong in the UI.
+
+---
+
 ## Sessions
 
 | Date | Summary | Problems |
@@ -210,3 +286,11 @@ When a problem is encountered and fixed, log it here immediately:
 | 2026-03-17 | Auth UI redesign break from main plan — fully restyled `/login` and `/signup` with a warm atmospheric auth scene, elevated card layout, design-system form controls (`Input`/`Button`/`Text`), animated error/success feedback, and staggered entrance choreography using shared motion tokens. Preserved all existing auth behavior: safe `next` redirect on login, Google OAuth callback flow, signup validation and Supabase signup/email-confirm flow. | Needed a quick fix during implementation for zsh path globbing with `(auth)` directories (`no matches found`); resolved by quoting paths when running file commands. |
 | 2026-03-17 | Group settings polish + consistency pass — fixed shared Button icon/label horizontal alignment at the component level, removed cover URL hide/show functionality, normalized icon picker sizing to match neighboring inputs, and redesigned members rows/section hierarchy for tighter visual quality (identity, role, metadata, actions). | **Icon button layout drift** — shared button did not enforce horizontal icon+label layout in all contexts. **Icon/name mismatch** — icon trigger geometry was inconsistent with input controls. **Unnecessary interaction cost** — cover URL hide/show toggle added avoidable clicks. **Members block felt unfinished** — row layout created dead space and weak hierarchy before the redesign. |
 | 2026-03-17 | Phase 6 Feed planning discussion lock — aligned the plan to a homepage-inspired but production-readable Feed direction: Instagram-like continuous stream, medium playful UI, docked quick composer, comfy card density, edgy copy tone, and no stories/sticker decoration in v1. Also locked behavior: one reaction per user per item, expense+poll linking in v1 (events later), private media with signed URLs, optimistic updates with realtime reconciliation. Updated PLAN Phase 6/7 migration naming to current sequence. | — |
+| 2026-03-18 | `useEffect` audit + rework on critical app surfaces — reviewed all effect usage, then fixed high-impact cases without feature loss: smarter polls fallback refresh strategy (realtime-first, guarded timer), feed snapshot merge to protect local optimistic/realtime state, and modal reset lifecycle moved from open-effects to keyed remounts (`AddExpenseModal`, `CreateTabModal` callsites). | **Backend load risk** — unconditional 30s poll refetch loop while realtime was healthy. **State clobber risk** — feed prop sync could overwrite local optimistic state. **Lifecycle complexity** — modal reset depended on effect choreography instead of component remount boundaries. |
+| 2026-03-18 | Empty-state componentization pass — created shared `apps/app/src/components/EmptyState.tsx` and migrated feed/expenses/tabs/polls empty states to use it. Locked icon sizing to `size-48` (`192px`) for image/icon assets and kept emoji sizing unchanged (`text-5xl`). Removed blend-mode experiments from feed empty state. | **Visual regression loop** — one-off blend-mode iterations caused white background artifacts, overflow clipping issues, and scale mismatch. Resolved by standardizing the pattern in one shared component with explicit size tokens. |
+| 2026-03-18 | Feed photo pass correction — rebuilt `PostPhotoSheet` to keep only polished empty/selected/posting states (no metadata scaffolding), kept link selectors, and simplified image-card behavior in `FeedItemCard` to non-shifting subtle transitions with loading/fallback handling. | **Misread intent on metadata + motion** — introduced metadata inputs that were not desired and over-stylized card/lightbox continuity that hurt UX. Fixed by removing metadata UI and toning card animation down to subtle opacity-only behavior. |
+| 2026-03-18 | Lightbox removal + upload hardening — removed feed lightbox feature (`ImageLightbox` delete + `FeedListClient` wiring/state cleanup), made photo cards non-click-open, and added explicit upload timeouts/error surfacing for photo/voice submissions. | **Silent-feeling upload loop** — linked submissions could appear stuck without clear feedback when upload/action paths stalled. Fixed by timeout guards and explicit surfaced error messages in submit handlers. |
+| 2026-03-18 | Feed composer + card polish pass (photo, text, post bug fix) — **Photo sheet:** redesigned `PostPhotoSheet` to match voice sheet's crafted feel: wrapped in same `rounded-xl border bg-[#F8F4EE]` container, 68px camera button with `btn-primary` + shadow, real drag-and-drop with green border/bg feedback, bottom-anchored gradient overlay + indeterminate progress bar for upload, streamlined file info row. **Photo card:** blurred gradient placeholder instead of shimmer, Instagram-style `aspect-[4/5]` + `object-cover` framing, subtle hover lift. **Text sheet:** tightened container bg to match voice/photo parity (`#F8F4EE`), autofocus textarea on open, posting state dims link selectors, post button with `MessageSquareText` icon. **Text card:** new `TextPostBody` component with three tiers — short posts (<=40 chars) render in Geist Pixel at `web-section` size (42px), medium posts (41-80 chars) render as standard body, long posts (>80 chars) get a left accent blockquote bar. **Post creation bug fix:** split `createItem` into persist + hydrate phases — if `addFeedItem` succeeds but hydration/signing times out, optimistic item stays in place and realtime reconciles instead of reverting + showing false error. | **`object-contain` dead space** — initial attempt used `object-contain` to respect aspect ratio, but created large empty areas around non-standard images. Fix: Instagram-style `aspect-[4/5]` + `object-cover`. **Unnecessary `geist` package install** — tried to install `geist` npm package for Geist Pixel font, but `.geist-pixel` CSS class and font were already wired in `globals.css` and used by the `Text` component's `display`/`web-*` variants. Fix: reverted install, used existing class. **False timeout error on successful posts** — `createItem` had one try/catch around both persist (`addFeedItem`) and hydrate (`fetchHydratedItemById`). If the post saved but hydration timed out, the catch removed the optimistic item and showed an error even though the post was in DB. Fix: split into two phases — only revert on persist failure, leave optimistic item on hydration failure. |
+| 2026-03-18 | `usePrefetch` hook + card wiring — created `apps/app/src/hooks/usePrefetch.ts`: viewport-based route prefetching via IntersectionObserver + `router.prefetch()`. Tracks prefetched href (not boolean) so route changes re-prefetch correctly. Disconnects observer after first hit. 50px rootMargin for anticipation. Wired into `TabCard` (`/{groupId}/expenses/{tabId}`), `ExpenseCard` (`/{groupId}/expenses/{tabId}/{expenseId}`), and `GroupCard` (`/groups/{groupId}`). Especially valuable with `TransitionLink` which intercepts clicks and navigates via `router.push` — prefetch ensures RSC payload is cached before navigation fires. | **Original hook had a bug** — `prefetchedRef.current = false` reset was placed after the early return that checks `prefetchedRef.current`, making it dead code when href changed. Fix: track the prefetched href string instead of a boolean, compare against current href. **`options` dep array risk** — original hook accepted `IntersectionObserverInit` in useEffect deps, which would cause infinite re-renders with inline objects. Fix: hardcode `rootMargin`, drop options param. |
+| 2026-03-18 | Cloudflare R2 feed-media cutover — added a server-only R2 storage layer, moved feed photo/voice upload + signed read URL + delete flow behind server-controlled logic, kept Supabase as the auth/DB/feed metadata backend, updated env examples, and validated the real bucket end-to-end. Tightened feed photo handling to WebP-first compression at `0.72` quality with JPEG fallback and a 3MB cap. Replaced the feed delete `window.confirm` with shared `ConfirmDialog` and user-facing destructive copy. | **Client/server boundary was the real constraint** — the storage move was not just "swap providers"; R2 credentials had to stay server-only while Supabase remained the authority. Fixed by introducing server actions for upload/sign/delete and keeping old Supabase feed-media paths as fallback. **Initial delete copy talked like infrastructure** — the first dialog described storage deletion instead of the user-visible outcome. Fixed by rewriting it in product voice. |
+| 2026-03-17 | RecordVoiceSheet redesign + VoicePlayer upgrade + shared LinkSelectors — Full rewrite of `RecordVoiceSheet` with three visual phases (idle/recording/playback): idle shows 68px green gradient mic button + static sine canvas + timer; recording shows live canvas waveform (quadratic Bezier curves from RMS ring buffer at 50ms intervals), pulsing blurred lime glow behind stop button, counting timer + progress bar, haptic on start; playback shows play/pause button (morphed via `layoutId`), real audio peak bars (48 bars from `decodeAudioData`), click-to-seek scrubbing, elapsed time, "Record again" ghost button, haptic on stop. Extracted duplicated `LinkSelectors` from all 3 composer sheets into shared component with `groupId` prop — selected items now show navigable link pills (expense → `/{groupId}/expenses/{tabId}/{expenseId}`, poll → `/{groupId}/polls#pollId`). Added `tabId` to `FeedLinkOption` type and expense query. Upgraded `VoicePlayer` in `FeedItemCard` to match: real peak extraction via fetch+decodeAudioData, rAF-driven smooth progress (was choppy `timeupdate` ~4fps), click-to-seek on bars, `btn-primary` play button with filled white icons, green/tan bar coloring by playhead position. | **webm duration NaN** — `audio.duration` is often `NaN`/`Infinity` for webm blobs recorded via MediaRecorder. Fix: fall back to `previewDuration` (captured from the recording timer) when the browser can't determine duration from the blob metadata. Apply the same fallback in seek logic. **Ref reads don't trigger re-renders** — timer display read `audioElRef.current.currentTime` during playback, but ref mutations don't cause React re-renders. Fix: use `playProgress` state (updated via rAF) as single source of truth for both timer text and bar coloring. **Audio element reset on toggle** — setting `audio.src = previewUrl` on every play toggle restarted the audio from 0. Fix: create the `Audio` element once, reuse it across play/pause cycles. **Pulsing ring off-center** — `absolute inset-0` ring on the recording button sat inside `btn-primary`'s thick box-shadow, creating a visual offset. Scaling animation made it worse. Fix: replaced ring with a blurred lime blob (`blur-xl`, soft scale+opacity animation) behind the button — no border, just ambient glow. |

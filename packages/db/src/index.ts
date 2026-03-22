@@ -1,28 +1,54 @@
 export { createClient as createBrowserClient } from "./client/browser";
-export { getProfile, updateProfile } from "./queries/profiles";
-export { getGroupsByUser, getGroupById, getGroupMembers } from "./queries/groups";
 export {
-  getExpenses,
-  getExpenseById,
   getBalances,
+  getExpenseById,
+  getExpenses,
   getGlobalBalances,
-  getUserNetBalance,
   getSettlementPayments,
+  getUserNetBalance,
 } from "./queries/expenses";
-export { getTabs, getTabById } from "./queries/tabs";
-export type { TabWithStats } from "./queries/tabs";
+export type {
+  FeedItemWithMeta,
+  FeedReactionCount,
+  FeedReplyWithProfile,
+} from "./queries/feed";
 export {
+  getFeedItemById,
+  getFeedItems,
+  getReplies,
+  getReplyCount,
+  getReplyCounts,
+  getSignedFeedMediaUrl,
+} from "./queries/feed";
+export {
+  getGroupById,
+  getGroupMembers,
+  getGroupsByUser,
+} from "./queries/groups";
+export type {
+  PollOptionWithVotes,
+  PollTokenActionWithProfile,
+  PollWithOptions,
+} from "./queries/polls";
+export {
+  getPollById,
+  getPolls,
+  getPollTokenActions,
+  getUserVotes,
+} from "./queries/polls";
+export { getProfile, updateProfile } from "./queries/profiles";
+export type { ActionCheck, UserPlan } from "./queries/subscriptions";
+export {
+  canPerformAction,
   getUserPlan,
   getUserTokenBalance,
-  canPerformAction,
 } from "./queries/subscriptions";
-export type { UserPlan, ActionCheck } from "./queries/subscriptions";
-export { spendTokens, ACTION_COSTS } from "./queries/tokens";
+export type { TabWithStats } from "./queries/tabs";
+export { getTabById, getTabs } from "./queries/tabs";
 export type { CorruptionAction, SpendResult } from "./queries/tokens";
+export { ACTION_COSTS, spendTokens } from "./queries/tokens";
 export {
-  getPolls,
-  getPollById,
-  getUserVotes,
-  getPollTokenActions,
-} from "./queries/polls";
-export type { PollWithOptions, PollOptionWithVotes, PollTokenActionWithProfile } from "./queries/polls";
+  deleteFeedMedia,
+  uploadFeedPhoto,
+  uploadFeedVoice,
+} from "./storage/feed";

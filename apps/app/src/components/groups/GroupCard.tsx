@@ -1,6 +1,7 @@
 import { Badge, cn } from "@mooch/ui";
 import { ArrowUpRight, Users } from "lucide-react";
 import Link from "next/link";
+import { usePrefetch } from "@/hooks/usePrefetch";
 import { GroupIcon } from "./group-icon";
 import type { GroupSummary } from "./types";
 
@@ -10,9 +11,13 @@ type GroupCardProps = {
 };
 
 export function GroupCard({ group, className }: GroupCardProps) {
+  const href = `/groups/${group.id}`;
+  const prefetchRef = usePrefetch<HTMLAnchorElement>(href);
+
   return (
     <Link
-      href={`/groups/${group.id}`}
+      ref={prefetchRef}
+      href={href}
       className={cn(
         "group block h-full rounded-2xl border border-[#E4D3C7] bg-[#FDFCFB] shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_6px_14px_rgba(92,63,42,0.07)]",
         "transition-[border-color,box-shadow] duration-200 ease-out hover:border-[#D9C7BA] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_10px_18px_rgba(92,63,42,0.08)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8FB2D4]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#F8F6F1]",
