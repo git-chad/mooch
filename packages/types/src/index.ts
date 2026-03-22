@@ -218,3 +218,30 @@ export type PollTokenAction = {
   metadata: Record<string, unknown> | null;
   created_at: string;
 };
+
+// --- Plans (Kanban) ---
+
+export type PlanStatus = "ideas" | "to_plan" | "upcoming" | "done";
+
+export type Plan = {
+  id: string;
+  group_id: string;
+  title: string;
+  description: string | null;
+  status: PlanStatus;
+  sort_order: number;
+  date: string | null;
+  organizer_id: string | null;
+  linked_event_id: string | null;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PlanAttachment = {
+  id: string;
+  plan_id: string;
+  type: "photo" | "voice";
+  url: string;
+  created_at: string;
+};

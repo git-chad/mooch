@@ -58,9 +58,9 @@ export function ConfirmDialog({
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
       <Dialog.Portal>
-        <Dialog.Backdrop className="modal-backdrop fixed inset-0 bg-black/40" />
+        <Dialog.Backdrop className="modal-backdrop fixed inset-0 z-50 bg-black/40" />
 
-        <Dialog.Viewport className="fixed inset-0 flex items-center justify-center p-4">
+        <Dialog.Viewport className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <Dialog.Popup
             ref={popupRef}
             className={cn(

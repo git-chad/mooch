@@ -17,7 +17,7 @@ function getVariantState(variant: TransitionVariant, reducedMotion: boolean) {
   if (reducedMotion || variant === "none") {
     return {
       initial: false,
-      animate: { opacity: 1, y: 0, filter: "blur(0px)" },
+      animate: { opacity: 1 },
       transition: getSurfaceTransition(true, motionDuration.fast),
     };
   }

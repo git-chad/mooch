@@ -32,7 +32,9 @@
       "Bash(find /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync/node_modules/geist -name *pixel* -o -name *Pixel*)",
       "Bash(bun remove:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(find /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync/apps/app/src/lib -name *time* -o -name *date* -o -name *format*)",
+      "Bash(find /Users/tobiasmoccagatta/Documents/coding/git-chad/squad-sync/apps/app/src/components/events -name *.tsx)"
     ]
   }
 }

@@ -1534,13 +1534,13 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 
 **Goal:** Drag-and-drop kanban board with 4 columns to move squad ideas into real plans and events.
 
-**Status:** ⬜ — _Blocked until Phase 4 is APPROVED_
+**Status:** 🔄 — _In progress_
 
 ---
 
 ### 5.1 — Database Migrations: Plans
 
-- [ ] 5.1.1 — Create `supabase/migrations/0005_plans.sql`:
+- [x] 5.1.1 — Create `supabase/migrations/0013_plans.sql` (renumbered from 0005 to avoid collision):
 
   ```sql
   create type plan_status as enum ('ideas', 'to_plan', 'upcoming', 'done');
@@ -1582,14 +1582,14 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
     ));
   ```
 
-- [ ] 5.1.2 — Add `Plan`, `PlanAttachment`, `PlanStatus` types to `packages/types`.
+- [x] 5.1.2 — Add `Plan`, `PlanAttachment`, `PlanStatus` types to `packages/types`.
 
 ### 5.2 — Plan Queries & Server Actions
 
-- [ ] 5.2.1 — `packages/db/src/queries/plans.ts`:
+- [x] 5.2.1 — `packages/db/src/queries/plans.ts`:
   - `getPlans(supabase, groupId)` — all plans ordered by status + sort_order
   - `getPlanById(supabase, planId)` — with attachments + organizer profile
-- [ ] 5.2.2 — `apps/app/src/app/actions/plans.ts` (Server Actions):
+- [x] 5.2.2 — `apps/app/src/app/actions/plans.ts` (Server Actions):
   - `createPlan(groupId, data)`
   - `updatePlan(planId, data)`
   - `movePlan(planId, newStatus, newSortOrder)`
@@ -1600,38 +1600,43 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 
 ### 5.3 — Kanban Board UI
 
-- [ ] 5.3.1 — `apps/app/src/app/(shell)/[groupId]/plans/page.tsx` — full kanban board.
-- [ ] 5.3.2 — `apps/app/src/components/plans/KanbanBoard.tsx`:
-  - Horizontal 4-column layout with horizontal scroll on mobile
-  - Columns: "💡 Ideas", "📋 To Plan", "📅 Upcoming", "✅ Done" + count badge
-- [ ] 5.3.3 — `apps/app/src/components/plans/KanbanColumn.tsx`:
-  - Vertically scrollable list
-  - Drop zone with visual highlight
+- [x] 5.3.1 — `apps/app/src/app/(shell)/[groupId]/plans/page.tsx` — full kanban board.
+- [x] 5.3.2 — `apps/app/src/components/plans/KanbanBoard.tsx`:
+  - Responsive grid: 2-col on md, 4-col on xl
+  - Columns: Ideas, To Plan, Upcoming, Completed (each with Lucide icon + color accent)
+  - Empty state uses shared `EmptyState` component
+- [x] 5.3.3 — `apps/app/src/components/plans/KanbanColumn.tsx`:
+  - Vertically scrollable list with card count in header
+  - Per-column color accent (icon tint, header border, drop zone highlight)
+  - Empty column placeholder text (e.g. "No ideas yet", "All clear")
+  - Drop zone with column-colored highlight on drag-over
   - "+" add button
   - Uses `@hello-pangea/dnd` for drag-drop
-- [ ] 5.3.4 — `apps/app/src/components/plans/PlanCard.tsx`:
-  - Draggable with drag handle
+- [x] 5.3.4 — `apps/app/src/components/plans/PlanCard.tsx`:
+  - Whole card is the drag handle (no separate grip icon)
   - Title, description preview (2 lines, truncated)
-  - Date badge, organizer avatar, attachment indicators (📷 N, 🎙️ N)
-  - Motion `whileDrag`: scale + shadow
+  - Footer: creator avatar + name + relative time (left), date badge + organizer avatar (right)
+  - "Create event" badge on hover for upcoming cards (inline in footer, not absolute overlay)
+  - Done cards: reduced opacity, muted gradient
+  - Shadow stack matches Badge 3D design language
   - Tap → plan detail
-- [ ] 5.3.5 — Drag-drop logic:
+- [x] 5.3.5 — Drag-drop logic:
   - On cross-column drop: `movePlan` action
-  - On same-column reorder: `reorderPlans` action (debounced 300ms)
+  - On same-column reorder: `reorderPlans` action
   - Optimistic update: move in local state immediately, revert on error
-- [ ] 5.3.6 — `apps/app/src/components/plans/CreatePlanSheet.tsx`:
-  - Title (required), description, date picker, organizer selector, column selector
-  - Photo attach: file input → Supabase Storage `plan-attachments/{planId}/{filename}`
-  - Voice note: `MediaRecorder` API, max 60s, preview playback
-- [ ] 5.3.7 — `apps/app/src/components/plans/PlanDetailPanel.tsx`:
-  - Full details, status dropdown (editable), attachment viewer/player
-  - Edit, delete
+- [x] 5.3.6 — `apps/app/src/components/plans/CreatePlanSheet.tsx`:
+  - Title (required), description, DateTimePicker (shared with polls), status Select dropdown
+  - Photo/voice attachments removed (not needed for plans)
+- [x] 5.3.7 — `apps/app/src/components/plans/PlanDetailPanel.tsx`:
+  - Full details in Sheet, status Select dropdown with optimistic updates
+  - Edit/Delete actions use `Button variant="inline"` / `"inline-danger"`
+  - Attachment viewer/player
   - "Create Event from Plan" → navigates to create event pre-filled
 
 ### 5.4 — Supabase Storage
 
-- [ ] 5.4.1 — Create `plan-attachments` bucket (authenticated uploads, max 10MB photos / 5MB audio).
-- [ ] 5.4.2 — Storage RLS: group members can upload to group folder and read from it.
+- [x] 5.4.1 — Create `plan-attachments` bucket (authenticated uploads, max 10MB photos / 5MB audio).
+- [x] 5.4.2 — Storage RLS: group members can upload to group folder and read from it.
 
 ### 5.5 — Verify & Test
 
@@ -1655,7 +1660,7 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 - [ ] "Create Event from Plan" flow navigates correctly
 - [ ] RLS: non-members cannot access plans
 
-**Phase 5 Status: ⬜ — Awaiting approval**
+**Phase 5 Status: 🔄 — UI polish in progress**
 
 ---
 
