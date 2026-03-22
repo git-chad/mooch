@@ -1,20 +1,19 @@
 "use client";
 
-import { usePlansBoardStore } from "@mooch/stores";
+import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
 import type { PlanWithDetails } from "@mooch/stores";
+import { usePlansBoardStore } from "@mooch/stores";
 import type { PlanStatus } from "@mooch/types";
 import { Button, Container, Text } from "@mooch/ui";
-import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
 import { LayoutList } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { movePlan as movePlanAction, reorderPlans } from "@/app/actions/plans";
-import { TransitionSlot } from "@/components/TransitionSlot";
 import { motionDuration, motionEase } from "@/lib/motion";
 import { CreatePlanSheet } from "./CreatePlanSheet";
 import { KanbanColumn } from "./KanbanColumn";
-import { PLAN_STATUS_CONFIG } from "./plan-status";
 import { PlanDetailPanel } from "./PlanDetailPanel";
+import { PLAN_STATUS_CONFIG } from "./plan-status";
 
 type Props = {
   groupId: string;
@@ -27,23 +26,29 @@ export function KanbanBoard({ groupId, currentUserId }: Props) {
   const setPlans = usePlansBoardStore((s) => s.setPlans);
   const [createOpen, setCreateOpen] = useState(false);
   const [createColumn, setCreateColumn] = useState<PlanStatus>("ideas");
-  const [selectedPlan, setSelectedPlan] = useState<PlanWithDetails | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<PlanWithDetails | null>(
+    null,
+  );
   const reducedMotion = useReducedMotion() ?? false;
 
-  const columnPlans = {
-    ideas: [] as PlanWithDetails[],
-    to_plan: [] as PlanWithDetails[],
-    upcoming: [] as PlanWithDetails[],
-    done: [] as PlanWithDetails[],
-  };
+  const columnPlans = useMemo(() => {
+    const nextColumns = {
+      ideas: [] as PlanWithDetails[],
+      to_plan: [] as PlanWithDetails[],
+      upcoming: [] as PlanWithDetails[],
+      done: [] as PlanWithDetails[],
+    };
 
-  for (const plan of plans) {
-    columnPlans[plan.status]?.push(plan);
-  }
+    for (const plan of plans) {
+      nextColumns[plan.status]?.push(plan);
+    }
 
-  for (const key of Object.keys(columnPlans) as PlanStatus[]) {
-    columnPlans[key].sort((a, b) => a.sort_order - b.sort_order);
-  }
+    for (const key of Object.keys(nextColumns) as PlanStatus[]) {
+      nextColumns[key].sort((a, b) => a.sort_order - b.sort_order);
+    }
+
+    return nextColumns;
+  }, [plans]);
 
   const handleDragEnd = useCallback(
     async (result: DropResult) => {
@@ -153,10 +158,7 @@ export function KanbanBoard({ groupId, currentUserId }: Props) {
 
   return (
     <Container as="section" className="py-4 sm:py-6">
-      <TransitionSlot
-        className="col-span-6 sm:col-span-12 mx-auto w-full max-w-6xl space-y-5"
-        variant="context"
-      >
+      <div className="col-span-6 sm:col-span-12 mx-auto w-full max-w-6xl space-y-5">
         <header className="flex items-center justify-between gap-3">
           <Text variant="title">Plans</Text>
           <Button
@@ -215,17 +217,16 @@ export function KanbanBoard({ groupId, currentUserId }: Props) {
 
         {plans.length > 0 && (
           <DragDropContext onDragEnd={handleDragEnd}>
-            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
               {PLAN_STATUS_CONFIG.map((column) => (
-                <div key={column.id}>
-                  <KanbanColumn
-                    status={column.id}
-                    title={column.title}
-                    plans={columnPlans[column.id]}
-                    onAddClick={() => handleAddClick(column.id)}
-                    onPlanClick={setSelectedPlan}
-                  />
-                </div>
+                <KanbanColumn
+                  key={column.id}
+                  status={column.id}
+                  title={column.title}
+                  plans={columnPlans[column.id]}
+                  onAddClick={() => handleAddClick(column.id)}
+                  onPlanClick={setSelectedPlan}
+                />
               ))}
             </div>
           </DragDropContext>
@@ -244,7 +245,7 @@ export function KanbanBoard({ groupId, currentUserId }: Props) {
           groupId={groupId}
           currentUserId={currentUserId}
         />
-      </TransitionSlot>
+      </div>
     </Container>
   );
 }

@@ -38,7 +38,7 @@ export async function createPlan(
     // Get max sort_order for the target status column
     const status = data.status ?? "ideas";
     const { data: maxRow } = await admin
-        .from("plans")
+        .from("group_plans")
         .select("sort_order")
         .eq("group_id", groupId)
         .eq("status", status)
@@ -49,7 +49,7 @@ export async function createPlan(
     const nextSortOrder = (maxRow?.sort_order ?? -1) + 1;
 
     const { data: plan, error } = await admin
-        .from("plans")
+        .from("group_plans")
         .insert({
             group_id: groupId,
             title: data.title,
@@ -86,7 +86,7 @@ export async function updatePlan(
 
     // Fetch existing plan to verify access
     const { data: existing } = await admin
-        .from("plans")
+        .from("group_plans")
         .select("group_id, created_by")
         .eq("id", planId)
         .single();
@@ -104,7 +104,7 @@ export async function updatePlan(
     if (!member) return { error: "Not a group member" };
 
     const { data: plan, error } = await admin
-        .from("plans")
+        .from("group_plans")
         .update({
             ...data,
             updated_at: new Date().toISOString(),
@@ -136,7 +136,7 @@ export async function movePlan(
     if (!user) return { error: "Not authenticated" };
 
     const { data: existing } = await admin
-        .from("plans")
+        .from("group_plans")
         .select("group_id")
         .eq("id", planId)
         .single();
@@ -154,7 +154,7 @@ export async function movePlan(
     if (!member) return { error: "Not a group member" };
 
     const { data: plan, error } = await admin
-        .from("plans")
+        .from("group_plans")
         .update({
             status: newStatus,
             sort_order: newSortOrder,
@@ -198,7 +198,7 @@ export async function reorderPlans(
     // Batch update sort_orders
     for (const update of updates) {
         const { error } = await admin
-            .from("plans")
+            .from("group_plans")
             .update({ sort_order: update.sort_order, updated_at: new Date().toISOString() })
             .eq("id", update.id)
             .eq("group_id", groupId);
@@ -225,7 +225,7 @@ export async function deletePlan(
     if (!user) return { error: "Not authenticated" };
 
     const { data: existing } = await admin
-        .from("plans")
+        .from("group_plans")
         .select("group_id, created_by")
         .eq("id", planId)
         .single();
@@ -247,7 +247,7 @@ export async function deletePlan(
         return { error: "Only the creator or an admin can delete this plan" };
     }
 
-    const { error } = await admin.from("plans").delete().eq("id", planId);
+    const { error } = await admin.from("group_plans").delete().eq("id", planId);
 
     if (error) {
         console.error("[deletePlan] delete failed:", error.message);
@@ -272,7 +272,7 @@ export async function addPlanAttachment(
     if (!user) return { error: "Not authenticated" };
 
     const { data: plan } = await admin
-        .from("plans")
+        .from("group_plans")
         .select("group_id")
         .eq("id", planId)
         .single();
@@ -290,7 +290,7 @@ export async function addPlanAttachment(
     if (!member) return { error: "Not a group member" };
 
     const { data: attachment, error } = await admin
-        .from("plan_attachments")
+        .from("group_plan_attachments")
         .insert({ plan_id: planId, type, url })
         .select("*")
         .single();
@@ -317,7 +317,7 @@ export async function removePlanAttachment(
 
     // Get attachment + plan to verify
     const { data: attachment } = await admin
-        .from("plan_attachments")
+        .from("group_plan_attachments")
         .select("plan_id, url")
         .eq("id", attachmentId)
         .single();
@@ -325,7 +325,7 @@ export async function removePlanAttachment(
     if (!attachment) return { error: "Attachment not found" };
 
     const { data: plan } = await admin
-        .from("plans")
+        .from("group_plans")
         .select("group_id")
         .eq("id", attachment.plan_id)
         .single();
@@ -343,7 +343,7 @@ export async function removePlanAttachment(
     if (!member) return { error: "Not a group member" };
 
     const { error } = await admin
-        .from("plan_attachments")
+        .from("group_plan_attachments")
         .delete()
         .eq("id", attachmentId);
 

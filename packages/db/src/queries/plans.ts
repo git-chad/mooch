@@ -12,9 +12,9 @@ export async function getPlans(
     groupId: string,
 ): Promise<PlanWithDetails[]> {
     const { data, error } = await supabase
-        .from("plans")
+        .from("group_plans")
         .select(
-            "*, organizer:profiles!organizer_id(*), created_by_profile:profiles!created_by(*), plan_attachments(*)",
+            "*, organizer:profiles!organizer_id(*), created_by_profile:profiles!created_by(*), group_plan_attachments(*)",
         )
         .eq("group_id", groupId)
         .order("sort_order", { ascending: true });
@@ -30,8 +30,8 @@ export async function getPlans(
     return data
         .map((plan) => ({
             ...plan,
-            attachments: (plan.plan_attachments ?? []) as PlanAttachment[],
-            plan_attachments: undefined,
+            attachments: (plan.group_plan_attachments ?? []) as PlanAttachment[],
+            group_plan_attachments: undefined,
             organizer: plan.organizer as Profile | null,
             created_by_profile: plan.created_by_profile as Profile,
         }))
@@ -48,9 +48,9 @@ export async function getPlanById(
     planId: string,
 ): Promise<PlanWithDetails | null> {
     const { data, error } = await supabase
-        .from("plans")
+        .from("group_plans")
         .select(
-            "*, organizer:profiles!organizer_id(*), created_by_profile:profiles!created_by(*), plan_attachments(*)",
+            "*, organizer:profiles!organizer_id(*), created_by_profile:profiles!created_by(*), group_plan_attachments(*)",
         )
         .eq("id", planId)
         .single();
@@ -59,8 +59,8 @@ export async function getPlanById(
 
     return {
         ...data,
-        attachments: (data.plan_attachments ?? []) as PlanAttachment[],
-        plan_attachments: undefined,
+        attachments: (data.group_plan_attachments ?? []) as PlanAttachment[],
+        group_plan_attachments: undefined,
         organizer: data.organizer as Profile | null,
         created_by_profile: data.created_by_profile as Profile,
     } as PlanWithDetails;

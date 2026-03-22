@@ -2,7 +2,7 @@
 
 create type plan_status as enum ('ideas', 'to_plan', 'upcoming', 'done');
 
-create table public.plans (
+create table public.group_plans (
   id uuid primary key default gen_random_uuid(),
   group_id uuid references public.groups(id) on delete cascade not null,
   title text not null,
@@ -17,23 +17,23 @@ create table public.plans (
   updated_at timestamptz not null default now()
 );
 
-create table public.plan_attachments (
+create table public.group_plan_attachments (
   id uuid primary key default gen_random_uuid(),
-  plan_id uuid references public.plans(id) on delete cascade not null,
+  plan_id uuid references public.group_plans(id) on delete cascade not null,
   type text not null check (type in ('photo', 'voice')),
   url text not null,
   created_at timestamptz not null default now()
 );
 
-alter table public.plans enable row level security;
-alter table public.plan_attachments enable row level security;
+alter table public.group_plans enable row level security;
+alter table public.group_plan_attachments enable row level security;
 
 create policy "Group members can manage plans"
-  on public.plans for all using (public.is_group_member(group_id));
+  on public.group_plans for all using (public.is_group_member(group_id));
 
 create policy "Group members can manage plan attachments"
-  on public.plan_attachments for all
+  on public.group_plan_attachments for all
   using (exists (
-    select 1 from public.plans p
+    select 1 from public.group_plans p
     where p.id = plan_id and public.is_group_member(p.group_id)
   ));

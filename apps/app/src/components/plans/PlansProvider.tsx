@@ -34,7 +34,7 @@ export function PlansProvider({
                 {
                     event: "*",
                     schema: "public",
-                    table: "plans",
+                    table: "group_plans",
                     filter: `group_id=eq.${groupId}`,
                 },
                 async () => {
@@ -47,7 +47,7 @@ export function PlansProvider({
                 {
                     event: "*",
                     schema: "public",
-                    table: "plan_attachments",
+                    table: "group_plan_attachments",
                 },
                 async () => {
                     const fresh = await getPlans(supabase, groupId);
