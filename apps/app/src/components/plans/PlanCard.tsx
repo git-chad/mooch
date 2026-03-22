@@ -3,6 +3,7 @@
 import type { PlanWithDetails } from "@mooch/stores";
 import { Avatar, Badge, Text } from "@mooch/ui";
 import { Calendar, Camera, Mic } from "lucide-react";
+import { useRef } from "react";
 import { PLAN_STATUS_MAP } from "./plan-status";
 
 type Props = {
@@ -12,6 +13,7 @@ type Props = {
 };
 
 export function PlanCard({ plan, onClick, isDragging }: Props) {
+  const pointerDownRef = useRef<{ x: number; y: number } | null>(null);
   const photoCount = plan.attachments.filter((attachment) => attachment.type === "photo").length;
   const voiceCount = plan.attachments.filter((attachment) => attachment.type === "voice").length;
   const status = PLAN_STATUS_MAP[plan.status];
@@ -26,9 +28,29 @@ export function PlanCard({ plan, onClick, isDragging }: Props) {
     : null;
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <div
+      role="button"
+      tabIndex={0}
+      onPointerDown={(event) => {
+        pointerDownRef.current = { x: event.clientX, y: event.clientY };
+      }}
+      onClick={(event) => {
+        const start = pointerDownRef.current;
+        if (start) {
+          const dx = Math.abs(event.clientX - start.x);
+          const dy = Math.abs(event.clientY - start.y);
+          if (dx > 4 || dy > 4) {
+            return;
+          }
+        }
+        onClick();
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick();
+        }
+      }}
       className={`w-full rounded-2xl border p-4 text-left transition-all duration-150 ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
       style={{
         background: isDone ? "rgba(150, 145, 138, 0.08)" : "var(--color-surface)",
@@ -95,6 +117,6 @@ export function PlanCard({ plan, onClick, isDragging }: Props) {
           />
         )}
       </div>
-    </button>
+    </div>
   );
 }

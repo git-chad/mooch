@@ -2,7 +2,7 @@
 
 import type { PlanStatus } from "@mooch/types";
 import type { PlanWithDetails } from "@mooch/stores";
-import { Badge, Text } from "@mooch/ui";
+import { Text } from "@mooch/ui";
 import { Draggable, Droppable } from "@hello-pangea/dnd";
 import { Plus } from "lucide-react";
 import { PLAN_STATUS_MAP } from "./plan-status";
@@ -43,9 +43,6 @@ export function KanbanColumn({
             <Text variant="label" className="block uppercase tracking-wide">
               {title}
             </Text>
-            <Text variant="caption" color="subtle">
-              {plans.length} {plans.length === 1 ? "card" : "cards"}
-            </Text>
           </div>
         </div>
 
@@ -64,14 +61,11 @@ export function KanbanColumn({
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className="flex flex-1 flex-col gap-2 rounded-2xl border p-2 transition-colors duration-150"
+            className="flex flex-1 flex-col gap-2 rounded-xl pt-2 transition-colors duration-150"
             style={{
               background: snapshot.isDraggingOver
-                ? "rgba(249, 236, 213, 0.72)"
-                : "var(--color-surface-secondary)",
-              borderColor: snapshot.isDraggingOver
-                ? "rgba(214, 170, 105, 0.48)"
-                : "var(--color-edge)",
+                ? "rgba(249, 236, 213, 0.4)"
+                : "transparent",
             }}
           >
             {plans.map((plan, index) => (
@@ -98,12 +92,9 @@ export function KanbanColumn({
 
             {plans.length === 0 && !snapshot.isDraggingOver && (
               <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-[var(--color-edge)] px-4 py-8 text-center">
-                <div className="space-y-2">
-                  <Badge label="Drop zone" size="sm" />
-                  <Text variant="caption" color="subtle">
-                    Drag a plan here or create one directly in this column.
-                  </Text>
-                </div>
+                <Text variant="caption" color="subtle">
+                  Drag a plan here
+                </Text>
               </div>
             )}
           </div>
