@@ -1602,29 +1602,35 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 
 - [x] 5.3.1 — `apps/app/src/app/(shell)/[groupId]/plans/page.tsx` — full kanban board.
 - [x] 5.3.2 — `apps/app/src/components/plans/KanbanBoard.tsx`:
-  - Horizontal 4-column layout with horizontal scroll on mobile
-  - Columns: "💡 Ideas", "📋 To Plan", "📅 Upcoming", "✅ Done" + count badge
+  - Responsive grid: 2-col on md, 4-col on xl
+  - Columns: Ideas, To Plan, Upcoming, Completed (each with Lucide icon + color accent)
+  - Empty state uses shared `EmptyState` component
 - [x] 5.3.3 — `apps/app/src/components/plans/KanbanColumn.tsx`:
-  - Vertically scrollable list
-  - Drop zone with visual highlight
+  - Vertically scrollable list with card count in header
+  - Per-column color accent (icon tint, header border, drop zone highlight)
+  - Empty column placeholder text (e.g. "No ideas yet", "All clear")
+  - Drop zone with column-colored highlight on drag-over
   - "+" add button
   - Uses `@hello-pangea/dnd` for drag-drop
 - [x] 5.3.4 — `apps/app/src/components/plans/PlanCard.tsx`:
-  - Draggable with drag handle
+  - Whole card is the drag handle (no separate grip icon)
   - Title, description preview (2 lines, truncated)
-  - Date badge, organizer avatar, attachment indicators (📷 N, 🎙️ N)
-  - Motion `whileDrag`: scale + shadow
+  - Footer: creator avatar + name + relative time (left), date badge + organizer avatar (right)
+  - "Create event" badge on hover for upcoming cards (inline in footer, not absolute overlay)
+  - Done cards: reduced opacity, muted gradient
+  - Shadow stack matches Badge 3D design language
   - Tap → plan detail
 - [x] 5.3.5 — Drag-drop logic:
   - On cross-column drop: `movePlan` action
   - On same-column reorder: `reorderPlans` action
   - Optimistic update: move in local state immediately, revert on error
 - [x] 5.3.6 — `apps/app/src/components/plans/CreatePlanSheet.tsx`:
-  - Title (required), description, date picker, column selector
-  - Photo/voice attachments deferred until storage bucket is created
+  - Title (required), description, DateTimePicker (shared with polls), status Select dropdown
+  - Photo/voice attachments removed (not needed for plans)
 - [x] 5.3.7 — `apps/app/src/components/plans/PlanDetailPanel.tsx`:
-  - Full details, status dropdown (editable), attachment viewer/player
-  - Edit, delete
+  - Full details in Sheet, status Select dropdown with optimistic updates
+  - Edit/Delete actions use `Button variant="inline"` / `"inline-danger"`
+  - Attachment viewer/player
   - "Create Event from Plan" → navigates to create event pre-filled
 
 ### 5.4 — Supabase Storage
@@ -1654,7 +1660,7 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 - [ ] "Create Event from Plan" flow navigates correctly
 - [ ] RLS: non-members cannot access plans
 
-**Phase 5 Status: ⬜ — Awaiting approval**
+**Phase 5 Status: 🔄 — UI polish in progress**
 
 ---
 
