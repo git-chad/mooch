@@ -30,10 +30,41 @@ export const usePlansBoardStore = create<PlansBoardStore>((set) => ({
     removePlan: (id) =>
         set((s) => ({ plans: s.plans.filter((p) => p.id !== id) })),
     movePlan: (id, newStatus, newSortOrder) =>
-        set((s) => ({
-            plans: s.plans.map((p) =>
-                p.id === id ? { ...p, status: newStatus, sort_order: newSortOrder } : p,
-            ),
-        })),
+        set((s) => {
+            const nextPlans = [...s.plans];
+            const movingPlan = nextPlans.find((plan) => plan.id === id);
+
+            if (!movingPlan) return { plans: s.plans };
+
+            const sourceStatus = movingPlan.status;
+            const sourceColumn = nextPlans
+                .filter((plan) => plan.status === sourceStatus && plan.id !== id)
+                .sort((a, b) => a.sort_order - b.sort_order)
+                .map((plan, index) => ({ ...plan, sort_order: index }));
+
+            const destinationColumn = nextPlans
+                .filter((plan) => plan.status === newStatus && plan.id !== id)
+                .sort((a, b) => a.sort_order - b.sort_order);
+
+            const movedPlan = {
+                ...movingPlan,
+                status: newStatus,
+                sort_order: newSortOrder,
+            };
+
+            destinationColumn.splice(newSortOrder, 0, movedPlan);
+            const normalizedDestination = destinationColumn.map((plan, index) => ({
+                ...plan,
+                sort_order: index,
+            }));
+
+            const untouched = nextPlans.filter(
+                (plan) => plan.status !== sourceStatus && plan.status !== newStatus,
+            );
+
+            return {
+                plans: [...untouched, ...sourceColumn, ...normalizedDestination],
+            };
+        }),
     clear: () => set({ plans: [] }),
 }));

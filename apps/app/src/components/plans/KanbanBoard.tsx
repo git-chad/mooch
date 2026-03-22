@@ -3,191 +3,283 @@
 import { usePlansBoardStore } from "@mooch/stores";
 import type { PlanWithDetails } from "@mooch/stores";
 import type { PlanStatus } from "@mooch/types";
-import { Button, Text } from "@mooch/ui";
-import { useState, useCallback, useMemo } from "react";
+import { Button, Container, Text } from "@mooch/ui";
+import { DragDropContext, type DropResult } from "@hello-pangea/dnd";
 import {
-    DragDropContext,
-    type DropResult,
-} from "@hello-pangea/dnd";
+  LayoutList,
+  MoveRight,
+} from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useCallback, useMemo, useState } from "react";
 import { movePlan as movePlanAction, reorderPlans } from "@/app/actions/plans";
-import { KanbanColumn } from "./KanbanColumn";
+import { TransitionSlot } from "@/components/TransitionSlot";
+import { getSurfaceTransition, motionDuration, motionEase } from "@/lib/motion";
 import { CreatePlanSheet } from "./CreatePlanSheet";
+import { KanbanColumn } from "./KanbanColumn";
+import { PLAN_STATUS_CONFIG } from "./plan-status";
 import { PlanDetailPanel } from "./PlanDetailPanel";
 
-const COLUMNS: { id: PlanStatus; emoji: string; title: string }[] = [
-    { id: "ideas", emoji: "💡", title: "Ideas" },
-    { id: "to_plan", emoji: "📋", title: "To Plan" },
-    { id: "upcoming", emoji: "📅", title: "Upcoming" },
-    { id: "done", emoji: "✅", title: "Done" },
-];
-
 type Props = {
-    groupId: string;
-    currentUserId: string;
+  groupId: string;
+  currentUserId: string;
 };
 
 export function KanbanBoard({ groupId, currentUserId }: Props) {
-    const plans = usePlansBoardStore((s) => s.plans);
-    const storeMoveplan = usePlansBoardStore((s) => s.movePlan);
-    const setPlans = usePlansBoardStore((s) => s.setPlans);
-    const [createOpen, setCreateOpen] = useState(false);
-    const [createColumn, setCreateColumn] = useState<PlanStatus>("ideas");
-    const [selectedPlan, setSelectedPlan] = useState<PlanWithDetails | null>(null);
+  const plans = usePlansBoardStore((s) => s.plans);
+  const storeMovePlan = usePlansBoardStore((s) => s.movePlan);
+  const setPlans = usePlansBoardStore((s) => s.setPlans);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createColumn, setCreateColumn] = useState<PlanStatus>("ideas");
+  const [selectedPlan, setSelectedPlan] = useState<PlanWithDetails | null>(null);
+  const reducedMotion = useReducedMotion() ?? false;
 
-    // Group plans by status
-    const columnPlans = useMemo(() => {
-        const grouped: Record<PlanStatus, PlanWithDetails[]> = {
-            ideas: [],
-            to_plan: [],
-            upcoming: [],
-            done: [],
-        };
-        for (const plan of plans) {
-            grouped[plan.status]?.push(plan);
+  const itemTransition = useMemo(
+    () => getSurfaceTransition(reducedMotion, motionDuration.fast),
+    [reducedMotion],
+  );
+
+  const columnPlans = useMemo(() => {
+    const grouped: Record<PlanStatus, PlanWithDetails[]> = {
+      ideas: [],
+      to_plan: [],
+      upcoming: [],
+      done: [],
+    };
+
+    for (const plan of plans) {
+      grouped[plan.status]?.push(plan);
+    }
+
+    for (const key of Object.keys(grouped) as PlanStatus[]) {
+      grouped[key].sort((a, b) => a.sort_order - b.sort_order);
+    }
+
+    return grouped;
+  }, [plans]);
+
+  const handleDragEnd = useCallback(
+    async (result: DropResult) => {
+      const { source, destination, draggableId } = result;
+      if (!destination) return;
+
+      const sourceStatus = source.droppableId as PlanStatus;
+      const destinationStatus = destination.droppableId as PlanStatus;
+      const sourceIndex = source.index;
+      const destinationIndex = destination.index;
+
+      if (
+        sourceStatus === destinationStatus &&
+        sourceIndex === destinationIndex
+      ) {
+        return;
+      }
+
+      const previousPlans = [...plans];
+
+      if (sourceStatus === destinationStatus) {
+        const reorderedColumn = [...columnPlans[sourceStatus]];
+        const [movedPlan] = reorderedColumn.splice(sourceIndex, 1);
+        if (!movedPlan) return;
+        reorderedColumn.splice(destinationIndex, 0, movedPlan);
+
+        const normalizedColumn = reorderedColumn.map((plan, index) => ({
+          ...plan,
+          sort_order: index,
+        }));
+
+        setPlans(
+          plans.map(
+            (plan) =>
+              normalizedColumn.find((candidate) => candidate.id === plan.id) ??
+              plan,
+          ),
+        );
+
+        const response = await reorderPlans(
+          groupId,
+          normalizedColumn.map((plan) => ({
+            id: plan.id,
+            sort_order: plan.sort_order,
+          })),
+        );
+
+        if ("error" in response) {
+          setPlans(previousPlans);
         }
-        // Sort each column by sort_order
-        for (const key of Object.keys(grouped) as PlanStatus[]) {
-            grouped[key].sort((a, b) => a.sort_order - b.sort_order);
-        }
-        return grouped;
-    }, [plans]);
 
-    const handleDragEnd = useCallback(
-        async (result: DropResult) => {
-            const { source, destination, draggableId } = result;
-            if (!destination) return;
+        return;
+      }
 
-            const srcStatus = source.droppableId as PlanStatus;
-            const destStatus = destination.droppableId as PlanStatus;
-            const srcIndex = source.index;
-            const destIndex = destination.index;
+      const sourceColumn = [...columnPlans[sourceStatus]];
+      const destinationColumn = [...columnPlans[destinationStatus]];
+      const [movedPlan] = sourceColumn.splice(sourceIndex, 1);
 
-            // No movement
-            if (srcStatus === destStatus && srcIndex === destIndex) return;
+      if (!movedPlan) return;
 
-            // Snapshot for rollback
-            const prevPlans = [...plans];
+      destinationColumn.splice(destinationIndex, 0, movedPlan);
 
-            if (srcStatus === destStatus) {
-                // Reorder within the same column
-                const colItems = [...columnPlans[srcStatus]];
-                const [moved] = colItems.splice(srcIndex, 1);
-                colItems.splice(destIndex, 0, moved);
+      const normalizedSource = sourceColumn.map((plan, index) => ({
+        ...plan,
+        sort_order: index,
+      }));
+      const normalizedDestination = destinationColumn.map((plan, index) => ({
+        ...plan,
+        status: destinationStatus,
+        sort_order: index,
+      }));
 
-                // Optimistic: update sort_orders
-                const updates = colItems.map((item, index) => ({
-                    ...item,
-                    sort_order: index,
-                }));
+      storeMovePlan(draggableId, destinationStatus, destinationIndex);
 
-                setPlans(
-                    plans.map((p) => {
-                        const updated = updates.find((u) => u.id === p.id);
-                        return updated ?? p;
-                    }),
-                );
+      const moveResponse = await movePlanAction(
+        draggableId,
+        destinationStatus,
+        destinationIndex,
+      );
 
-                // Server call
-                const result = await reorderPlans(
-                    groupId,
-                    updates.map((u) => ({ id: u.id, sort_order: u.sort_order })),
-                );
-                if ("error" in result) {
-                    setPlans(prevPlans);
-                }
-            } else {
-                // Cross-column move
-                const destItems = [...columnPlans[destStatus]];
-                const plan = plans.find((p) => p.id === draggableId);
-                if (!plan) return;
+      if ("error" in moveResponse) {
+        setPlans(previousPlans);
+        return;
+      }
 
-                // Insert at destination index
-                destItems.splice(destIndex, 0, plan);
-                const newSortOrder = destIndex;
+      const reorderPayload = [
+        ...normalizedSource,
+        ...normalizedDestination.filter((plan) => plan.id !== draggableId),
+      ].map((plan) => ({
+        id: plan.id,
+        sort_order: plan.sort_order,
+      }));
 
-                // Optimistic update
-                storeMoveplan(draggableId, destStatus, newSortOrder);
+      const reorderResponse = await reorderPlans(groupId, reorderPayload);
 
-                // Server call
-                const result = await movePlanAction(draggableId, destStatus, newSortOrder);
-                if ("error" in result) {
-                    setPlans(prevPlans);
-                }
-            }
-        },
-        [plans, columnPlans, groupId, storeMoveplan, setPlans],
-    );
+      if ("error" in reorderResponse) {
+        setPlans(previousPlans);
+      }
+    },
+    [columnPlans, groupId, plans, setPlans, storeMovePlan],
+  );
 
-    const handleAddClick = useCallback((status: PlanStatus) => {
-        setCreateColumn(status);
-        setCreateOpen(true);
-    }, []);
+  const handleAddClick = useCallback((status: PlanStatus) => {
+    setCreateColumn(status);
+    setCreateOpen(true);
+  }, []);
 
-    return (
-        <div className="flex flex-col h-full">
-            {/* Header */}
-            <header className="flex items-center justify-between gap-3 px-4 sm:px-6 py-4">
-                <Text variant="title">Plans</Text>
-                <Button
-                    type="button"
-                    variant="primary"
-                    size="sm"
-                    onClick={() => {
-                        setCreateColumn("ideas");
-                        setCreateOpen(true);
-                    }}
-                >
-                    + New plan
-                </Button>
-            </header>
+  return (
+    <Container as="section" className="py-4 sm:py-6">
+      <TransitionSlot
+        className="col-span-6 sm:col-span-12 mx-auto w-full max-w-6xl space-y-5"
+        variant="context"
+      >
+        <header className="flex items-center justify-between gap-3">
+          <Text variant="title">Plans</Text>
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            onClick={() => {
+              setCreateColumn("ideas");
+              setCreateOpen(true);
+            }}
+          >
+            + New plan
+          </Button>
+        </header>
 
-            {/* Empty state */}
-            {plans.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-20 text-center px-4">
-                    <p className="text-5xl mb-4">📋</p>
-                    <Text variant="heading" className="mb-1">
-                        No plans yet
-                    </Text>
-                    <Text variant="body" color="subtle">
-                        Start planning — turn ideas into events!
-                    </Text>
-                </div>
-            )}
+        <AnimatePresence>
+          {plans.length === 0 && (
+            <motion.div
+              className="flex flex-col items-center justify-center py-20 text-center"
+              initial={
+                reducedMotion
+                  ? { opacity: 0 }
+                  : { opacity: 0, y: 12, filter: "blur(4px)" }
+              }
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              exit={reducedMotion ? { opacity: 0 } : { opacity: 0, y: -8 }}
+              transition={{
+                duration: motionDuration.standard,
+                ease: motionEase.out,
+              }}
+            >
+              <div className="mb-4 rounded-full border border-[var(--color-edge)] bg-[var(--color-surface)] p-4 text-[var(--color-text-muted)]">
+                <LayoutList className="h-7 w-7" />
+              </div>
+              <Text variant="heading" className="mb-1">
+                No plans yet
+              </Text>
+              <Text variant="body" color="subtle" className="mb-4 max-w-md">
+                Start mapping ideas, move them across states, and keep the squad
+                aligned without leaving the board.
+              </Text>
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  setCreateColumn("ideas");
+                  setCreateOpen(true);
+                }}
+              >
+                + New plan
+              </Button>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-            {/* Kanban board */}
-            {plans.length > 0 && (
-                <DragDropContext onDragEnd={handleDragEnd}>
-                    <div className="flex-1 flex gap-3 overflow-x-auto px-4 sm:px-6 pb-4 snap-x snap-mandatory md:snap-none">
-                        {COLUMNS.map((col) => (
-                            <KanbanColumn
-                                key={col.id}
-                                status={col.id}
-                                emoji={col.emoji}
-                                title={col.title}
-                                plans={columnPlans[col.id]}
-                                onAddClick={() => handleAddClick(col.id)}
-                                onPlanClick={setSelectedPlan}
-                            />
-                        ))}
-                    </div>
-                </DragDropContext>
-            )}
+        {plans.length > 0 && (
+          <>
+            <div
+              className="flex items-center gap-2 rounded-2xl border px-4 py-3"
+              style={{
+                background: "var(--color-surface)",
+                borderColor: "var(--color-edge)",
+              }}
+            >
+              <MoveRight className="h-4 w-4 text-[var(--color-text-muted)]" />
+              <Text variant="caption" color="subtle">
+                Drag any card between columns to update its status instantly.
+              </Text>
+            </div>
 
-            {/* Create plan sheet */}
-            <CreatePlanSheet
-                open={createOpen}
-                onClose={() => setCreateOpen(false)}
-                groupId={groupId}
-                initialStatus={createColumn}
-            />
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <motion.div
+                layout
+                className="grid gap-3 md:grid-cols-2 xl:grid-cols-4"
+                transition={itemTransition}
+              >
+                {PLAN_STATUS_CONFIG.map((column) => (
+                  <motion.div
+                    key={column.id}
+                    layout="position"
+                    transition={itemTransition}
+                  >
+                    <KanbanColumn
+                      status={column.id}
+                      title={column.title}
+                      plans={columnPlans[column.id]}
+                      onAddClick={() => handleAddClick(column.id)}
+                      onPlanClick={setSelectedPlan}
+                    />
+                  </motion.div>
+                ))}
+              </motion.div>
+            </DragDropContext>
+          </>
+        )}
 
-            {/* Plan detail panel */}
-            <PlanDetailPanel
-                plan={selectedPlan}
-                onClose={() => setSelectedPlan(null)}
-                groupId={groupId}
-                currentUserId={currentUserId}
-            />
-        </div>
-    );
+        <CreatePlanSheet
+          open={createOpen}
+          onClose={() => setCreateOpen(false)}
+          groupId={groupId}
+          initialStatus={createColumn}
+        />
+
+        <PlanDetailPanel
+          plan={selectedPlan}
+          onClose={() => setSelectedPlan(null)}
+          groupId={groupId}
+          currentUserId={currentUserId}
+        />
+      </TransitionSlot>
+    </Container>
+  );
 }

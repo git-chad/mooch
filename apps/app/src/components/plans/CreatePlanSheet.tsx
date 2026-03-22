@@ -1,241 +1,302 @@
 "use client";
 
+import { createBrowserClient, uploadPlanAttachment } from "@mooch/db";
 import type { PlanStatus } from "@mooch/types";
 import { Button, Input, Sheet, Text } from "@mooch/ui";
-import { useState, useTransition } from "react";
-import { createPlan, addPlanAttachment } from "@/app/actions/plans";
 import { Camera, Mic, X } from "lucide-react";
-import { createBrowserClient } from "@mooch/db";
-import { uploadPlanAttachment } from "@mooch/db";
+import { useEffect, useState, useTransition } from "react";
+import { addPlanAttachment, createPlan } from "@/app/actions/plans";
+import { PLAN_STATUS_CONFIG } from "./plan-status";
 
 type Props = {
-    open: boolean;
-    onClose: () => void;
-    groupId: string;
-    initialStatus: PlanStatus;
+  open: boolean;
+  onClose: () => void;
+  groupId: string;
+  initialStatus: PlanStatus;
 };
 
-const STATUS_OPTIONS: { value: PlanStatus; label: string; emoji: string }[] = [
-    { value: "ideas", label: "Ideas", emoji: "💡" },
-    { value: "to_plan", label: "To Plan", emoji: "📋" },
-    { value: "upcoming", label: "Upcoming", emoji: "📅" },
-    { value: "done", label: "Done", emoji: "✅" },
-];
+export function CreatePlanSheet({
+  open,
+  onClose,
+  groupId,
+  initialStatus,
+}: Props) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [date, setDate] = useState("");
+  const [status, setStatus] = useState<PlanStatus>(initialStatus);
+  const [isPending, startTransition] = useTransition();
 
-export function CreatePlanSheet({ open, onClose, groupId, initialStatus }: Props) {
-    const [title, setTitle] = useState("");
-    const [description, setDescription] = useState("");
-    const [date, setDate] = useState("");
-    const [status, setStatus] = useState<PlanStatus>(initialStatus);
-    const [isPending, startTransition] = useTransition();
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
 
-    const [photo, setPhoto] = useState<File | null>(null);
-    const [isRecording, setIsRecording] = useState(false);
-    const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
-    const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  useEffect(() => {
+    if (open) {
+      setStatus(initialStatus);
+    }
+  }, [initialStatus, open]);
 
-    const startRecording = async () => {
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) setAudioBlob(event.data);
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+    } catch (error) {
+      console.error("Microphone access denied", error);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && mediaRecorder.state !== "inactive") {
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach((track) => track.stop());
+      setIsRecording(false);
+    }
+  };
+
+  const resetForm = () => {
+    setTitle("");
+    setDescription("");
+    setDate("");
+    setStatus(initialStatus);
+    setPhoto(null);
+    setAudioBlob(null);
+
+    if (isRecording) stopRecording();
+  };
+
+  const handleSubmit = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!title.trim()) return;
+
+    startTransition(async () => {
+      const result = await createPlan(groupId, {
+        title: title.trim(),
+        description: description.trim() || undefined,
+        date: date || null,
+        status,
+      });
+
+      if ("error" in result) {
+        console.error("Failed to create plan:", result.error);
+        return;
+      }
+
+      const supabase = createBrowserClient();
+
+      if (photo) {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const recorder = new MediaRecorder(stream);
-            recorder.ondataavailable = (e) => {
-                if (e.data.size > 0) setAudioBlob(e.data);
-            };
-            recorder.start();
-            setMediaRecorder(recorder);
-            setIsRecording(true);
-        } catch (err) {
-            console.error("Microphone access denied", err);
+          const path = await uploadPlanAttachment(
+            supabase,
+            groupId,
+            result.plan.id,
+            photo,
+            photo.name,
+          );
+          await addPlanAttachment(result.plan.id, "photo", path);
+        } catch (error) {
+          console.error("Photo upload failed", error);
         }
-    };
+      }
 
-    const stopRecording = () => {
-        if (mediaRecorder && mediaRecorder.state !== "inactive") {
-            mediaRecorder.stop();
-            mediaRecorder.stream.getTracks().forEach(t => t.stop());
-            setIsRecording(false);
+      if (audioBlob) {
+        try {
+          const path = await uploadPlanAttachment(
+            supabase,
+            groupId,
+            result.plan.id,
+            audioBlob,
+            "voice.webm",
+          );
+          await addPlanAttachment(result.plan.id, "voice", path);
+        } catch (error) {
+          console.error("Voice upload failed", error);
         }
-    };
+      }
 
-    // Reset when initialStatus changes
-    const resetForm = () => {
-        setTitle("");
-        setDescription("");
-        setDate("");
-        setStatus(initialStatus);
-        setPhoto(null);
-        setAudioBlob(null);
-        if (isRecording) stopRecording();
-    };
+      resetForm();
+      onClose();
+    });
+  };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!title.trim()) return;
+  return (
+    <Sheet
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) {
+          resetForm();
+          onClose();
+        }
+      }}
+      title="New Plan"
+    >
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div>
+          <label htmlFor="plan-title" className="mb-1 block">
+            <Text variant="label">Title *</Text>
+          </label>
+          <Input
+            id="plan-title"
+            placeholder="What's the plan?"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            autoFocus
+            required
+          />
+        </div>
 
-        startTransition(async () => {
-            const result = await createPlan(groupId, {
-                title: title.trim(),
-                description: description.trim() || undefined,
-                date: date || null,
-                status,
-            });
+        <div>
+          <label htmlFor="plan-description" className="mb-1 block">
+            <Text variant="label">Description</Text>
+          </label>
+          <textarea
+            id="plan-description"
+            placeholder="Add context, timing, or who should take the lead."
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            rows={3}
+            className="w-full resize-none rounded-2xl border border-[var(--color-edge)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,170,105,0.35)]"
+          />
+        </div>
 
-            if ("error" in result) {
-                console.error("Failed to create plan:", result.error);
-                return;
-            }
+        <div>
+          <label htmlFor="plan-date" className="mb-1 block">
+            <Text variant="label">Date</Text>
+          </label>
+          <input
+            id="plan-date"
+            type="datetime-local"
+            value={date}
+            onChange={(event) => setDate(event.target.value)}
+            className="w-full rounded-2xl border border-[var(--color-edge)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,170,105,0.35)]"
+          />
+        </div>
 
-            // Upload attachments
-            const supabase = createBrowserClient();
-            if (photo) {
-                try {
-                    const path = await uploadPlanAttachment(supabase, groupId, result.plan.id, photo, photo.name);
-                    await addPlanAttachment(result.plan.id, "photo", path);
-                } catch (e) {
-                    console.error("Photo upload failed", e);
-                }
-            }
-            if (audioBlob) {
-                try {
-                    const path = await uploadPlanAttachment(supabase, groupId, result.plan.id, audioBlob, "voice.webm");
-                    await addPlanAttachment(result.plan.id, "voice", path);
-                } catch (e) {
-                    console.error("Voice upload failed", e);
-                }
-            }
+        <div>
+          <Text variant="label" className="mb-2 block">
+            Status
+          </Text>
+          <div className="flex flex-wrap gap-2">
+            {PLAN_STATUS_CONFIG.map((option) => {
+              const Icon = option.icon;
+              const isActive = status === option.id;
 
-            resetForm();
-            onClose();
-        });
-    };
-
-    return (
-        <Sheet
-            open={open}
-            onOpenChange={(val) => {
-                if (!val) {
-                    resetForm();
-                    onClose();
-                }
-            }}
-            title="New Plan"
-        >
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                {/* Title */}
-                <div>
-                    <label htmlFor="plan-title" className="block mb-1">
-                        <Text variant="label">Title *</Text>
-                    </label>
-                    <Input
-                        id="plan-title"
-                        placeholder="What's the plan?"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                        autoFocus
-                        required
-                    />
-                </div>
-
-                {/* Description */}
-                <div>
-                    <label htmlFor="plan-description" className="block mb-1">
-                        <Text variant="label">Description</Text>
-                    </label>
-                    <textarea
-                        id="plan-description"
-                        placeholder="Add some details..."
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        rows={3}
-                        className="w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40 resize-none"
-                    />
-                </div>
-
-                {/* Date */}
-                <div>
-                    <label htmlFor="plan-date" className="block mb-1">
-                        <Text variant="label">Date (optional)</Text>
-                    </label>
-                    <input
-                        id="plan-date"
-                        type="datetime-local"
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
-                        className="w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
-                    />
-                </div>
-
-                {/* Column selector */}
-                <div>
-                    <Text variant="label" className="block mb-2">
-                        Column
-                    </Text>
-                    <div className="flex gap-2 flex-wrap">
-                        {STATUS_OPTIONS.map((opt) => (
-                            <button
-                                key={opt.value}
-                                type="button"
-                                onClick={() => setStatus(opt.value)}
-                                className={`
-                  inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all
-                  ${status === opt.value
-                                        ? "bg-amber-100 text-amber-800 ring-2 ring-amber-300/60"
-                                        : "bg-stone-100 text-stone-600 hover:bg-stone-200/80"
-                                    }
-                `}
-                            >
-                                <span>{opt.emoji}</span>
-                                {opt.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Attachments */}
-                <div className="flex gap-6 mt-1 mb-2">
-                    <div>
-                        <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-stone-600 hover:text-stone-900">
-                            <Camera className="w-4 h-4" /> Photo
-                            <input type="file" accept="image/*" className="hidden" onChange={(e) => {
-                                if (e.target.files && e.target.files[0]) setPhoto(e.target.files[0]);
-                            }} />
-                        </label>
-                        {photo && (
-                            <div className="text-xs text-stone-500 mt-1 flex items-center justify-between gap-2 bg-stone-100 p-1.5 rounded">
-                                <span className="truncate max-w-[120px]">{photo.name}</span>
-                                <button type="button" onClick={() => setPhoto(null)} className="hover:text-stone-800">
-                                    <X className="w-3 h-3" />
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                    <div>
-                        <button
-                            type="button"
-                            onClick={isRecording ? stopRecording : (audioBlob ? () => setAudioBlob(null) : startRecording)}
-                            className={`flex items-center gap-1.5 text-sm font-medium ${isRecording ? 'text-red-500' : 'text-stone-600 hover:text-stone-900'}`}
-                        >
-                            <Mic className="w-4 h-4" />
-                            {isRecording ? "Stop Recording" : (audioBlob ? "Remove Audio" : "Voice Note")}
-                        </button>
-                        {audioBlob && !isRecording && (
-                            <div className="text-xs text-stone-500 mt-1 bg-stone-100 p-1.5 rounded">
-                                Audio captured
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Submit */}
-                <Button
-                    type="submit"
-                    variant="primary"
-                    disabled={!title.trim() || isPending}
-                    className="mt-2"
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => setStatus(option.id)}
+                  className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition-colors"
+                  style={{
+                    background: isActive
+                      ? "rgba(214, 170, 105, 0.18)"
+                      : "var(--color-surface-secondary)",
+                    borderColor: isActive
+                      ? "rgba(214, 170, 105, 0.45)"
+                      : "var(--color-edge)",
+                    color: isActive
+                      ? "var(--color-text)"
+                      : "var(--color-text-muted)",
+                  }}
                 >
-                    {isPending ? "Creating..." : "Create Plan"}
-                </Button>
-            </form>
-        </Sheet>
-    );
+                  <Icon className="h-4 w-4" />
+                  {option.title}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div
+            className="rounded-2xl border p-3"
+            style={{
+              background: "var(--color-surface-secondary)",
+              borderColor: "var(--color-edge)",
+            }}
+          >
+            <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-[var(--color-text)]">
+              <Camera className="h-4 w-4" />
+              Add photo
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(event) => {
+                  if (event.target.files && event.target.files[0]) {
+                    setPhoto(event.target.files[0]);
+                  }
+                }}
+              />
+            </label>
+            {photo && (
+              <div className="mt-2 flex items-center justify-between gap-2 rounded-xl border border-[var(--color-edge)] bg-[var(--color-surface)] px-2 py-1.5">
+                <Text variant="caption" className="truncate">
+                  {photo.name}
+                </Text>
+                <button
+                  type="button"
+                  onClick={() => setPhoto(null)}
+                  className="text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)]"
+                  aria-label="Remove selected photo"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div
+            className="rounded-2xl border p-3"
+            style={{
+              background: "var(--color-surface-secondary)",
+              borderColor: "var(--color-edge)",
+            }}
+          >
+            <button
+              type="button"
+              onClick={
+                isRecording
+                  ? stopRecording
+                  : audioBlob
+                    ? () => setAudioBlob(null)
+                    : startRecording
+              }
+              className="flex items-center gap-2 text-sm font-medium text-[var(--color-text)]"
+            >
+              <Mic className={`h-4 w-4 ${isRecording ? "text-red-500" : ""}`} />
+              {isRecording
+                ? "Stop recording"
+                : audioBlob
+                  ? "Remove voice note"
+                  : "Add voice note"}
+            </button>
+            {audioBlob && !isRecording && (
+              <Text variant="caption" color="subtle" className="mt-2 block">
+                Voice note ready to upload.
+              </Text>
+            )}
+          </div>
+        </div>
+
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={!title.trim() || isPending}
+          className="mt-2"
+        >
+          {isPending ? "Creating..." : "Create plan"}
+        </Button>
+      </form>
+    </Sheet>
+  );
 }

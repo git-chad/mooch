@@ -1,351 +1,434 @@
 "use client";
 
+import { createBrowserClient, getSignedPlanAttachmentUrl } from "@mooch/db";
 import type { PlanWithDetails } from "@mooch/stores";
 import type { PlanStatus } from "@mooch/types";
-import { Avatar, Button, ConfirmDialog, Sheet, Text } from "@mooch/ui";
-import { Calendar, Camera, Mic, Trash2, Edit3, ExternalLink } from "lucide-react";
-import { useState, useEffect, useTransition } from "react";
-import { updatePlan, deletePlan, removePlanAttachment } from "@/app/actions/plans";
-import { createBrowserClient, getSignedPlanAttachmentUrl } from "@mooch/db";
+import { Avatar, Button, ConfirmDialog, Input, Sheet, Text } from "@mooch/ui";
+import {
+  Calendar,
+  Camera,
+  ExternalLink,
+  Mic,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import { useEffect, useState, useTransition } from "react";
+import {
+  deletePlan,
+  removePlanAttachment,
+  updatePlan,
+} from "@/app/actions/plans";
+import { PLAN_STATUS_CONFIG } from "./plan-status";
 
 type Props = {
-    plan: PlanWithDetails | null;
-    onClose: () => void;
-    groupId: string;
-    currentUserId: string;
+  plan: PlanWithDetails | null;
+  onClose: () => void;
+  groupId: string;
+  currentUserId: string;
 };
 
-const STATUS_OPTIONS: { value: PlanStatus; label: string; emoji: string }[] = [
-    { value: "ideas", label: "Ideas", emoji: "💡" },
-    { value: "to_plan", label: "To Plan", emoji: "📋" },
-    { value: "upcoming", label: "Upcoming", emoji: "📅" },
-    { value: "done", label: "Done", emoji: "✅" },
-];
+export function PlanDetailPanel({
+  plan,
+  onClose,
+  groupId,
+  currentUserId,
+}: Props) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
 
-export function PlanDetailPanel({ plan, onClose, groupId, currentUserId }: Props) {
-    const [isEditing, setIsEditing] = useState(false);
-    const [editTitle, setEditTitle] = useState("");
-    const [editDescription, setEditDescription] = useState("");
-    const [confirmDelete, setConfirmDelete] = useState(false);
-    const [isPending, startTransition] = useTransition();
-    const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  useEffect(() => {
+    if (!plan) {
+      setSignedUrls({});
+      return;
+    }
 
-    useEffect(() => {
-        if (!plan) {
-            setSignedUrls({});
-            return;
+    let isMounted = true;
+
+    const fetchUrls = async () => {
+      const supabase = createBrowserClient();
+      const urls: Record<string, string> = {};
+
+      for (const attachment of plan.attachments) {
+        if (signedUrls[attachment.id]) continue;
+
+        const url = await getSignedPlanAttachmentUrl(supabase, attachment.url);
+        if (url && isMounted) {
+          urls[attachment.id] = url;
         }
-        let isMounted = true;
-        const fetchUrls = async () => {
-            const supabase = createBrowserClient();
-            const urls: Record<string, string> = {};
-            for (const att of plan.attachments) {
-                if (signedUrls[att.id]) continue; // Skip already loaded
-                const url = await getSignedPlanAttachmentUrl(supabase, att.url);
-                if (url && isMounted) urls[att.id] = url;
-            }
-            if (isMounted && Object.keys(urls).length > 0) {
-                setSignedUrls(prev => ({ ...prev, ...urls }));
-            }
-        };
-        fetchUrls();
-        return () => { isMounted = false; };
-    }, [plan]);
+      }
 
-    if (!plan) return null;
-
-    const canEdit = true; // All group members can edit plans
-    const canDelete = plan.created_by === currentUserId; // Only creator can delete
-
-    const handleEdit = () => {
-        setEditTitle(plan.title);
-        setEditDescription(plan.description ?? "");
-        setIsEditing(true);
+      if (isMounted && Object.keys(urls).length > 0) {
+        setSignedUrls((previous) => ({ ...previous, ...urls }));
+      }
     };
 
-    const handleSaveEdit = () => {
-        if (!editTitle.trim()) return;
-        startTransition(async () => {
-            const result = await updatePlan(plan.id, {
-                title: editTitle.trim(),
-                description: editDescription.trim() || null,
-            });
-            if ("error" in result) {
-                console.error("Failed to update plan:", result.error);
-                return;
-            }
+    fetchUrls();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [plan]);
+
+  if (!plan) return null;
+
+  const canEdit = true;
+  const canDelete = plan.created_by === currentUserId;
+
+  const formattedDate = plan.date
+    ? new Date(plan.date).toLocaleDateString("en-US", {
+        weekday: "short",
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      })
+    : null;
+
+  const photoAttachments = plan.attachments.filter(
+    (attachment) => attachment.type === "photo",
+  );
+  const voiceAttachments = plan.attachments.filter(
+    (attachment) => attachment.type === "voice",
+  );
+
+  const handleEdit = () => {
+    setEditTitle(plan.title);
+    setEditDescription(plan.description ?? "");
+    setIsEditing(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (!editTitle.trim()) return;
+
+    startTransition(async () => {
+      const result = await updatePlan(plan.id, {
+        title: editTitle.trim(),
+        description: editDescription.trim() || null,
+      });
+
+      if ("error" in result) {
+        console.error("Failed to update plan:", result.error);
+        return;
+      }
+
+      setIsEditing(false);
+    });
+  };
+
+  const handleDelete = () => {
+    startTransition(async () => {
+      const result = await deletePlan(plan.id);
+
+      if ("error" in result) {
+        console.error("Failed to delete plan:", result.error);
+        return;
+      }
+
+      setConfirmDelete(false);
+      onClose();
+    });
+  };
+
+  const handleDeleteAttachment = (attachmentId: string) => {
+    startTransition(async () => {
+      const result = await removePlanAttachment(attachmentId);
+
+      if ("error" in result) {
+        console.error("Failed to delete attachment:", result.error);
+        return;
+      }
+
+      setSignedUrls((previous) => {
+        const next = { ...previous };
+        delete next[attachmentId];
+        return next;
+      });
+    });
+  };
+
+  const handleStatusChange = (newStatus: PlanStatus) => {
+    startTransition(async () => {
+      const result = await updatePlan(plan.id, { status: newStatus });
+      if ("error" in result) {
+        console.error("Failed to update plan status:", result.error);
+      }
+    });
+  };
+
+  return (
+    <>
+      <Sheet
+        open={!!plan}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
             setIsEditing(false);
-        });
-    };
-
-    const handleDelete = () => {
-        startTransition(async () => {
-            const result = await deletePlan(plan.id);
-            if ("error" in result) {
-                console.error("Failed to delete plan:", result.error);
-                return;
-            }
-            setConfirmDelete(false);
             onClose();
-        });
-    };
+          }
+        }}
+        title={isEditing ? "Edit Plan" : plan.title}
+      >
+        <div className="flex flex-col gap-5">
+          {isEditing ? (
+            <>
+              <div>
+                <label htmlFor="edit-title" className="mb-1 block">
+                  <Text variant="label">Title</Text>
+                </label>
+                <Input
+                  id="edit-title"
+                  value={editTitle}
+                  onChange={(event) => setEditTitle(event.target.value)}
+                />
+              </div>
 
-    const handleDeleteAttachment = (attachmentId: string) => {
-        if (!confirm("Remove this attachment?")) return;
-        startTransition(async () => {
-            const result = await removePlanAttachment(attachmentId);
-            if ("error" in result) {
-                console.error("Failed to delete attachment:", result.error);
-            } else {
-                setSignedUrls(prev => {
-                    const next = { ...prev };
-                    delete next[attachmentId];
-                    return next;
-                });
-            }
-        });
-    };
+              <div>
+                <label htmlFor="edit-description" className="mb-1 block">
+                  <Text variant="label">Description</Text>
+                </label>
+                <textarea
+                  id="edit-description"
+                  value={editDescription}
+                  onChange={(event) => setEditDescription(event.target.value)}
+                  rows={4}
+                  className="w-full resize-none rounded-2xl border border-[var(--color-edge)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:ring-2 focus:ring-[rgba(214,170,105,0.35)]"
+                />
+              </div>
 
-    const handleStatusChange = (newStatus: PlanStatus) => {
-        startTransition(async () => {
-            await updatePlan(plan.id, { status: newStatus });
-        });
-    };
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={handleSaveEdit}
+                  disabled={!editTitle.trim() || isPending}
+                >
+                  {isPending ? "Saving..." : "Save"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsEditing(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              {plan.description && (
+                <Text variant="body" color="subtle">
+                  {plan.description}
+                </Text>
+              )}
 
-    const formattedDate = plan.date
-        ? new Date(plan.date).toLocaleDateString("en-US", {
-            weekday: "short",
-            month: "short",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-        })
-        : null;
+              <div>
+                <Text variant="label" className="mb-2 block">
+                  Status
+                </Text>
+                <div className="flex flex-wrap gap-2">
+                  {PLAN_STATUS_CONFIG.map((option) => {
+                    const Icon = option.icon;
+                    const isActive = plan.status === option.id;
 
-    const photoAttachments = plan.attachments.filter((a) => a.type === "photo");
-    const voiceAttachments = plan.attachments.filter((a) => a.type === "voice");
-
-    return (
-        <>
-            <Sheet
-                open={!!plan}
-                onOpenChange={(val) => {
-                    if (!val) {
-                        setIsEditing(false);
-                        onClose();
-                    }
-                }}
-                title={isEditing ? "Edit Plan" : plan.title}
-            >
-                <div className="flex flex-col gap-4">
-                    {isEditing ? (
-                        /* Edit mode */
-                        <>
-                            <div>
-                                <label htmlFor="edit-title" className="block mb-1">
-                                    <Text variant="label">Title</Text>
-                                </label>
-                                <input
-                                    id="edit-title"
-                                    value={editTitle}
-                                    onChange={(e) => setEditTitle(e.target.value)}
-                                    className="w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-800 focus:outline-none focus:ring-2 focus:ring-amber-400/40"
-                                />
-                            </div>
-                            <div>
-                                <label htmlFor="edit-desc" className="block mb-1">
-                                    <Text variant="label">Description</Text>
-                                </label>
-                                <textarea
-                                    id="edit-desc"
-                                    value={editDescription}
-                                    onChange={(e) => setEditDescription(e.target.value)}
-                                    rows={4}
-                                    className="w-full rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-400/40 resize-none"
-                                />
-                            </div>
-                            <div className="flex gap-2">
-                                <Button
-                                    type="button"
-                                    variant="primary"
-                                    size="sm"
-                                    onClick={handleSaveEdit}
-                                    disabled={!editTitle.trim() || isPending}
-                                >
-                                    {isPending ? "Saving..." : "Save"}
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setIsEditing(false)}
-                                >
-                                    Cancel
-                                </Button>
-                            </div>
-                        </>
-                    ) : (
-                        /* View mode */
-                        <>
-                            {/* Description */}
-                            {plan.description && (
-                                <Text variant="body" color="subtle">
-                                    {plan.description}
-                                </Text>
-                            )}
-
-                            {/* Status selector */}
-                            <div>
-                                <Text variant="label" className="block mb-2">
-                                    Status
-                                </Text>
-                                <div className="flex gap-2 flex-wrap">
-                                    {STATUS_OPTIONS.map((opt) => (
-                                        <button
-                                            key={opt.value}
-                                            type="button"
-                                            onClick={() => handleStatusChange(opt.value)}
-                                            disabled={isPending}
-                                            className={`
-                        inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all
-                        ${plan.status === opt.value
-                                                    ? "bg-amber-100 text-amber-800 ring-2 ring-amber-300/60"
-                                                    : "bg-stone-100 text-stone-600 hover:bg-stone-200/80"
-                                                }
-                      `}
-                                        >
-                                            <span>{opt.emoji}</span>
-                                            {opt.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Date */}
-                            {formattedDate && (
-                                <div className="flex items-center gap-2 text-stone-500">
-                                    <Calendar className="w-4 h-4" />
-                                    <Text variant="caption">{formattedDate}</Text>
-                                </div>
-                            )}
-
-                            {/* Organizer */}
-                            {plan.organizer && (
-                                <div className="flex items-center gap-2">
-                                    <Avatar
-                                        src={plan.organizer.photo_url}
-                                        name={plan.organizer.display_name}
-                                        size="sm"
-                                    />
-                                    <div>
-                                        <Text variant="caption" color="subtle">
-                                            Organizer
-                                        </Text>
-                                        <Text variant="body">{plan.organizer.display_name}</Text>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Attachments */}
-                            {(photoAttachments.length > 0 || voiceAttachments.length > 0) && (
-                                <div>
-                                    <Text variant="label" className="block mb-2">
-                                        Attachments
-                                    </Text>
-                                    <div className="space-y-3">
-                                        {photoAttachments.map((att) => (
-                                            <div key={att.id} className="relative group rounded-lg overflow-hidden border border-stone-200">
-                                                {signedUrls[att.id] ? (
-                                                    <img src={signedUrls[att.id]} alt="Attachment" className="w-full h-auto object-cover max-h-48" />
-                                                ) : (
-                                                    <div className="h-24 bg-stone-100 flex items-center justify-center animate-pulse"><Camera className="w-5 h-5 text-stone-400" /></div>
-                                                )}
-                                                {canEdit && (
-                                                    <button type="button" onClick={() => handleDeleteAttachment(att.id)} className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70">
-                                                        <Trash2 className="w-3 h-3" />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        ))}
-                                        {voiceAttachments.map((att) => (
-                                            <div key={att.id} className="relative bg-stone-100 rounded-lg p-3 pr-10 flex items-center">
-                                                {signedUrls[att.id] ? (
-                                                    <audio src={signedUrls[att.id]} controls className="w-full h-8" />
-                                                ) : (
-                                                    <div className="flex items-center gap-2 text-stone-400 text-sm"><Mic className="w-4 h-4 animate-pulse" /> Loading voice note...</div>
-                                                )}
-                                                {canEdit && (
-                                                    <button type="button" onClick={() => handleDeleteAttachment(att.id)} className="absolute right-3 p-1.5 text-stone-400 hover:text-red-500 transition-colors">
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Created by */}
-                            <div className="flex items-center gap-2 pt-2 border-t border-stone-100">
-                                <Avatar
-                                    src={plan.created_by_profile.photo_url}
-                                    name={plan.created_by_profile.display_name}
-                                    size="sm"
-                                />
-                                <Text variant="caption" color="subtle">
-                                    Created by {plan.created_by_profile.display_name}
-                                </Text>
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex gap-2 pt-2">
-                                {canEdit && (
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={handleEdit}
-                                    >
-                                        <Edit3 className="w-4 h-4 mr-1.5" />
-                                        Edit
-                                    </Button>
-                                )}
-                                {canDelete && (
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => setConfirmDelete(true)}
-                                        className="text-red-500 hover:text-red-600"
-                                    >
-                                        <Trash2 className="w-4 h-4 mr-1.5" />
-                                        Delete
-                                    </Button>
-                                )}
-                                {/* Create Event from Plan — navigates to the events creation page (Phase 7) */}
-                                <a
-                                    href={`/${groupId}/events/new?from_plan=${plan.id}`}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-stone-100 text-stone-600 hover:bg-stone-200/80 transition-all ml-auto"
-                                >
-                                    <ExternalLink className="w-4 h-4" />
-                                    Create Event
-                                </a>
-                            </div>
-                        </>
-                    )}
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => handleStatusChange(option.id)}
+                        disabled={isPending}
+                        className="inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-medium transition-colors"
+                        style={{
+                          background: isActive
+                            ? "rgba(214, 170, 105, 0.18)"
+                            : "var(--color-surface-secondary)",
+                          borderColor: isActive
+                            ? "rgba(214, 170, 105, 0.45)"
+                            : "var(--color-edge)",
+                          color: isActive
+                            ? "var(--color-text)"
+                            : "var(--color-text-muted)",
+                        }}
+                      >
+                        <Icon className="h-4 w-4" />
+                        {option.title}
+                      </button>
+                    );
+                  })}
                 </div>
-            </Sheet>
+              </div>
 
-            <ConfirmDialog
-                open={confirmDelete}
-                onOpenChange={setConfirmDelete}
-                title="Delete Plan"
-                description={`Are you sure you want to delete "${plan.title}"? This action cannot be undone.`}
-                confirmLabel="Delete"
-                variant="destructive"
-                onConfirm={handleDelete}
-                onCancel={() => setConfirmDelete(false)}
-            />
-        </>
-    );
+              {formattedDate && (
+                <div className="flex items-center gap-2 text-[var(--color-text-muted)]">
+                  <Calendar className="h-4 w-4" />
+                  <Text variant="caption">{formattedDate}</Text>
+                </div>
+              )}
+
+              {plan.organizer && (
+                <div
+                  className="rounded-2xl border p-3"
+                  style={{
+                    background: "var(--color-surface-secondary)",
+                    borderColor: "var(--color-edge)",
+                  }}
+                >
+                  <Text variant="caption" color="subtle" className="mb-2 block">
+                    Organizer
+                  </Text>
+                  <div className="flex items-center gap-2">
+                    <Avatar
+                      src={plan.organizer.photo_url}
+                      name={plan.organizer.display_name}
+                      size="sm"
+                    />
+                    <Text variant="body">{plan.organizer.display_name}</Text>
+                  </div>
+                </div>
+              )}
+
+              {(photoAttachments.length > 0 || voiceAttachments.length > 0) && (
+                <div>
+                  <Text variant="label" className="mb-2 block">
+                    Attachments
+                  </Text>
+                  <div className="space-y-3">
+                    {photoAttachments.map((attachment) => (
+                      <div
+                        key={attachment.id}
+                        className="group relative overflow-hidden rounded-2xl border"
+                        style={{
+                          background: "var(--color-surface-secondary)",
+                          borderColor: "var(--color-edge)",
+                        }}
+                      >
+                        {signedUrls[attachment.id] ? (
+                          <img
+                            src={signedUrls[attachment.id]}
+                            alt="Plan attachment"
+                            className="max-h-56 w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-32 items-center justify-center text-[var(--color-text-muted)]">
+                            <Camera className="h-5 w-5 animate-pulse" />
+                          </div>
+                        )}
+
+                        {canEdit && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAttachment(attachment.id)}
+                            className="absolute right-2 top-2 rounded-full bg-black/55 p-2 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                            aria-label="Remove photo attachment"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+
+                    {voiceAttachments.map((attachment) => (
+                      <div
+                        key={attachment.id}
+                        className="relative rounded-2xl border p-3"
+                        style={{
+                          background: "var(--color-surface-secondary)",
+                          borderColor: "var(--color-edge)",
+                        }}
+                      >
+                        {signedUrls[attachment.id] ? (
+                          <audio
+                            src={signedUrls[attachment.id]}
+                            controls
+                            className="w-full"
+                          />
+                        ) : (
+                          <div className="flex items-center gap-2 text-sm text-[var(--color-text-muted)]">
+                            <Mic className="h-4 w-4 animate-pulse" />
+                            Loading voice note...
+                          </div>
+                        )}
+
+                        {canEdit && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteAttachment(attachment.id)}
+                            className="absolute right-3 top-3 text-[var(--color-text-muted)] transition-colors hover:text-red-500"
+                            aria-label="Remove voice attachment"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 border-t border-[var(--color-edge)] pt-3">
+                <Avatar
+                  src={plan.created_by_profile.photo_url}
+                  name={plan.created_by_profile.display_name}
+                  size="sm"
+                />
+                <Text variant="caption" color="subtle">
+                  Created by {plan.created_by_profile.display_name}
+                </Text>
+              </div>
+
+              <div className="flex flex-wrap gap-2 pt-1">
+                {canEdit && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleEdit}
+                  >
+                    <Pencil className="mr-1.5 h-4 w-4" />
+                    Edit
+                  </Button>
+                )}
+
+                {canDelete && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setConfirmDelete(true)}
+                    className="text-red-500 hover:text-red-600"
+                  >
+                    <Trash2 className="mr-1.5 h-4 w-4" />
+                    Delete
+                  </Button>
+                )}
+
+                <a
+                  href={`/${groupId}/events/new?from_plan=${plan.id}`}
+                  className="ml-auto inline-flex items-center gap-1.5 rounded-full border border-[var(--color-edge)] bg-[var(--color-surface-secondary)] px-3 py-2 text-sm font-medium text-[var(--color-text)] transition-colors hover:bg-[var(--color-surface-tertiary)]"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Create event
+                </a>
+              </div>
+            </>
+          )}
+        </div>
+      </Sheet>
+
+      <ConfirmDialog
+        open={confirmDelete}
+        onOpenChange={setConfirmDelete}
+        title="Delete Plan"
+        description={`Are you sure you want to delete "${plan.title}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDelete(false)}
+      />
+    </>
+  );
 }
