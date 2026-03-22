@@ -318,7 +318,7 @@ export async function removePlanAttachment(
     // Get attachment + plan to verify
     const { data: attachment } = await admin
         .from("plan_attachments")
-        .select("plan_id")
+        .select("plan_id, url")
         .eq("id", attachmentId)
         .single();
 
@@ -350,6 +350,16 @@ export async function removePlanAttachment(
     if (error) {
         console.error("[removePlanAttachment] delete failed:", error.message);
         return { error: error.message };
+    }
+
+    // Attempt to delete the file from storage
+    if (attachment.url) {
+        const { error: storageError } = await admin.storage
+            .from("plan-attachments")
+            .remove([attachment.url]);
+        if (storageError) {
+            console.error("[removePlanAttachment] storage delete failed:", storageError.message);
+        }
     }
 
     revalidatePath(`/${plan.group_id}/plans`);

@@ -4,8 +4,9 @@ import type { PlanWithDetails } from "@mooch/stores";
 import type { PlanStatus } from "@mooch/types";
 import { Avatar, Button, ConfirmDialog, Sheet, Text } from "@mooch/ui";
 import { Calendar, Camera, Mic, Trash2, Edit3, ExternalLink } from "lucide-react";
-import { useState, useTransition } from "react";
-import { updatePlan, deletePlan } from "@/app/actions/plans";
+import { useState, useEffect, useTransition } from "react";
+import { updatePlan, deletePlan, removePlanAttachment } from "@/app/actions/plans";
+import { createBrowserClient, getSignedPlanAttachmentUrl } from "@mooch/db";
 
 type Props = {
     plan: PlanWithDetails | null;
@@ -27,6 +28,29 @@ export function PlanDetailPanel({ plan, onClose, groupId, currentUserId }: Props
     const [editDescription, setEditDescription] = useState("");
     const [confirmDelete, setConfirmDelete] = useState(false);
     const [isPending, startTransition] = useTransition();
+    const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+
+    useEffect(() => {
+        if (!plan) {
+            setSignedUrls({});
+            return;
+        }
+        let isMounted = true;
+        const fetchUrls = async () => {
+            const supabase = createBrowserClient();
+            const urls: Record<string, string> = {};
+            for (const att of plan.attachments) {
+                if (signedUrls[att.id]) continue; // Skip already loaded
+                const url = await getSignedPlanAttachmentUrl(supabase, att.url);
+                if (url && isMounted) urls[att.id] = url;
+            }
+            if (isMounted && Object.keys(urls).length > 0) {
+                setSignedUrls(prev => ({ ...prev, ...urls }));
+            }
+        };
+        fetchUrls();
+        return () => { isMounted = false; };
+    }, [plan]);
 
     if (!plan) return null;
 
@@ -63,6 +87,22 @@ export function PlanDetailPanel({ plan, onClose, groupId, currentUserId }: Props
             }
             setConfirmDelete(false);
             onClose();
+        });
+    };
+
+    const handleDeleteAttachment = (attachmentId: string) => {
+        if (!confirm("Remove this attachment?")) return;
+        startTransition(async () => {
+            const result = await removePlanAttachment(attachmentId);
+            if ("error" in result) {
+                console.error("Failed to delete attachment:", result.error);
+            } else {
+                setSignedUrls(prev => {
+                    const next = { ...prev };
+                    delete next[attachmentId];
+                    return next;
+                });
+            }
         });
     };
 
@@ -212,23 +252,33 @@ export function PlanDetailPanel({ plan, onClose, groupId, currentUserId }: Props
                                     <Text variant="label" className="block mb-2">
                                         Attachments
                                     </Text>
-                                    <div className="space-y-2">
+                                    <div className="space-y-3">
                                         {photoAttachments.map((att) => (
-                                            <div
-                                                key={att.id}
-                                                className="flex items-center gap-2 text-sm text-stone-500"
-                                            >
-                                                <Camera className="w-4 h-4" />
-                                                <span className="truncate">{att.url.split("/").pop()}</span>
+                                            <div key={att.id} className="relative group rounded-lg overflow-hidden border border-stone-200">
+                                                {signedUrls[att.id] ? (
+                                                    <img src={signedUrls[att.id]} alt="Attachment" className="w-full h-auto object-cover max-h-48" />
+                                                ) : (
+                                                    <div className="h-24 bg-stone-100 flex items-center justify-center animate-pulse"><Camera className="w-5 h-5 text-stone-400" /></div>
+                                                )}
+                                                {canEdit && (
+                                                    <button type="button" onClick={() => handleDeleteAttachment(att.id)} className="absolute top-2 right-2 p-1.5 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70">
+                                                        <Trash2 className="w-3 h-3" />
+                                                    </button>
+                                                )}
                                             </div>
                                         ))}
                                         {voiceAttachments.map((att) => (
-                                            <div
-                                                key={att.id}
-                                                className="flex items-center gap-2 text-sm text-stone-500"
-                                            >
-                                                <Mic className="w-4 h-4" />
-                                                <span className="truncate">{att.url.split("/").pop()}</span>
+                                            <div key={att.id} className="relative bg-stone-100 rounded-lg p-3 pr-10 flex items-center">
+                                                {signedUrls[att.id] ? (
+                                                    <audio src={signedUrls[att.id]} controls className="w-full h-8" />
+                                                ) : (
+                                                    <div className="flex items-center gap-2 text-stone-400 text-sm"><Mic className="w-4 h-4 animate-pulse" /> Loading voice note...</div>
+                                                )}
+                                                {canEdit && (
+                                                    <button type="button" onClick={() => handleDeleteAttachment(att.id)} className="absolute right-3 p-1.5 text-stone-400 hover:text-red-500 transition-colors">
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                             </div>
                                         ))}
                                     </div>

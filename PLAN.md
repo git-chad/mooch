@@ -1629,8 +1629,8 @@ All corruption actions call `spendTokens(userId, action, cost)` from 3B.4 before
 
 ### 5.4 — Supabase Storage
 
-- [ ] 5.4.1 — Create `plan-attachments` bucket (authenticated uploads, max 10MB photos / 5MB audio).
-- [ ] 5.4.2 — Storage RLS: group members can upload to group folder and read from it.
+- [x] 5.4.1 — Create `plan-attachments` bucket (authenticated uploads, max 10MB photos / 5MB audio).
+- [x] 5.4.2 — Storage RLS: group members can upload to group folder and read from it.
 
 ### 5.5 — Verify & Test
 

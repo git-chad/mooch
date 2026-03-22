@@ -3,7 +3,10 @@
 import type { PlanStatus } from "@mooch/types";
 import { Button, Input, Sheet, Text } from "@mooch/ui";
 import { useState, useTransition } from "react";
-import { createPlan } from "@/app/actions/plans";
+import { createPlan, addPlanAttachment } from "@/app/actions/plans";
+import { Camera, Mic, X } from "lucide-react";
+import { createBrowserClient } from "@mooch/db";
+import { uploadPlanAttachment } from "@mooch/db";
 
 type Props = {
     open: boolean;
@@ -26,12 +29,43 @@ export function CreatePlanSheet({ open, onClose, groupId, initialStatus }: Props
     const [status, setStatus] = useState<PlanStatus>(initialStatus);
     const [isPending, startTransition] = useTransition();
 
+    const [photo, setPhoto] = useState<File | null>(null);
+    const [isRecording, setIsRecording] = useState(false);
+    const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+    const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const recorder = new MediaRecorder(stream);
+            recorder.ondataavailable = (e) => {
+                if (e.data.size > 0) setAudioBlob(e.data);
+            };
+            recorder.start();
+            setMediaRecorder(recorder);
+            setIsRecording(true);
+        } catch (err) {
+            console.error("Microphone access denied", err);
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorder && mediaRecorder.state !== "inactive") {
+            mediaRecorder.stop();
+            mediaRecorder.stream.getTracks().forEach(t => t.stop());
+            setIsRecording(false);
+        }
+    };
+
     // Reset when initialStatus changes
     const resetForm = () => {
         setTitle("");
         setDescription("");
         setDate("");
         setStatus(initialStatus);
+        setPhoto(null);
+        setAudioBlob(null);
+        if (isRecording) stopRecording();
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -49,6 +83,25 @@ export function CreatePlanSheet({ open, onClose, groupId, initialStatus }: Props
             if ("error" in result) {
                 console.error("Failed to create plan:", result.error);
                 return;
+            }
+
+            // Upload attachments
+            const supabase = createBrowserClient();
+            if (photo) {
+                try {
+                    const path = await uploadPlanAttachment(supabase, groupId, result.plan.id, photo, photo.name);
+                    await addPlanAttachment(result.plan.id, "photo", path);
+                } catch (e) {
+                    console.error("Photo upload failed", e);
+                }
+            }
+            if (audioBlob) {
+                try {
+                    const path = await uploadPlanAttachment(supabase, groupId, result.plan.id, audioBlob, "voice.webm");
+                    await addPlanAttachment(result.plan.id, "voice", path);
+                } catch (e) {
+                    console.error("Voice upload failed", e);
+                }
             }
 
             resetForm();
@@ -135,6 +188,41 @@ export function CreatePlanSheet({ open, onClose, groupId, initialStatus }: Props
                                 {opt.label}
                             </button>
                         ))}
+                    </div>
+                </div>
+
+                {/* Attachments */}
+                <div className="flex gap-6 mt-1 mb-2">
+                    <div>
+                        <label className="flex items-center gap-1.5 cursor-pointer text-sm font-medium text-stone-600 hover:text-stone-900">
+                            <Camera className="w-4 h-4" /> Photo
+                            <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) setPhoto(e.target.files[0]);
+                            }} />
+                        </label>
+                        {photo && (
+                            <div className="text-xs text-stone-500 mt-1 flex items-center justify-between gap-2 bg-stone-100 p-1.5 rounded">
+                                <span className="truncate max-w-[120px]">{photo.name}</span>
+                                <button type="button" onClick={() => setPhoto(null)} className="hover:text-stone-800">
+                                    <X className="w-3 h-3" />
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    <div>
+                        <button
+                            type="button"
+                            onClick={isRecording ? stopRecording : (audioBlob ? () => setAudioBlob(null) : startRecording)}
+                            className={`flex items-center gap-1.5 text-sm font-medium ${isRecording ? 'text-red-500' : 'text-stone-600 hover:text-stone-900'}`}
+                        >
+                            <Mic className="w-4 h-4" />
+                            {isRecording ? "Stop Recording" : (audioBlob ? "Remove Audio" : "Voice Note")}
+                        </button>
+                        {audioBlob && !isRecording && (
+                            <div className="text-xs text-stone-500 mt-1 bg-stone-100 p-1.5 rounded">
+                                Audio captured
+                            </div>
+                        )}
                     </div>
                 </div>
 

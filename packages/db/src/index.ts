@@ -31,3 +31,9 @@ export {
   getPlanById,
 } from "./queries/plans";
 export type { PlanWithDetails } from "./queries/plans";
+
+export {
+  uploadPlanAttachment,
+  deletePlanAttachmentFile,
+  getSignedPlanAttachmentUrl,
+} from "./storage/plans";
