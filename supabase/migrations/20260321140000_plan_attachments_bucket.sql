@@ -1,0 +1,2 @@
+-- No-op: superseded by 20260321120000_group_plans_repair.sql
+-- Kept for migration history consistency.

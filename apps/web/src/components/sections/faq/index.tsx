@@ -173,7 +173,7 @@ export function FAQ() {
         </div>
       </Container>
 
-      <StickerLayer
+      {/* <StickerLayer
         key={`${showStickers ? "visible" : "hidden"}:${layoutMode ? "layout" : "live"}:${stickerLayoutSignature}`}
         reduceMotion={reduceMotion}
         isVisible={showStickers}
@@ -181,7 +181,7 @@ export function FAQ() {
         stickerPoses={stickerPoses}
         onOffsetChange={handleStickerOffsetChange}
         onPoseChange={handleStickerPoseChange}
-      />
+      /> */}
     </div>
   );
 }
