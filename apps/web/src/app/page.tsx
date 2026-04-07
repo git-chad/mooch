@@ -14,16 +14,19 @@ export default function Home() {
       </section>
       <section
         id="features"
-        className="relative z-10 min-h-screen bg-[#FCFCFB]"
+        className="relative z-10 min-h-screen scroll-mt-24 bg-[#FCFCFB]"
       >
         <Features />
       </section>
-      <section id="faq" className="relative z-10 bg-[#FCFCFB]">
+      <section id="faq" className="relative z-10 scroll-mt-24 bg-[#FCFCFB]">
         <Suspense>
           <FAQ />
         </Suspense>
       </section>
-      <section id="cta" className="relative z-10 bg-[#FCFCFB]">
+      <section
+        id="cta"
+        className="relative z-10 scroll-mt-24 bg-[#FCFCFB]"
+      >
         <CTA />
       </section>
     </main>

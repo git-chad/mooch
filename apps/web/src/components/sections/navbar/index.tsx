@@ -8,11 +8,11 @@ import {
   useScroll,
 } from "motion/react";
 import Link from "next/link";
-import { useRef, useState } from "react";
+import { useRef, useState, type MouseEvent } from "react";
 
 const navLinks = [
   { label: "Features", href: "#features" },
-  { label: "Pricing", href: "#cta" },
+  // { label: "Pricing", href: "#waitlist" },
   { label: "FAQ", href: "#faq" },
 ] as const;
 
@@ -21,6 +21,32 @@ export const Navbar = () => {
   const visibleRef = useRef(true);
   const reduceMotion = useReducedMotion();
   const { scrollY } = useScroll();
+
+  const scrollToSection = (id: string) => {
+    document.getElementById(id)?.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "start",
+    });
+  };
+
+  const handleAnchorClick = (
+    event: MouseEvent<HTMLAnchorElement>,
+    href: string,
+  ) => {
+    if (!href.startsWith("#")) {
+      return;
+    }
+
+    const id = href.slice(1);
+    const target = document.getElementById(id);
+    if (!target) {
+      return;
+    }
+
+    event.preventDefault();
+    scrollToSection(id);
+    window.history.pushState(null, "", href);
+  };
 
   useMotionValueEvent(scrollY, "change", (current) => {
     const previous = scrollY.getPrevious() ?? 0;
@@ -83,6 +109,7 @@ export const Navbar = () => {
                 <li key={item.label}>
                   <Link
                     href={item.href}
+                    onClick={(event) => handleAnchorClick(event, item.href)}
                     className="text-[13px] leading-[16px] text-[#5F7892] transition-colors duration-150 hover:text-[#3F5B74]"
                   >
                     {item.label}
@@ -92,16 +119,18 @@ export const Navbar = () => {
             </ul>
 
             <div className="flex items-center gap-2">
-              <Link
-                href="#cta"
+              {/* <Link
+                href="#waitlist"
+                onClick={(event) => handleAnchorClick(event, "#waitlist")}
                 className="hidden text-[13px] leading-[16px] text-[#5F7892] transition-colors duration-150 hover:text-[#3F5B74] sm:inline"
               >
                 Login
-              </Link>
+              </Link> */}
               <Button
                 size="md"
                 variant="primary"
                 className="h-[30px] px-3 py-1.5"
+                onClick={() => scrollToSection("waitlist")}
               >
                 Join Waitlist
               </Button>

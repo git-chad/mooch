@@ -6,7 +6,7 @@ const CTA_ARTWORK_SRC = "/images/cta-section-illustration.webp";
 
 export const CTA = () => {
   return (
-    <div className="pt-32 bg-[#FCFCFB]">
+    <div id="waitlist" className="pt-32 bg-[#FCFCFB]">
       <div className="w-full grid grid-cols-6 sm:grid-cols-8 gap-2 px-4 sm:px-8 max-w-[904px] mx-auto">
         <div className="col-span-6 col-start-1 sm:col-span-6 sm:col-start-2 flex flex-col items-center gap-12">
           <TitleReveal

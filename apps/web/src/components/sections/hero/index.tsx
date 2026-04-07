@@ -8,6 +8,13 @@ export const Hero = () => {
   const [introCanPlay, setIntroCanPlay] = useState(false);
   const [heroScrollProgress, setHeroScrollProgress] = useState(0);
 
+  const scrollToWaitlist = () => {
+    document.getElementById("waitlist")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
   useEffect(() => {
     let started = false;
 
@@ -75,7 +82,7 @@ export const Hero = () => {
           className="hero-reveal hero-reveal-badge"
           style={{ animationPlayState: introPlayState }}
         >
-          <Badge className="w-fit" label="Coming pretty soon" color="#6F859B" />
+          <Badge className="w-fit" label="Coming soon" color="#6F859B" />
         </div>
         <TitleReveal
           as="h1"
@@ -95,15 +102,15 @@ export const Hero = () => {
           color="web-description"
           style={{ animationPlayState: introPlayState }}
         >
-          mooched's your everyday tool for micro-managing your friends. Fret not,
-          it's free to get started.
+          mooched's your everyday tool for micro-managing your friends. Fret
+          not, it's free to get started.
         </Text>
 
         <div
           className="flex justify-center items-center gap-2 hero-reveal hero-reveal-buttons"
           style={{ animationPlayState: introPlayState }}
         >
-          <div
+          {/* <div
             className="hero-reveal-btn hero-reveal-btn-a"
             style={{ animationPlayState: introPlayState }}
           >
@@ -117,6 +124,12 @@ export const Hero = () => {
           >
             <Button variant="primary" size="md">
               Sign up for Free
+            </Button>
+          </div> */}
+
+          <div style={{ animationPlayState: introPlayState }}>
+            <Button variant="primary" size="md" onClick={scrollToWaitlist}>
+              Join Waitlist
             </Button>
           </div>
         </div>

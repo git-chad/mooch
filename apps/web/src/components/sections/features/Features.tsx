@@ -35,32 +35,28 @@ const moreFeatures = [
     variant: "compact",
     title: "Plans",
     badgeTone: "purple",
-    description:
-      "Lorem ipsum dolor sit et amet, some placeholder text, whatever.",
+    description: "Turn half-baked ideas into actual plans your friends can follow.",
   },
   {
     slug: "feed",
     variant: "compact",
     title: "Feed",
     badgeTone: "blue",
-    description:
-      "Lorem ipsum dolor sit et amet, some placeholder text, whatever.",
+    description: "Keep the squad chat, drops, and random chaos in one running stream.",
   },
   {
     slug: "events",
     variant: "compact",
     title: "Events",
     badgeTone: "blue",
-    description:
-      "Lorem ipsum dolor sit et amet, some placeholder text, whatever.",
+    description: "Set the time, lock the place, and stop asking who's actually coming.",
   },
   {
     slug: "insights",
     variant: "compact",
     title: "Insights",
     badgeTone: "purple",
-    description:
-      "Lorem ipsum dolor sit et amet, some placeholder text, whatever.",
+    description: "See who pays, who flakes, and who somehow never misses a free meal.",
   },
 ] satisfies FeaturesFeatureData[];
 
