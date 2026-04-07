@@ -8,10 +8,16 @@ import type { FAQItemData } from "./types";
 type FAQItemProps = {
   item: FAQItemData;
   isOpen: boolean;
+  questionNumber: number;
   onToggle: () => void;
 };
 
-export function FAQItem({ item, isOpen, onToggle }: FAQItemProps) {
+export function FAQItem({
+  item,
+  isOpen,
+  questionNumber,
+  onToggle,
+}: FAQItemProps) {
   const panelId = useId();
   const reduceMotion = useReducedMotion();
 
@@ -39,7 +45,6 @@ export function FAQItem({ item, isOpen, onToggle }: FAQItemProps) {
           : "bg-[#FFFFFFCC] backdrop-blur-md shadow-[0_4px_6px_rgba(95,123,146,0.08)]",
       )}
     >
-
       <motion.button
         type="button"
         whileTap={reduceMotion ? undefined : { scale: 0.992 }}
@@ -56,7 +61,7 @@ export function FAQItem({ item, isOpen, onToggle }: FAQItemProps) {
                 item.accent,
               )}
             >
-              FAQ
+              #{questionNumber}
             </div>
             <Text
               as="h3"

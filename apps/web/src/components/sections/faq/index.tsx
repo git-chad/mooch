@@ -159,6 +159,7 @@ export function FAQ() {
                 >
                   <FAQItem
                     item={item}
+                    questionNumber={index + 1}
                     isOpen={openId === item.id}
                     onToggle={() =>
                       setOpenId((current) =>

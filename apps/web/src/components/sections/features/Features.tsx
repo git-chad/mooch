@@ -35,28 +35,32 @@ const moreFeatures = [
     variant: "compact",
     title: "Plans",
     badgeTone: "purple",
-    description: "Turn half-baked ideas into actual plans your friends can follow.",
+    description:
+      "Turn half-baked ideas into actual plans your friends can follow.",
   },
   {
     slug: "feed",
     variant: "compact",
     title: "Feed",
     badgeTone: "blue",
-    description: "Keep the squad chat, drops, and random chaos in one running stream.",
+    description:
+      "Keep the squad chat, drops, and random chaos in one running stream.",
   },
   {
     slug: "events",
     variant: "compact",
     title: "Events",
     badgeTone: "blue",
-    description: "Set the time, lock the place, and stop asking who's actually coming.",
+    description:
+      "Set the time, lock the place, and stop asking who's actually coming.",
   },
   {
     slug: "insights",
     variant: "compact",
     title: "Insights",
     badgeTone: "purple",
-    description: "See who pays, who flakes, and who somehow never misses a free meal.",
+    description:
+      "See who pays, who flakes, and who somehow never misses a free meal.",
   },
 ] satisfies FeaturesFeatureData[];
 
@@ -77,14 +81,14 @@ export const Features = () => {
         <Text
           as="h3"
           variant="web-lead"
-          className="mt-6 text-center max-w-[513px]"
+          className="mt-6 text-center max-w-[513px] text-pretty"
           color="web-description"
         >
           Tired of your friends being lazy pieces of shit? Be that HR person
           they need and bring order to the squad.
         </Text>
 
-        <div className="mt-14 flex w-full flex-col gap-6">
+        <div className="mt-14 flex w-full flex-col gap-y-16 md:gap-6">
           {featuredTools.map(withScreenshot).map(({ slug, ...item }, index) => (
             <FeaturesFeature key={slug} delay={0.08 + index * 0.08} {...item} />
           ))}
@@ -103,7 +107,7 @@ export const Features = () => {
           <div className="h-px w-full bg-[#C7D4E1]" />
         </div>
 
-        <div className="mt-10 grid w-full grid-cols-1 gap-x-2 gap-y-4 sm:grid-cols-2">
+        <div className="mt-10 grid w-full grid-cols-1 gap-x-2 gap-y-16 md:gap-y-4 sm:grid-cols-2">
           {moreFeatures.map(withScreenshot).map(({ slug, ...item }, index) => (
             <FeaturesFeature key={slug} delay={0.06 + index * 0.06} {...item} />
           ))}

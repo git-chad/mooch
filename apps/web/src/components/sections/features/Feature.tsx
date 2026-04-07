@@ -105,8 +105,10 @@ export function FeaturesFeature({
     >
       <div
         className={cn(
-          "relative w-full overflow-hidden grid place-items-center rounded-[14px] border border-[#C7D4E1]/20 bg-[#EEF3F8]",
-          isFeatured ? "h-[360px]" : "h-[182px]",
+          "relative grid w-full place-items-center overflow-hidden rounded-[14px] border border-[#C7D4E1]/20 bg-[#EEF3F8]",
+          isFeatured
+            ? "min-h-[220px] sm:min-h-[300px] md:h-[360px]"
+            : "min-h-[208px] sm:h-[182px]",
           mediaClassName,
         )}
       >
@@ -124,11 +126,18 @@ export function FeaturesFeature({
             />
           ) : (
             <Image
-              className="h-full w-full object-cover"
+              className={cn(
+                "h-full w-full",
+                isFeatured ? "object-cover" : "object-contain object-top",
+              )}
               src={mediaSrc}
               alt={mediaAlt ?? `${title} preview`}
               fill
-              sizes={isFeatured ? "(min-width: 904px) 676px, 100vw" : "334px"}
+              sizes={
+                isFeatured
+                  ? "(min-width: 904px) 676px, 100vw"
+                  : "(min-width: 640px) 334px, 100vw"
+              }
               onError={() => setHasMediaError(true)}
             />
           )
@@ -140,7 +149,7 @@ export function FeaturesFeature({
       </div>
 
       {isFeatured ? (
-        <div className="flex w-full items-center gap-4">
+        <div className="flex w-full flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
           <span
             className={cn(
               "inline-flex items-center rounded-full border",
@@ -152,11 +161,11 @@ export function FeaturesFeature({
             </Text>
           </span>
           {shouldShowDivider ? (
-            <span className="h-[15px] w-px shrink-0 bg-[#C7D4E1]" />
+            <span className="h-[15px] w-px shrink-0 bg-[#C7D4E1] hidden md:block" />
           ) : null}
           <Text
             as="p"
-            className="shrink-0 text-[15px] leading-[20px] text-[#6F859B]"
+            className="text-[15px] leading-[20px] text-[#6F859B] sm:shrink-0 text-balance"
           >
             {description}
           </Text>
@@ -175,7 +184,7 @@ export function FeaturesFeature({
           </span>
           <Text
             as="p"
-            className="w-full text-[15px] leading-[20px] text-[#6F859B]"
+            className="w-full text-[15px] leading-[20px] text-[#6F859B] text-balance"
           >
             {description}
           </Text>

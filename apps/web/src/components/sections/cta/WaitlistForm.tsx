@@ -16,7 +16,7 @@ function SubmitButton() {
       variant="primary"
       loading={pending}
       disabled={pending}
-      className="h-[38px] px-4 py-[10px]"
+      className="h-[38px] w-full px-4 py-[10px] sm:w-auto"
     >
       {pending ? "Joining..." : "Sign up to Waitlist"}
     </Button>
@@ -34,7 +34,7 @@ export function WaitlistForm() {
       {state.status === "success" ? null : (
         <form
           action={formAction}
-          className="flex w-full sm:w-auto flex-col items-center justify-center gap-3 sm:flex-row sm:gap-[19px]"
+          className="flex w-full max-w-[460px] flex-col items-stretch justify-center gap-3 sm:max-w-none sm:flex-row sm:items-center sm:gap-[19px]"
         >
           <input type="hidden" name="source" value="website_cta" />
           <div
@@ -55,7 +55,7 @@ export function WaitlistForm() {
             <Input
               aria-label="Email"
               autoComplete="email"
-              className="h-[36px] border-[#DCCABF] bg-[linear-gradient(in_oklab_180deg,oklab(100%_0_.0001_/_92%)_0%,oklab(94.7%_.005_.009_/_72%)_100%)] px-3 text-[13px] leading-[16px] text-[#68809A] shadow-none"
+              className="h-[40px] w-full border-[#DCCABF] bg-[linear-gradient(in_oklab_180deg,oklab(100%_0_.0001_/_92%)_0%,oklab(94.7%_.005_.009_/_72%)_100%)] px-3 text-[13px] leading-[16px] text-[#68809A] shadow-none sm:h-[36px]"
               error={state.fieldErrors?.email}
               id="waitlist-email"
               maxLength={320}

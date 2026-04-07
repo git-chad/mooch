@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge, Button, Container, Text } from "@mooch/ui";
-import { useEffect, useState, type CSSProperties } from "react";
+import { type CSSProperties, useEffect, useState } from "react";
 import { TitleReveal } from "../common/TitleReveal";
 
 export const Hero = () => {
@@ -73,9 +73,9 @@ export const Hero = () => {
   } as CSSProperties;
 
   return (
-    <Container variant="site" className="pt-32">
+    <Container variant="site" className="pt-24 sm:pt-32">
       <div
-        className="hero-scroll-fade z-20 col-span-6 col-start-2 flex flex-col items-center gap-6"
+        className="hero-scroll-fade z-20 col-span-full md:col-span-6 md:col-start-2 flex flex-col items-center gap-6"
         style={heroContentStyle}
       >
         <div
@@ -98,7 +98,7 @@ export const Hero = () => {
         <Text
           as="h2"
           variant="web-lead"
-          className="text-center md:px-20 hero-reveal hero-reveal-description"
+          className="hero-reveal hero-reveal-description max-w-[36rem] px-4 text-center sm:px-0 md:px-20"
           color="web-description"
           style={{ animationPlayState: introPlayState }}
         >
@@ -107,7 +107,7 @@ export const Hero = () => {
         </Text>
 
         <div
-          className="flex justify-center items-center gap-2 hero-reveal hero-reveal-buttons"
+          className="hero-reveal hero-reveal-buttons flex items-center justify-center gap-2"
           style={{ animationPlayState: introPlayState }}
         >
           {/* <div
@@ -127,8 +127,16 @@ export const Hero = () => {
             </Button>
           </div> */}
 
-          <div style={{ animationPlayState: introPlayState }}>
-            <Button variant="primary" size="md" onClick={scrollToWaitlist}>
+          <div
+            className="w-full px-4 sm:w-auto sm:px-0"
+            style={{ animationPlayState: introPlayState }}
+          >
+            <Button
+              variant="primary"
+              size="md"
+              className="w-full sm:w-auto"
+              onClick={scrollToWaitlist}
+            >
               Join Waitlist
             </Button>
           </div>

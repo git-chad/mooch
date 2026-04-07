@@ -52,11 +52,14 @@ const variantClasses: Record<TextVariant, string> = {
   overline: "text-[10px] font-semibold font-sans uppercase tracking-widest",
   // Homepage - Final Version (Paper: mooched.app / frame 2PI-0)
   // 80/73, -0.06 tracking, GeistPixel-Circle
-  "web-hero": "geist-pixel text-[80px] leading-[73px] tracking-[-0.06em]",
+  "web-hero":
+    "geist-pixel text-[56px] leading-[50px] tracking-[-0.06em] sm:text-[68px] sm:leading-[61px] md:text-[80px] md:leading-[73px]",
   // 42/44, -0.04 tracking, GeistPixel-Circle
-  "web-section": "geist-pixel text-[42px] leading-[44px] tracking-[-0.04em]",
+  "web-section":
+    "geist-pixel text-[28px] leading-[31px] tracking-[-0.04em] sm:text-[34px] sm:leading-[37px] md:text-[42px] md:leading-[44px]",
   // 20/32, -0.01 tracking
-  "web-lead": "font-sans text-[20px] leading-[32px] tracking-[-0.01em]",
+  "web-lead":
+    "font-sans text-[17px] leading-[28px] tracking-[-0.01em] sm:text-[19px] sm:leading-[30px] md:text-[20px] md:leading-[32px]",
   // 15/20 body copy and footer links
   "web-body": "font-sans text-[15px] leading-[20px]",
   // 13/16 UI labels (inputs/buttons secondary)
