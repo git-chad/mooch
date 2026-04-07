@@ -95,7 +95,7 @@ export const Hero = () => {
           color="web-description"
           style={{ animationPlayState: introPlayState }}
         >
-          mooch's your everyday tool for micro-managing your friends. Fret not,
+          mooched's your everyday tool for micro-managing your friends. Fret not,
           it's free to get started.
         </Text>
 

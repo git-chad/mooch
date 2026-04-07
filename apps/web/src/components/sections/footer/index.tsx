@@ -22,7 +22,7 @@ export const Footer = () => {
             color="web-title"
             className="w-full text-center"
           >
-            mooch.me
+            mooched.app
           </Text>
 
           <nav

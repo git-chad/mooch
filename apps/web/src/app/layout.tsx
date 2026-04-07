@@ -12,11 +12,11 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "mooch — track the chaos, keep the vibes",
   description: "Expenses, plans, votes & memories — all in one squad app.",
-  metadataBase: new URL("https://mooch.me"),
+  metadataBase: new URL("https://mooched.app"),
   openGraph: {
     title: "mooch — track the chaos, keep the vibes",
     description: "Expenses, plans, votes & memories — all in one squad app.",
-    url: "https://mooch.me",
+    url: "https://mooched.app",
     siteName: "mooch",
     images: [
       {

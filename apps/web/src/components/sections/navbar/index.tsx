@@ -74,7 +74,7 @@ export const Navbar = () => {
                 variant="web-lead"
                 className="truncate text-black geist-pixel"
               >
-                mooch
+                mooched
               </Text>
             </Link>
 

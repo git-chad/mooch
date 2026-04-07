@@ -3,6 +3,7 @@
 import { cn, Text } from "@mooch/ui";
 import { motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
+import { useState } from "react";
 
 export type FeaturesFeatureVariant = "featured" | "compact";
 export type FeaturesFeatureMediaKind = "image" | "video";
@@ -48,6 +49,8 @@ export function FeaturesFeature({
   const resolvedBadgeTone = badgeTone ?? (isFeatured ? "green" : "purple");
   const shouldShowDivider = isFeatured && (showDivider ?? true);
   const reduceMotion = useReducedMotion();
+  const [hasMediaError, setHasMediaError] = useState(false);
+  const showMedia = !!mediaSrc && !hasMediaError;
 
   const cardVariants = reduceMotion
     ? {
@@ -102,17 +105,18 @@ export function FeaturesFeature({
     >
       <div
         className={cn(
-          "relative w-full overflow-hidden rounded-[14px] bg-[#EEF3F8]",
+          "relative w-full overflow-hidden grid place-items-center rounded-[14px] bg-[#EEF3F8]",
           isFeatured ? "h-[360px]" : "h-[182px]",
           mediaClassName,
         )}
       >
-        {mediaSrc ? (
+        {showMedia ? (
           mediaKind === "video" ? (
             <video
               className="h-full w-full object-cover"
               src={mediaSrc}
               poster={mediaPoster}
+              onError={() => setHasMediaError(true)}
               muted
               playsInline
               autoPlay
@@ -125,9 +129,10 @@ export function FeaturesFeature({
               alt={mediaAlt ?? `${title} preview`}
               fill
               sizes={isFeatured ? "(min-width: 904px) 676px, 100vw" : "334px"}
+              onError={() => setHasMediaError(true)}
             />
           )
-        ) : null}
+        ) : <Text as="span" variant="web-chip" className="opacity-50">Coming soon</Text>}
       </div>
 
       {isFeatured ? (

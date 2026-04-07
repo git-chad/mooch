@@ -3,7 +3,7 @@
 > **"Track the chaos, keep the vibes: expenses, plans, votes & memories — all in one squad app."**
 >
 > Web app (Next.js 16 + Supabase) · Monorepo · English & Spanish
-> Structure: `mooch.me` (marketing) + `app.mooch.me` (app)
+> Structure: `mooched.app` (marketing) + `app.mooched.app` (app)
 
 ---
 
@@ -54,8 +54,8 @@
 ```
 mooch/
 ├── apps/
-│   ├── app/          → Next.js app — app.mooch.me
-│   └── web/          → Next.js marketing site — mooch.me
+│   ├── app/          → Next.js app — app.mooched.app
+│   └── web/          → Next.js marketing site — mooched.app
 ├── packages/
 │   ├── db/           → Supabase client, queries, types
 │   ├── types/        → Shared TypeScript types & Zod schemas
@@ -471,7 +471,7 @@ insights (id, group_id, week_id, total_spent, top_category, top_poll, attendance
   - Large monospace invite code display
   - "Copy code" button
   - QR code (generated with `qrcode` npm package)
-  - "Share link" button → `navigator.share()` with `https://app.mooch.me/join/{code}`
+  - "Share link" button → `navigator.share()` with `https://app.mooched.app/join/{code}`
 - [x] 2.4.6 — `apps/app/src/app/join/[code]/page.tsx` (public, no auth required):
   - Shows group name + emoji from invite code lookup
   - "Join this squad" CTA → if not logged in, redirect to `/login?next=/join/{code}`; if logged in, call `joinGroupByCode`
@@ -1215,7 +1215,7 @@ try {
   - Refreshes automatically when the Stripe webhook updates either table — no page reload needed.
 
 - [x] 3B.3.5 — Locked-feature UI pattern (shared component `packages/ui/src/LockedFeature.tsx`):
-  - Renders a 🔒 icon with muted text and a tooltip: _"Upgrade to Pro"_ linking to `mooch.me/pricing`.
+  - Renders a 🔒 icon with muted text and a tooltip: _"Upgrade to Pro"_ linking to `mooched.app/pricing`.
   - **Never** use a red ❌. The locked state should feel like an invitation, not a rejection.
 
 ---
@@ -2250,11 +2250,11 @@ Note: this Supabase Storage bucket was a working prototype to unblock feed devel
 ### 9.7 — Marketing Site (apps/web)
 
 - [ ] 9.6.1 — `apps/web/src/app/page.tsx` home page:
-  - Hero: tagline + CTA → `app.mooch.me/signup`
+  - Hero: tagline + CTA → `app.mooched.app/signup`
   - Feature sections: Expenses, Polls, Plans, Feed, Events, Insights
   - Footer: Privacy, Terms, support email
 - [ ] 9.6.2 — `/privacy` and `/terms` static pages.
-- [ ] 9.6.3 — `/join/{code}` → redirect to `app.mooch.me/join/{code}`.
+- [ ] 9.6.3 — `/join/{code}` → redirect to `app.mooched.app/join/{code}`.
 - [ ] 9.6.4 — Open Graph meta tags on all pages.
 - [ ] 9.6.5 — Favicon + apple-touch-icon.
 - [ ] 9.6.6 — `sitemap.xml` and `robots.txt`.
@@ -2360,10 +2360,10 @@ Note: this Supabase Storage bucket was a working prototype to unblock feed devel
 - [ ] 10.6.1 — Create Vercel project for `apps/app`:
   - Root: `apps/app`
   - All env vars set
-  - Custom domain: `app.mooch.me`
+  - Custom domain: `app.mooched.app`
 - [ ] 10.6.2 — Create Vercel project for `apps/web`:
   - Root: `apps/web`
-  - Custom domains: `mooch.me` + `www.mooch.me`
+  - Custom domains: `mooched.app` + `www.mooched.app`
 - [ ] 10.6.3 — Configure Turborepo remote cache in Vercel.
 - [ ] 10.6.4 — Set up preview deployments on pull requests.
 

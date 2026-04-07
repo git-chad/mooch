@@ -1,4 +1,4 @@
-# Homepage Implementation Plan (`mooch.me`)
+# Homepage Implementation Plan (`mooched.app`)
 
 Based on the "Homepage - Final Version" design in Paper (node `2PI-0`).
 
@@ -32,7 +32,7 @@ Based on the "Homepage - Final Version" design in Paper (node `2PI-0`).
 
 ### Footer
 
-- [ ] "mooch.me" logo/text with green blob accent
+- [ ] "mooched.app" logo/text with green blob accent
 - [ ] Footer links — Features, FAQ, Pricing, Back to top
 
 ---

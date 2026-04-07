@@ -231,4 +231,4 @@ Zustand stores that need to be built alongside components.
 - Empty states, skeletons, and error states are **designed moments** with their own motion — not afterthoughts.
 
 
-# mooch.me - to mooch or be mooched
+# mooched.app - to mooch or be mooched

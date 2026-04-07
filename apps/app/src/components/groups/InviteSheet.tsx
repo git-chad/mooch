@@ -21,7 +21,7 @@ export function InviteSheet({
   const [sharing, setSharing] = useState(false);
 
   const inviteLink = useMemo(
-    () => `https://app.mooch.me/join/${inviteCode}`,
+    () => `https://app.mooched.app/join/${inviteCode}`,
     [inviteCode],
   );
 

@@ -2,7 +2,15 @@ import { Container, Text } from "@mooch/ui";
 import { TitleReveal } from "../common/TitleReveal";
 import { FeaturesFeature, type FeaturesFeatureData } from "./Feature";
 
-const featuredTools: FeaturesFeatureData[] = [
+const getScreenshotPath = (slug: string) => `/screenshots/${slug}.png`;
+
+const withScreenshot = (feature: FeaturesFeatureData): FeaturesFeatureData => ({
+  ...feature,
+  mediaSrc: getScreenshotPath(feature.slug),
+  mediaAlt: `${feature.title} app screenshot`,
+});
+
+const featuredTools = [
   {
     slug: "expense-tracking",
     variant: "featured",
@@ -19,9 +27,9 @@ const featuredTools: FeaturesFeatureData[] = [
     badgeTone: "green",
     description: "Democracy 101, corruption and all.",
   },
-];
+] satisfies FeaturesFeatureData[];
 
-const moreFeatures: FeaturesFeatureData[] = [
+const moreFeatures = [
   {
     slug: "plans",
     variant: "compact",
@@ -54,7 +62,7 @@ const moreFeatures: FeaturesFeatureData[] = [
     description:
       "Lorem ipsum dolor sit et amet, some placeholder text, whatever.",
   },
-];
+] satisfies FeaturesFeatureData[];
 
 export const Features = () => {
   return (
@@ -81,7 +89,7 @@ export const Features = () => {
         </Text>
 
         <div className="mt-14 flex w-full flex-col gap-6">
-          {featuredTools.map(({ slug, ...item }, index) => (
+          {featuredTools.map(withScreenshot).map(({ slug, ...item }, index) => (
             <FeaturesFeature key={slug} delay={0.08 + index * 0.08} {...item} />
           ))}
         </div>
@@ -100,7 +108,7 @@ export const Features = () => {
         </div>
 
         <div className="mt-10 grid w-full grid-cols-1 gap-x-2 gap-y-4 sm:grid-cols-2">
-          {moreFeatures.map(({ slug, ...item }, index) => (
+          {moreFeatures.map(withScreenshot).map(({ slug, ...item }, index) => (
             <FeaturesFeature key={slug} delay={0.06 + index * 0.06} {...item} />
           ))}
         </div>

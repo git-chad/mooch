@@ -50,7 +50,7 @@ const variantClasses: Record<TextVariant, string> = {
   label: "text-xs font-medium font-sans",
   caption: "text-xs font-sans",
   overline: "text-[10px] font-semibold font-sans uppercase tracking-widest",
-  // Homepage - Final Version (Paper: mooch.me / frame 2PI-0)
+  // Homepage - Final Version (Paper: mooched.app / frame 2PI-0)
   // 80/73, -0.06 tracking, GeistPixel-Circle
   "web-hero": "geist-pixel text-[80px] leading-[73px] tracking-[-0.06em]",
   // 42/44, -0.04 tracking, GeistPixel-Circle
@@ -76,7 +76,7 @@ const colorClasses: Record<TextColor, string> = {
   info: "text-ink-info-2",
   danger: "text-danger",
   accent: "text-accent-fg",
-  // Homepage - Final Version (Paper: mooch.me / frame 2PI-0)
+  // Homepage - Final Version (Paper: mooched.app / frame 2PI-0)
   "web-title-hero": "text-[#1F2A23]",
   "web-title": "text-[#1E2A35]",
   "web-description": "text-[#6F859B]",

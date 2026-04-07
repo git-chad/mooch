@@ -44,7 +44,7 @@ export function SheetDemo() {
         open={receiptOpen}
         onOpenChange={setReceiptOpen}
         title="mooch"
-        description={"app.mooch.me\nSquad invite · expires never"}
+        description={"app.mooched.app\nSquad invite · expires never"}
       >
         <div className="space-y-1">
           <div className="flex justify-between">

@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        hostname: "*.mooch.me",
+        hostname: "*.mooched.app",
       },
     ],
   },

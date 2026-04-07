@@ -321,7 +321,7 @@ export function TabReceipt({
             </ReceiptSection>
 
             <p className="text-center text-[9px] uppercase tracking-[0.2em] text-[#B5A99A] pt-2">
-              mooch.me
+              mooched.app
             </p>
           </motion.div>
         </div>
