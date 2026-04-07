@@ -105,7 +105,7 @@ export function FeaturesFeature({
     >
       <div
         className={cn(
-          "relative w-full overflow-hidden grid place-items-center rounded-[14px] bg-[#EEF3F8]",
+          "relative w-full overflow-hidden grid place-items-center rounded-[14px] border border-[#C7D4E1]/20 bg-[#EEF3F8]",
           isFeatured ? "h-[360px]" : "h-[182px]",
           mediaClassName,
         )}
@@ -132,7 +132,11 @@ export function FeaturesFeature({
               onError={() => setHasMediaError(true)}
             />
           )
-        ) : <Text as="span" variant="web-chip" className="opacity-50">Coming soon</Text>}
+        ) : (
+          <Text as="span" variant="web-chip" className="opacity-50">
+            Coming soon
+          </Text>
+        )}
       </div>
 
       {isFeatured ? (

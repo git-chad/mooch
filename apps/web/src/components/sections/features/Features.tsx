@@ -2,7 +2,7 @@ import { Container, Text } from "@mooch/ui";
 import { TitleReveal } from "../common/TitleReveal";
 import { FeaturesFeature, type FeaturesFeatureData } from "./Feature";
 
-const getScreenshotPath = (slug: string) => `/screenshots/${slug}.png`;
+const getScreenshotPath = (slug: string) => `/screenshots/${slug}.webp`;
 
 const withScreenshot = (feature: FeaturesFeatureData): FeaturesFeatureData => ({
   ...feature,
@@ -39,6 +39,14 @@ const moreFeatures = [
       "Lorem ipsum dolor sit et amet, some placeholder text, whatever.",
   },
   {
+    slug: "feed",
+    variant: "compact",
+    title: "Feed",
+    badgeTone: "blue",
+    description:
+      "Lorem ipsum dolor sit et amet, some placeholder text, whatever.",
+  },
+  {
     slug: "events",
     variant: "compact",
     title: "Events",
@@ -51,14 +59,6 @@ const moreFeatures = [
     variant: "compact",
     title: "Insights",
     badgeTone: "purple",
-    description:
-      "Lorem ipsum dolor sit et amet, some placeholder text, whatever.",
-  },
-  {
-    slug: "feed",
-    variant: "compact",
-    title: "Feed",
-    badgeTone: "blue",
     description:
       "Lorem ipsum dolor sit et amet, some placeholder text, whatever.",
   },
